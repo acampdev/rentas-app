@@ -1,0 +1,32 @@
+// src/hooks/index.ts
+
+export { useAuth } from './useAuth';
+export { useContribuyentes } from './useContribuyentes';
+export { usePredios } from './usePredioAPI';
+export { usePisos } from './usePisos';
+export { useAsignacion } from './useAsignacion';
+export { useHR } from './useHR';
+export { usePU } from './usePU';
+export { useCajas } from './useCajas';
+export { useUsuarios } from './useUsuarios';
+export { useCuentaCorriente } from './useCuentaCorriente';
+export { useBarrios } from './useBarrios';
+export { useSectores } from './useSectores';
+export { useUIT } from './useUIT';
+export { useAlcabala } from './useAlcabala';
+export { useDepreciacion } from './useDepreciacion';
+export { useValoresUnitarios } from './useValoresUnitarios';
+export { useAranceles } from './useAranceles';
+export { useDirecciones } from './useDirecciones';
+export { useCalles } from './useCalles';
+export { useLimpiezaPublica } from './useLimpiezaPublica';
+export { useParquesJardines } from './useParquesJardines';
+export { useSerenazgo } from './useSerenazgo';
+export { useResolucionesInteres } from './useResolucionInteres';
+export { useVencimientos } from './useVencimientos';
+export { useConstantesOptions, useAnioOptions } from './useConstantesOptions';
+export { useContribuyenteForm } from './useContribuyenteForm';
+export { usePredioForm } from './usePredioForm';
+export { usePagos } from './usePagos';
+export { useInteres } from './useInteres';
+export { useAuditorias } from './useAuditorias';

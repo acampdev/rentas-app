@@ -1,0 +1,318 @@
+// src/hooks/useCalles.ts
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCrudEntity } from './useCrudEntity';
+import { 
+  CalleData, 
+  CreateCalleDTO, 
+  UpdateCalleDTO,
+} from '../services/calleApiService';
+import { SectorData } from '../services/SectorService';
+import { BarrioData } from '../services/barrioService';
+import { TipoViaData } from '../services/viaService';
+import calleService from '../services/calleApiService';
+import sectorService from '../services/SectorService';
+import barrioService from '../services/barrioService';
+import tipoViaService from '../services/viaService';
+
+export const useCalles = () => {
+  // Estados adicionales
+  const [sectores, setSectores] = useState<SectorData[]>([]);
+  const [barrios, setBarrios] = useState<BarrioData[]>([]);
+  const [barriosFiltrados, setBarriosFiltrados] = useState<BarrioData[]>([]);
+  const [tiposVia, setTiposVia] = useState<TipoViaData[]>([]);
+  const [loadingSectores, setLoadingSectores] = useState(false);
+  const [loadingBarrios, setLoadingBarrios] = useState(false);
+  const [loadingTiposVia, setLoadingTiposVia] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  
+
+  // Hook genérico para CRUD
+  const [state, actions] = useCrudEntity<CalleData, CreateCalleDTO, UpdateCalleDTO>(
+    calleService,
+    {
+      entityName: 'Calle',
+      loadOnMount: true,
+      searchDebounce: 300,
+      sortFunction: (a, b) => {
+        // Ordenar por nombre de vía y luego por nombre
+        const viaComparison = (a.nombreVia || '').localeCompare(b.nombreVia || '');
+        if (viaComparison !== 0) return viaComparison;
+        return (a.nombre || '').localeCompare(b.nombre || '');
+      },
+      localFilter: (items, filter) => {
+        let filtered = items;
+        
+        if (filter.search) {
+          const searchLower = filter.search.toLowerCase();
+          filtered = filtered.filter(item => 
+            item.nombre?.toLowerCase().includes(searchLower) ||
+            item.nombreVia?.toLowerCase().includes(searchLower) ||
+            item.codigo?.toString().includes(searchLower)
+          );
+        }
+        
+        if (filter.codigoVia) {
+          filtered = filtered.filter(item => 
+            item.codigoVia === filter.codigoVia
+          );
+        }
+        
+        if (filter.codBarrio) {
+          filtered = filtered.filter(item => 
+            item.codBarrio === filter.codBarrio
+          );
+        }
+        
+        return filtered;
+      }
+    }
+  );
+
+  // Cargar sectores
+  const cargarSectores = useCallback(async () => {
+    try {
+      setLoadingSectores(true);
+      const data = await sectorService.getAll();
+      setSectores(data);
+    } catch (error) {
+      console.error('Error cargando sectores:', error);
+    } finally {
+      setLoadingSectores(false);
+    }
+  }, []);
+
+  // Cargar barrios
+  const cargarBarrios = useCallback(async () => {
+    try {
+      setLoadingBarrios(true);
+      const data = await barrioService.getAll();
+      setBarrios(data);
+      setBarriosFiltrados(data);
+    } catch (error) {
+      console.error('Error cargando barrios:', error);
+    } finally {
+      setLoadingBarrios(false);
+    }
+  }, []);
+
+  // Cargar tipos de vía
+  const cargarTiposVia = useCallback(async () => {
+    try {
+      setLoadingTiposVia(true);
+      const data = await tipoViaService.getAll();
+      setTiposVia(data);
+    } catch (error) {
+      console.error('Error cargando tipos de vía:', error);
+    } finally {
+      setLoadingTiposVia(false);
+    }
+  }, []);
+
+  // Cargar todas las dependencias
+  const cargarDependencias = useCallback(async () => {
+    await Promise.all([
+      cargarSectores(),
+      cargarBarrios(),
+      cargarTiposVia()
+    ]);
+  }, [cargarSectores, cargarBarrios, cargarTiposVia]);
+
+  // Cargar dependencias al montar
+  useEffect(() => {
+    cargarDependencias();
+  }, [cargarDependencias]);
+
+  // Filtrar barrios por sector
+  const filtrarBarriosPorSector = useCallback((codSector: number) => {
+    if (!codSector || codSector === 0) {
+      setBarriosFiltrados(barrios);
+    } else {
+      const barriosFiltrados = barrios.filter(b => b.codSector === codSector);
+      setBarriosFiltrados(barriosFiltrados);
+    }
+  }, [barrios]);
+
+  // Helpers para obtener nombres
+  const obtenerNombreSector = useCallback((codSector: number): string => {
+    const sector = sectores.find(s => s.codSector === codSector);
+    return sector?.nombreSector || 'Sin sector';
+  }, [sectores]);
+
+  const obtenerNombreBarrio = useCallback((codBarrio: number): string => {
+    const barrio = barrios.find(b => b.codigo === codBarrio);
+    return barrio?.nombre || 'Sin barrio';
+  }, [barrios]);
+
+  const obtenerCodigoSector = useCallback((codBarrio: number): number => {
+    const barrio = barrios.find(b => b.codigo === codBarrio);
+    return barrio?.codSector || 0;
+  }, [barrios]);
+
+  const obtenerNombreTipoVia = useCallback((codigoVia: number): string => {
+    const tipoVia = tiposVia.find(v => v.codigo === codigoVia);
+    return tipoVia?.nombre || 'Sin tipo';
+  }, [tiposVia]);
+
+  // Buscar por tipo de vía
+  const buscarPorTipoVia = useCallback((codigoVia: number) => {
+    actions.setFilters({ codigoVia });
+  }, [actions]);
+
+  // Buscar por barrio
+  const buscarPorBarrio = useCallback((codBarrio: number) => {
+    actions.setFilters({ codBarrio });
+  }, [actions]);
+
+  // Buscar por sector
+  const buscarPorSector = useCallback((codSector: number) => {
+    actions.setFilters({ codSector });
+    filtrarBarriosPorSector(codSector);
+  }, [actions, filtrarBarriosPorSector]);
+
+
+  // Crear calle con validación
+  const crearCalle = useCallback(async (data: CreateCalleDTO) => {
+    // Validar que el barrio existe (solo si se proporciona)
+    if (data.codBarrio > 0) {
+      const barrioExiste = barrios.some(b => b.codigo === data.codBarrio);
+      if (!barrioExiste) {
+        throw new Error('El barrio seleccionado no existe');
+      }
+    }
+
+    // Preparar datos con codTipoVia como string
+    const payload: CreateCalleDTO = {
+      nombreVia: data.nombreVia,
+      codTipoVia: String(data.codTipoVia),
+      codBarrio: data.codBarrio || 0,
+      codSector: data.codSector
+    };
+
+    console.log('📤 [useCalles] Enviando payload:', payload);
+
+    return actions.createItem(payload);
+  }, [actions, barrios]);
+
+  // Actualizar calle con validación
+  const actualizarCalle = useCallback(async (id: number, data: UpdateCalleDTO) => {
+    // Validar que el barrio existe (solo si se proporciona)
+    if (data.codBarrio && data.codBarrio > 0) {
+      const barrioExiste = barrios.some(b => b.codigo === data.codBarrio);
+      if (!barrioExiste) {
+        throw new Error('El barrio seleccionado no existe');
+      }
+    }
+
+    // Preparar datos con codTipoVia como string
+    const payload: UpdateCalleDTO = {
+      nombreVia: data.nombreVia,
+      codTipoVia: data.codTipoVia ? String(data.codTipoVia) : undefined,
+      codBarrio: data.codBarrio || 0,
+      codSector: data.codSector
+    };
+
+    console.log('📤 [useCalles] Actualizando con payload:', payload);
+
+    return actions.updateItem(id, payload);
+  }, [actions, barrios]);
+
+  // Función para guardar (crear o actualizar)
+  const guardarCalle = useCallback(async (data: CreateCalleDTO | UpdateCalleDTO) => {
+    if (state.selectedItem && modoEdicion) {
+      // Actualizar
+      return actualizarCalle(state.selectedItem.codigo!, data as UpdateCalleDTO);
+    } else {
+      // Crear
+      return crearCalle(data as CreateCalleDTO);
+    }
+  }, [state.selectedItem, modoEdicion, actualizarCalle, crearCalle]);
+
+  // Actualizar sector
+  const actualizarSector = useCallback(async (sectorId: number, nombre: string) => {
+    try {
+      console.log('📝 [useCalles] Actualizando sector:', sectorId, nombre);
+      
+      await calleService.actualizarSector(sectorId, { nombreSector: nombre });
+      
+      // Recargar sectores después de actualizar
+      await cargarSectores();
+      
+      console.log('✅ Sector actualizado exitosamente');
+      return true;
+      
+    } catch (error: any) {
+      console.error('❌ [useCalles] Error al actualizar sector:', error);
+      throw error;
+    }
+  }, [cargarSectores]);
+
+  // Datos a mostrar son siempre los items del estado
+  const callesToShow = state.items;
+
+  return useMemo(() => ({
+    // Estado
+    calles: callesToShow,
+    calleSeleccionada: state.selectedItem,
+    loading: state.loading,
+    error: state.error,
+    page: state.page,
+    pageSize: state.pageSize,
+    totalItems: callesToShow.length,
+    totalPages: Math.ceil(callesToShow.length / state.pageSize),
+    searchTerm: state.searchTerm,
+    isOffline: state.isOffline,
+    modoEdicion,
+
+    // Dependencias
+    sectores,
+    barrios,
+    barriosFiltrados,
+    tiposVia,
+    loadingSectores,
+    loadingBarrios,
+    loadingTiposVia,
+
+    // Acciones CRUD
+    cargarCalles: actions.loadItems,
+    crearCalle,
+    actualizarCalle,
+    eliminarCalle: actions.deleteItem,
+    seleccionarCalle: actions.selectItem,
+    buscarCalles: actions.search,
+    limpiarSeleccion: actions.clearSelection,
+    guardarCalle,
+    setModoEdicion,
+
+    // Paginación
+    setPagina: actions.setPage,
+    setTamañoPagina: actions.setPageSize,
+    siguientePagina: actions.nextPage,
+    paginaAnterior: actions.previousPage,
+
+    // Acciones adicionales
+    buscarPorTipoVia,
+    buscarPorBarrio,
+    buscarPorSector,
+    filtrarBarriosPorSector,
+    cargarDependencias,
+    cargarSectores,
+    cargarBarrios,
+    cargarTiposVia,
+    obtenerNombreSector,
+    obtenerNombreBarrio,
+    obtenerCodigoSector,
+    obtenerNombreTipoVia,
+    actualizarSector,
+    refrescar: actions.refresh,
+    limpiarError: actions.clearError,
+    resetear: actions.reset
+  }), [
+    callesToShow, state.selectedItem, state.loading, state.error, state.page, state.pageSize,
+    state.searchTerm, state.isOffline, modoEdicion, sectores, barrios, barriosFiltrados,
+    tiposVia, loadingSectores, loadingBarrios, loadingTiposVia, actions, crearCalle,
+    actualizarCalle, guardarCalle, buscarPorTipoVia, buscarPorBarrio, buscarPorSector,
+    filtrarBarriosPorSector, cargarDependencias, cargarSectores, cargarBarrios,
+    cargarTiposVia, obtenerNombreSector, obtenerNombreBarrio, obtenerCodigoSector,
+    obtenerNombreTipoVia, actualizarSector
+  ]);
+};

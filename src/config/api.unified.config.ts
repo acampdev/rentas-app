@@ -1,0 +1,401 @@
+// src/config/api.unified.config.ts
+
+// ========================================
+// CONFIGURACIÓN INICIAL
+// ========================================
+
+// URL del backend. Nunca se codifica una IP en el código fuente.
+// En HTTPS no se permite una API HTTP (contenido mixto); se usa el proxy
+// del mismo origen, que debe publicar las rutas /api y /auth.
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
+const hasMixedContent = typeof window !== 'undefined' &&
+  window.location.protocol === 'https:' &&
+  configuredApiUrl.startsWith('http:');
+
+if (hasMixedContent) {
+  console.warn('[API] VITE_API_URL usa HTTP sobre HTTPS; se usará el proxy del mismo origen.');
+}
+
+export const API_BASE_URL = hasMixedContent ? '' : configuredApiUrl;
+
+// ========================================
+// TIPOS E INTERFACES
+// ========================================
+
+type SimpleEndpoint = string;
+type ComplexEndpoint = {
+  base: string;
+  [key: string]: string;
+};
+
+interface EndpointsConfig {
+  barrio: SimpleEndpoint;
+  sector: ComplexEndpoint;
+  via: SimpleEndpoint;  // Reemplaza a calle
+  contribuyente: ComplexEndpoint;
+  arancel: SimpleEndpoint;
+  valorUnitario: SimpleEndpoint;
+  uit: SimpleEndpoint;
+  alcabala: SimpleEndpoint;
+  depreciacion: SimpleEndpoint;
+  predio: ComplexEndpoint;
+  piso: SimpleEndpoint;
+  direccion: SimpleEndpoint;
+  persona: ComplexEndpoint;
+  constante: ComplexEndpoint;
+  serenazgo: SimpleEndpoint;
+  limpiezaPublica: ComplexEndpoint;
+  parquesJardines: SimpleEndpoint;
+  cuentaCorriente: ComplexEndpoint;
+  resolucionInteres: SimpleEndpoint;
+  vencimiento: SimpleEndpoint;
+  interes: ComplexEndpoint;
+  asignacionCaja: ComplexEndpoint;
+  caja: ComplexEndpoint;
+  turno: SimpleEndpoint;
+  aperturaCaja: ComplexEndpoint;
+  usuario: ComplexEndpoint;
+  asignacionPredio: ComplexEndpoint;
+  pu: SimpleEndpoint;
+  hr: SimpleEndpoint;
+  tim: SimpleEndpoint;
+  auditoria: SimpleEndpoint;
+}
+
+// ========================================
+// CONFIGURACIÓN PRINCIPAL
+// ========================================
+
+export const API_CONFIG = {
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  retries: 3, 
+  
+  // Headers por defecto
+  defaultHeaders: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  
+  requiresAuth: true,
+  
+  endpoints: {
+    auditoria: '/api/auditoria',
+    tim: '/api/tim',
+    barrio: '/api/barrio',
+    sector: {
+      base: '/api/sector',
+      listarCuadrante: '/api/sector/listarCuadrante',
+      listarUnidadUrbana: '/api/sector/listarTipoUnidadUrbana',
+    },
+    via: '/api/via/listarVia',  // ← CORREGIDO: era /api/calle
+    contribuyente: {
+      base: '/api/contribuyente',
+      general: '/api/contribuyente/general',
+    },
+    arancel: '/api/arancel',
+    valorUnitario: '/api/valoresunitarios',
+    uit: '/api/uitEpa',
+    alcabala: '/api/alcabala',
+    depreciacion: '/api/depreciacion',
+    predio: {
+      base: '/api/predio',
+      all: '/api/predio/all',
+      usos: '/api/predio/usos',
+    },
+    piso: '/api/piso',
+    asignacion:'/api/asignacionpredio',
+    direccion:'/api/direccion',
+    persona: {
+      base: '/api/persona',
+      listarPersona: '/api/persona/listarPersona',
+      listarPorTipoYNombre: '/api/persona/listarPersonaPorTipoPersonaNombreRazon',
+      listarPorContribuyente: '/api/persona/listarPersonaPorTipoPersonaNombreRazonContribuyente',
+      listarPorTipoVia: '/api/persona/listarPersonaPorTipoPersonaNombreVia'
+    },
+    constante: {
+      base: '/api/constante',
+      listarPadre: '/api/constante/listarConstantePadre',
+      listarHijo: '/api/constante/listarConstanteHijo'
+    },
+    serenazgo: '/api/arbitrioSerenazgo',
+    limpiezaPublica: {
+      base: '/api/arbitrioLimpiezaPublica',
+      listarLimpiezaPublicaOtros: '/api/arbitrioLimpiezaPublica/listarArbitrioLimpiezaPublicaOtros',
+      insertarLimpiezaPublicaOtros: '/api/arbitrioLimpiezaPublica/insertarArbitrioLimpiezaPublicaOtros',
+      actualizarLimpiezaPublicaOtros: '/api/arbitrioLimpiezaPublica/actualizarArbitrioLimpiezaPublicaOtros',
+    },
+    parquesJardines: '/api/arbitrioParquesJardines',
+    cuentaCorriente : {
+      base: '/api/estadoCuenta',
+      listar: '/api/estadoCuenta/listar',
+      listarDetalle: '/api/estadoCuenta/listarDetalle',
+    },
+    resolucionInteres: '/api/resolucionInteres',
+    vencimiento: '/api/vencimiento',
+    interes: {
+      base: '/api/interes',
+      eliminar: '/api/interes/eliminarInteres'
+    },
+    asignacionCaja: {
+      base: '/api/asignacionCaja',
+      listar: '/api/asignacionCaja/listar',
+      insertar: '/api/asignacionCaja/insertar',
+      actualizar: '/api/asignacionCaja/actualizar',
+      eliminar: '/api/asignacionCaja/eliminar',
+    },
+    caja: {
+      base: '/api/caja',
+      listar: '/api/caja/listar',
+      insertar: '/api/caja/insertar',
+      actualizar: '/api/caja/actualizar',
+      eliminar: '/api/caja/eliminar',
+    },
+    aperturaCaja: {
+      base: '/api/aperturaCaja',
+      aperturar: '/api/aperturaCaja/aperturar',
+      cierre: '/api/aperturaCaja/cierre',
+    },
+    turno: '/api/turno',
+    usuario: {
+      base: '/api/usuario',
+      listar: '/api/usuario/listar',
+      insertar: '/api/usuario/insertar',
+      actualizar: '/api/usuario/actualizar',
+      cambiarClave: '/api/usuario/cambiarClave',
+      darBaja: '/api/usuario/darBaja',
+      activar: '/api/usuario/activar',
+    },
+    asignacionPredio: {
+      base: '/api/asignacionpredio',
+      prevalidarBeneficioPensionista: '/api/asignacionpredio/prevalidarBeneficioPensionista',
+      prevalidarBeneficioAdultoMayor: '/api/asignacionpredio/prevalidarBeneficioAdultoMayor',
+    },
+    pu: '/api/pu',
+    hr: '/api/hr',
+  } as EndpointsConfig,
+  
+  defaultParams: {
+    parametrosBusqueda: 'a'
+  },
+  
+  cache: {
+    enabled: true,
+    duration: 5 * 60 * 1000,
+    maxSize: 100
+  }
+};
+
+// ========================================
+// CONSTANTES ADICIONALES
+// ========================================
+
+export const API_CONSTANTS = {
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+  DEFAULT_TIMEOUT: API_CONFIG.timeout,
+  DEFAULT_SEARCH_PARAM: API_CONFIG.defaultParams.parametrosBusqueda,
+  
+  ERROR_MESSAGES: {
+    NETWORK: 'Error de conexión. Verifique su internet.',
+    UNAUTHORIZED: 'No autorizado.',
+    FORBIDDEN: 'No tiene permisos para realizar esta acción.',
+    NOT_FOUND: 'Recurso no encontrado.',
+    SERVER_ERROR: 'Error del servidor. Intente más tarde.',
+    TIMEOUT: 'La petición excedió el tiempo límite.',
+    UNKNOWN: 'Error desconocido.',
+    CORS: 'Error de CORS. Verifique la configuración del servidor.'
+  },
+  
+  HTTP_STATUS: {
+    OK: 200,
+    CREATED: 201,
+    NO_CONTENT: 204,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    TIMEOUT: 408,
+    CONFLICT: 409,
+    UNPROCESSABLE_ENTITY: 422,
+    TOO_MANY_REQUESTS: 429,
+    INTERNAL_SERVER_ERROR: 500,
+    BAD_GATEWAY: 502,
+    SERVICE_UNAVAILABLE: 503
+  }
+};
+
+// ========================================
+// FUNCIONES PRINCIPALES
+// ========================================
+
+/**
+ * Construir URL completa
+ */
+export const buildApiUrl = (endpoint: string, params?: Record<string, any>): string => {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  
+  const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let url = `${baseURL}${cleanEndpoint}`;
+  
+  if (params && Object.keys(params).length > 0) {
+    const queryString = new URLSearchParams(params).toString();
+    url += `?${queryString}`;
+  }
+  
+  return url;
+};
+
+/**
+ * Obtener el token de autenticación almacenado por AuthService.
+ */
+export const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.sessionStorage.getItem('auth_token');
+};
+
+export const getStoredAuthUser = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage.getItem('auth_user');
+};
+
+/**
+ * Obtener el código numérico del usuario autenticado para auditoría.
+ * Nunca usa un usuario por defecto: una operación sin identidad debe fallar.
+ */
+export const getAuthenticatedUserCode = (): number => {
+  if (typeof window === 'undefined') {
+    throw new Error('No se puede obtener el usuario autenticado fuera del navegador.');
+  }
+
+  const storedUser = getStoredAuthUser();
+  if (!storedUser) {
+    throw new Error('No hay un usuario autenticado para registrar la operación.');
+  }
+
+  try {
+    const user = JSON.parse(storedUser) as { id?: string | number; codUsuario?: string | number };
+    const code = Number(user.codUsuario ?? user.id);
+
+    if (!Number.isInteger(code) || code <= 0) {
+      throw new Error('El usuario autenticado no tiene un código válido.');
+    }
+
+    return code;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('código válido')) {
+      throw error;
+    }
+
+    throw new Error('No se pudo leer la identidad del usuario autenticado.');
+  }
+};
+
+/**
+ * Construir los headers comunes de la API.
+ * Las peticiones protegidas incluyen el token Bearer por defecto.
+ */
+export const getApiHeaders = (includeAuth: boolean = true): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  if (includeAuth) {
+    const token = getAuthToken();
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+};
+
+/**
+ * Determinar si las operaciones de la API requieren autenticación.
+ */
+export const requiresAuth = (_method: string): boolean => {
+  return true;
+};
+
+/**
+ * Obtener endpoint
+ */
+export function getEndpoint<K extends keyof EndpointsConfig>(
+  module: K,
+  subEndpoint?: string
+): string {
+  const endpoint = API_CONFIG.endpoints[module];
+  
+  if (typeof endpoint === 'string') {
+    return endpoint;
+  }
+  
+  if (typeof endpoint === 'object' && endpoint !== null) {
+    const endpointObj = endpoint as any;
+    
+    if (subEndpoint && endpointObj[subEndpoint]) {
+      return endpointObj[subEndpoint];
+    }
+    
+    if ('base' in endpointObj) {
+      return endpointObj.base;
+    }
+  }
+  
+  throw new Error(`Endpoint no encontrado: ${String(module)}`);
+}
+
+/**
+ * Endpoints para health check
+ */
+export const getHealthCheckEndpoints = (): string[] => {
+  return [
+    API_CONFIG.endpoints.sector,
+    API_CONFIG.endpoints.barrio,
+    API_CONFIG.endpoints.contribuyente,
+    API_CONFIG.endpoints.predio
+  ] as string[];
+};
+
+/**
+ * Mensaje de error por código
+ */
+export const getErrorMessage = (statusCode: number): string => {
+  const messages = API_CONSTANTS.ERROR_MESSAGES;
+  
+  switch (statusCode) {
+    case 400:
+      return 'Solicitud incorrecta. Verifique los datos enviados.';
+    case 401:
+      return messages.UNAUTHORIZED;
+    case 403:
+      return messages.FORBIDDEN;
+    case 404:
+      return messages.NOT_FOUND;
+    case 408:
+      return messages.TIMEOUT;
+    case 500:
+    case 502:
+    case 503:
+      return messages.SERVER_ERROR;
+    default:
+      return messages.UNKNOWN;
+  }
+};
+
+// ========================================
+// EXPORTAR TIPOS
+// ========================================
+
+export type { 
+  EndpointsConfig, 
+  ComplexEndpoint
+};

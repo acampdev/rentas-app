@@ -1,0 +1,1560 @@
+// src/components/caja/modal/DeudaContribuyente.tsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogActions,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  IconButton,
+  Divider,
+  Paper,
+  Tabs,
+  Tab,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormControlLabel,
+  Alert,
+  CircularProgress
+} from '@mui/material';
+import {
+  Close as CloseIcon,
+  Receipt as ReceiptIcon,
+  Public as PublicIcon,
+  AccountBalance as AccountBalanceIcon,
+  Payment as PaymentIcon,
+  Gavel as GavelIcon,
+  Warning as WarningIcon
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+// Importar hooks de atajos de teclado
+import { useModuleHotkeys } from '../../../hooks/useModuleHotkeys';
+import { Tooltip } from '@mui/material';
+
+// Importar componentes de deuda separados
+import DeudaGlobal, { mapDetallesToGlobalItems } from './deuda/DeudaGlobal';
+import DeudaOrdinariaComponent from './deuda/DeudaOrdinaria';
+import DeudaFraccionada from './deuda/DeudaFraccionada';
+import DeudaCoactiva from './deuda/DeudaCoactiva';
+import { mapTributoNameToCode } from './deuda/deuda.validation';
+
+// Importar servicios
+import { cuentaCorrienteService, EstadoCuentaDetalle } from '../../../services/cuentaCorrienteService';
+
+// Styled Components
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: theme.spacing(2),
+    minWidth: '1200px',
+    maxWidth: '1400px',
+    height: '750px',
+    overflowX: 'hidden',
+  },
+}));
+
+const HeaderBox = styled(Box)(({ theme }) => ({
+  background: theme.palette.primary.main,
+  color: 'white',
+  padding: theme.spacing(2),
+  margin: theme.spacing(-3, -3, 2, -3),
+  borderRadius: `${theme.spacing(2)} ${theme.spacing(2)} 0 0`,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+}));
+
+const ContentBox = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  overflowX: 'hidden',
+}));
+
+// Interfaces
+export interface ContribuyenteData {
+  codigoPredio: string;
+  dniRuc: string;
+  contribuyente: string;
+  direccionPredio: string;
+}
+
+export interface DeudaGlobalItem {
+  id: string;
+  año: number;
+  titulo: string;
+  mes1: number;
+  mes2: number;
+  mes3: number;
+  mes4: number;
+  mes5: number;
+  mes6: number;
+  mes7: number;
+  mes8: number;
+  mes9: number;
+  mes10: number;
+  mes11: number;
+  mes12: number;
+  deuda: number;
+}
+
+// Interface para datos de pago procesado
+interface ConceptoPago {
+  id: string;
+  descripcion: string;
+  añosAfectados: number[];
+  mesesAfectados: number[];
+  total: number;
+  detalleMeses: { [mes: number]: number };
+  tributoNombre?: string;
+  tipoPago?: string;
+  saldosDeuda?: any[];
+}
+
+import { ContribuyenteOption } from '../../../models/Caja';
+
+interface DatosPagoDeudaOrdinaria {
+  montoTotal: number;
+  conceptos: ConceptoPago[];
+  contribuyente: ContribuyenteOption;
+}
+
+interface DeudaContribuyenteProps {
+  open: boolean;
+  onClose: () => void;
+  contribuyenteData?: ContribuyenteOption | null;
+  loading?: boolean;
+  onPagoGenerado?: (datos: DatosPagoDeudaOrdinaria) => void;
+}
+
+
+
+// Interfaces para Deuda Fraccionamiento
+interface ResolucionFraccionamiento {
+  año: number;
+  resolucion: string;
+  cuotas: CuotaFraccionamiento[];
+}
+
+interface CuotaFraccionamiento {
+  nCuota: number;
+  deuda: number;
+  im: number;
+  cuota: number;
+  fVenc: string;
+  checked: boolean;
+}
+
+interface TributoFraccionado {
+  tributo: string;
+  valores: number[];
+}
+
+// Interfaces para Deuda Coactiva
+interface ExpedienteCoactivo {
+  añoExpediente: number;
+  nroExpediente: string;
+  años: AñoCoactivo[];
+}
+
+interface AñoCoactivo {
+  año: number;
+  tributos: TributoCoactivo[];
+}
+
+interface TributoCoactivo {
+  tributo: string;
+  valores: number[];
+  checked: boolean;
+}
+
+const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
+  open,
+  onClose,
+  contribuyenteData = null,
+  onPagoGenerado
+}) => {
+  // Estados para inputs y pestañas
+  const [montoAPagar, setMontoAPagar] = useState<string>('');
+  const [tipoMonto, setTipoMonto] = useState<string>('repartir');
+  const [deudaTabValue, setDeudaTabValue] = useState(0);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [selectedCells, setSelectedCells] = useState<{ [rowId: string]: string[] }>({});
+
+  // Estados para datos reales de Cuenta Corriente
+  const [allDetailsRaw, setAllDetailsRaw] = useState<{ year: number; details: EstadoCuentaDetalle[] }[]>([]);
+  const [listAños, setListAños] = useState<number[]>([]);
+  const [selectedAñoOrdinaria, setSelectedAñoOrdinaria] = useState<number | null>(null);
+  const [loadingDeudas, setLoadingDeudas] = useState(false);
+
+  // Mapear deudas globales utilizando el import de DeudaGlobal
+  const deudaGlobalData = useMemo(() => {
+    return mapDetallesToGlobalItems(allDetailsRaw);
+  }, [allDetailsRaw]);
+
+  // Cargar deudas reales del contribuyente desde Cuenta Corriente
+  useEffect(() => {
+    const fetchDeudas = async () => {
+      if (!open || !contribuyenteData) return;
+      
+      const codContribuyente = contribuyenteData.codigo || contribuyenteData.codigoPredio;
+      if (!codContribuyente) return;
+
+      setLoadingDeudas(true);
+      try {
+        console.log('[DeudaContribuyente] Cargando deudas reales del contribuyente:', codContribuyente);
+        
+        // 1. Obtener los años del estado de cuenta anual
+        const yearsData = await cuentaCorrienteService.listarEstadoCuenta(codContribuyente);
+        const years = yearsData.map(y => Number(y.anio)).filter(Boolean).sort((a, b) => b - a);
+        setListAños(years);
+        
+        if (years.length > 0) {
+          setSelectedAñoOrdinaria(years[0]);
+        }
+
+        // 2. Obtener el detalle de cada año
+        const allDetailsPromises = years.map(yr => 
+          cuentaCorrienteService.listarDetalleEstadoCuenta(codContribuyente, yr)
+            .then(details => ({ year: yr, details }))
+            .catch(err => {
+              console.error(`Error listando detalle para año ${yr}:`, err);
+              return { year: yr, details: [] };
+            })
+        );
+        const allDetails = await Promise.all(allDetailsPromises);
+
+        setAllDetailsRaw(allDetails);
+
+        // Activar por defecto todos los checks para el primer año en Deuda Ordinaria
+        if (years.length > 0) {
+          const firstYearDetails = allDetails.find(item => item.year === years[0])?.details || [];
+          const defaultSelected = firstYearDetails
+            .filter(det => det.saldoNeto > 0)
+            .map((det, idx) => `debt-${years[0]}-${det.tributo}-${idx}`);
+          setSelectedRows(defaultSelected);
+        }
+
+      } catch (err) {
+        console.error('[DeudaContribuyente] Error al cargar deudas:', err);
+      } finally {
+        setLoadingDeudas(false);
+      }
+    };
+
+    fetchDeudas();
+  }, [open, contribuyenteData]);
+
+  // Manejar el cambio de año en Deuda Ordinaria
+  const handleSeleccionarAñoOrdinaria = useCallback((año: number) => {
+    setSelectedAñoOrdinaria(año);
+    // Activar por defecto todos los checks para el año seleccionado
+    const yearDetails = allDetailsRaw.find(item => item.year === año)?.details || [];
+    const defaultSelected = yearDetails
+      .filter(det => det.saldoNeto > 0)
+      .map((det, idx) => `debt-${año}-${det.tributo}-${idx}`);
+    setSelectedRows(defaultSelected);
+  }, [allDetailsRaw]);
+
+  // Estados para Deuda Fraccionamiento
+  const [selectedAño, setSelectedAño] = useState<number | null>(null);
+  const [selectedResolucion, setSelectedResolucion] = useState<string>('');
+  const [selectedResolucionCode, setSelectedResolucionCode] = useState<number | null>(null);
+  const [cuotasFraccionamiento, setCuotasFraccionamiento] = useState<CuotaFraccionamiento[]>([]);
+  const [tributosFraccionados, setTributosFraccionados] = useState<TributoFraccionado[]>([]);
+  const [montoFraccionado, setMontoFraccionado] = useState<string>('');
+  
+  // Estados para Deuda Coactiva
+  const [selectedExpediente, setSelectedExpediente] = useState<number | null>(null);
+  const [selectedAñoCoactivo, setSelectedAñoCoactivo] = useState<number | null>(null);
+  const [añosCoactivos, setAñosCoactivos] = useState<AñoCoactivo[]>([]);
+  const [tributosCoactivos, setTributosCoactivos] = useState<TributoCoactivo[]>([]);
+  const [montoCoactivo, setMontoCoactivo] = useState<string>('');
+
+  // Calcular deuda global total
+  const calcularDeudaGlobalTotal = (): number => {
+    return deudaGlobalData.reduce((total, item) => total + item.deuda, 0);
+  };
+
+  // Calcular distribución de pago (vertical - por columnas)
+  const calcularDistribucionPago = () => {
+    const monto = parseFloat(montoAPagar) || 0;
+    const distribucion: { [key: string]: { [key: string]: number } } = {};
+    
+    // Inicializar distribución
+    for (const item of deudaGlobalData) {
+      distribucion[item.id] = {};
+      for (let mes = 1; mes <= 12; mes++) {
+        distribucion[item.id][`mes${mes}`] = 0;
+      }
+    }
+    
+    let montoRestante = monto;
+    
+    if (tipoMonto === 'repartir') {
+      // Distribuir verticalmente entre todas las filas seleccionadas (o todas si es global)
+      const filasSeleccionadas = deudaGlobalData.filter(d => 
+        deudaTabValue === 0 || 
+        (d.año === selectedAñoOrdinaria && selectedRows.includes(d.id))
+      );
+
+      for (let mes = 1; mes <= 12 && montoRestante > 0; mes++) {
+        const mesKey = `mes${mes}` as keyof typeof deudaGlobalData[0];
+        
+        // Procesar cada fila para el mes actual
+        for (const item of filasSeleccionadas) {
+          const deudaMes = item[mesKey] as number;
+          
+          if (montoRestante > 0 && deudaMes > 0) {
+            const pago = Math.min(montoRestante, deudaMes);
+            distribucion[item.id][mesKey] = pago;
+            montoRestante -= pago;
+          }
+        }
+      }
+    } else {
+      // Distribuir verticalmente solo entre filas seleccionadas
+      const filasSeleccionadas = deudaGlobalData.filter(d => selectedRows.includes(d.id));
+      
+      for (let mes = 1; mes <= 12 && montoRestante > 0; mes++) {
+        const mesKey = `mes${mes}` as keyof typeof deudaGlobalData[0];
+        
+        // Procesar solo filas seleccionadas para el mes actual
+        for (const item of filasSeleccionadas) {
+          const deudaMes = item[mesKey] as number;
+          
+          if (montoRestante > 0 && deudaMes > 0) {
+            const pago = Math.min(montoRestante, deudaMes);
+            distribucion[item.id][mesKey] = pago;
+            montoRestante -= pago;
+          }
+        }
+      }
+    }
+    
+    return distribucion;
+  };
+
+  // Obtener color de celda según el pago o selección
+  const getCellColor = (itemId: string, mesKey: string, deudaMes: number): string => {
+    if (deudaTabValue !== 1) {
+      return 'transparent';
+    }
+
+    if (tipoMonto === 'seleccionar') {
+      const isSelected = selectedCells[itemId]?.includes(mesKey);
+      return isSelected ? '#1976d2' : 'transparent';
+    }
+    
+    if (!montoAPagar || parseFloat(montoAPagar) <= 0) {
+      return 'transparent';
+    }
+    
+    const distribucion = calcularDistribucionPago();
+    const pago = distribucion[itemId]?.[mesKey] || 0;
+    
+    if (pago === 0) return 'transparent';
+    if (pago >= deudaMes) return '#1976d2'; // Primary color for full payment
+    
+    // Gradient for partial payment
+    const percentage = (pago / deudaMes) * 100;
+    return `linear-gradient(to right, #1976d2 ${percentage}%, transparent ${percentage}%)`;
+  };
+
+  // Verificar si el monto excede la deuda
+  const montoExcedeDeuda = (): boolean => {
+    const monto = parseFloat(montoAPagar) || 0;
+    let deudaTotal = 0;
+    
+    if (tipoMonto === 'repartir') {
+      deudaTotal = calcularDeudaGlobalTotal();
+    } else {
+      deudaTotal = deudaGlobalData
+        .filter(d => selectedRows.includes(d.id))
+        .reduce((sum, item) => sum + item.deuda, 0);
+    }
+    
+    return monto > deudaTotal;
+  };
+
+  // Procesar pago de deuda ordinaria
+  const procesarPagoDeudaOrdinaria = () => {
+    if (!montoAPagar || parseFloat(montoAPagar) <= 0 || !contribuyenteData) {
+      return;
+    }
+
+    const monto = parseFloat(montoAPagar);
+    const distribucion = calcularDistribucionPago();
+    const conceptos: ConceptoPago[] = [];
+    
+    // Agrupar por tributo
+    const tributosProcesados = new Map<string, {
+      añosAfectados: Set<number>,
+      mesesAfectados: Set<number>,
+      total: number,
+      detalleMeses: { [mes: number]: number }
+    }>();
+
+    // Procesar distribución por cada item de deuda global
+    for (const item of deudaGlobalData) {
+      if (!tributosProcesados.has(item.titulo)) {
+        tributosProcesados.set(item.titulo, {
+          añosAfectados: new Set(),
+          mesesAfectados: new Set(),
+          total: 0,
+          detalleMeses: {}
+        });
+      }
+      
+      const tributoData = tributosProcesados.get(item.titulo)!;
+      
+      // Verificar si este item tiene pagos
+      const itemDistribucion = distribucion[item.id];
+      if (itemDistribucion) {
+        for (let mes = 1; mes <= 12; mes++) {
+          const mesKey = `mes${mes}` as keyof typeof item;
+          const pagoMes = itemDistribucion[mesKey] || 0;
+          
+          if (pagoMes > 0) {
+            tributoData.añosAfectados.add(item.año);
+            tributoData.mesesAfectados.add(mes);
+            tributoData.total += pagoMes;
+            
+            if (!tributoData.detalleMeses[mes]) {
+              tributoData.detalleMeses[mes] = 0;
+            }
+            tributoData.detalleMeses[mes] += pagoMes;
+          }
+        }
+      }
+    }
+
+    // Convertir a conceptos
+    tributosProcesados.forEach((data, tributoNombre) => {
+      if (data.total > 0) {
+        const añosArray = Array.from(data.añosAfectados).sort();
+        const mesesArray = Array.from(data.mesesAfectados).sort();
+        
+        conceptos.push({
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          descripcion: `${tributoNombre} - Años: ${añosArray.join(', ')} - Meses: ${mesesArray.join(', ')}`,
+          añosAfectados: añosArray,
+          mesesAfectados: mesesArray,
+          total: data.total,
+          detalleMeses: data.detalleMeses,
+          tributoNombre
+        });
+      }
+    });
+
+    const datosPago: DatosPagoDeudaOrdinaria = {
+      montoTotal: monto,
+      conceptos,
+      contribuyente: contribuyenteData
+    };
+
+    // Llamar al callback para enviar los datos a Pagos.tsx
+    if (onPagoGenerado) {
+      onPagoGenerado(datosPago);
+    }
+
+    // Cerrar el modal
+    handleClose();
+  };
+
+  // Procesar pago de deuda fraccionamiento
+  const procesarPagoDeudaFraccionamiento = () => {
+    if (!montoAPagar || parseFloat(montoAPagar) <= 0 || !contribuyenteData) {
+      return;
+    }
+
+    const monto = parseFloat(montoAPagar);
+    const conceptos: ConceptoPago[] = [];
+    
+    // Verificar que hay datos de tributos fraccionados
+    if (!tributosFraccionados || tributosFraccionados.length === 0) {
+      console.log('No hay tributos fraccionados cargados');
+      return;
+    }
+
+    // Obtener cuotas seleccionadas
+    const cuotasSeleccionadas = cuotasFraccionamiento.filter(c => c.checked);
+    
+    if (cuotasSeleccionadas.length === 0) {
+      console.log('No hay cuotas seleccionadas');
+      return;
+    }
+
+    if (!selectedResolucion) {
+      console.log('No hay resolución seleccionada');
+      return;
+    }
+
+    // Usar la misma lógica que getCellColorFraccionamiento para determinar qué celdas están pintadas
+    const tributosProcesados = new Map<string, {
+      añosAfectados: Set<number>,
+      mesesAfectados: Set<number>,
+      total: number,
+      detalleMeses: { [mes: number]: number }
+    }>();
+
+    let montoRestante = monto;
+    
+    // Recorrer columnas verticalmente (igual que en getCellColorFraccionamiento)
+    for (let col = 0; col < 12; col++) {
+      for (let row = 0; row < tributosFraccionados.length; row++) {
+        if (montoRestante <= 0) break;
+        
+        const tributo = tributosFraccionados[row];
+        const valor = tributo.valores[col];
+        
+        if (valor > 0) {
+          // Calcular cuánto se puede pagar de esta celda
+          const pagoEnCelda = Math.min(montoRestante, valor);
+          
+          if (pagoEnCelda > 0) {
+            // Inicializar tributo si no existe
+            if (!tributosProcesados.has(tributo.tributo)) {
+              tributosProcesados.set(tributo.tributo, {
+                añosAfectados: new Set(),
+                mesesAfectados: new Set(),
+                total: 0,
+                detalleMeses: {}
+              });
+            }
+            
+            const tributoData = tributosProcesados.get(tributo.tributo)!;
+            
+            // Agregar datos
+            tributoData.añosAfectados.add(selectedAño!);
+            tributoData.mesesAfectados.add(col + 1); // +1 porque los meses van de 1-12
+            tributoData.total += pagoEnCelda;
+            
+            // Detalle por mes
+            const mes = col + 1;
+            if (!tributoData.detalleMeses[mes]) {
+              tributoData.detalleMeses[mes] = 0;
+            }
+            tributoData.detalleMeses[mes] += pagoEnCelda;
+            
+            // Restar del monto restante
+            montoRestante -= pagoEnCelda;
+          }
+        }
+      }
+      
+      if (montoRestante <= 0) break;
+    }
+
+    // Convertir a conceptos para Pagos.tsx
+    tributosProcesados.forEach((data, tributoNombre) => {
+      if (data.total > 0) {
+        const añosArray = Array.from(data.añosAfectados).sort();
+        const mesesArray = Array.from(data.mesesAfectados).sort();
+        
+        // Crear descripción con información detallada de fraccionamiento
+        const cuotasInfo = cuotasSeleccionadas.map(c => `Cuota ${c.nCuota} (${c.fVenc})`).join(', ');
+        const descripcion = `${tributoNombre} - Año: ${añosArray.join(', ')} - ${selectedResolucion} (${cuotasInfo}) - Meses: ${mesesArray.join(', ')}`;
+        
+        const saldosDeudaConcepto: any[] = [];
+        Object.keys(data.detalleMeses).forEach(mesStr => {
+          const mes = parseInt(mesStr);
+          const abonoVal = data.detalleMeses[mes];
+          
+          if (abonoVal > 0) {
+            // Buscar la cuota correspondiente a este mes
+            const matchedCuota = cuotasSeleccionadas.find(c => {
+              let cuotaMes = -1;
+              if (c.fVenc) {
+                if (c.fVenc.includes('-')) {
+                  const parts = c.fVenc.split('-');
+                  if (parts[0].length === 4) cuotaMes = parseInt(parts[1]);
+                } else if (c.fVenc.includes('/')) {
+                  const parts = c.fVenc.split('/');
+                  cuotaMes = parseInt(parts[1]);
+                }
+              }
+              return cuotaMes === mes;
+            });
+            
+            const cuotaToUse = matchedCuota || cuotasSeleccionadas[0];
+            
+            saldosDeudaConcepto.push({
+              codTributo: mapTributoNameToCode(tributoNombre),
+              anio: selectedAño || new Date().getFullYear(),
+              periodo: mes,
+              abono: Number(abonoVal.toFixed(4)),
+              anioResolucion: selectedAño || new Date().getFullYear(),
+              codResolucion: selectedResolucionCode || (selectedResolucion ? parseInt(selectedResolucion.replace(/\D/g, '')) : 1),
+              numeroCuota: cuotaToUse ? cuotaToUse.nCuota : 1
+            });
+          }
+        });
+
+        conceptos.push({
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          descripcion,
+          añosAfectados: añosArray,
+          mesesAfectados: mesesArray,
+          total: data.total,
+          detalleMeses: data.detalleMeses,
+          tipoPago: 'fraccionamiento',
+          tributoNombre,
+          saldosDeuda: saldosDeudaConcepto
+        });
+      }
+    });
+
+    const datosPago: DatosPagoDeudaOrdinaria = {
+      montoTotal: monto,
+      conceptos,
+      contribuyente: contribuyenteData
+    };
+
+    // Llamar al callback para enviar los datos a Pagos.tsx
+    if (onPagoGenerado) {
+      onPagoGenerado(datosPago);
+    }
+
+    // Cerrar el modal
+    handleClose();
+  };
+
+  // Manejar selección de filas
+  const handleRowSelection = useCallback((itemId: string) => {
+    const isChecking = !selectedRows.includes(itemId);
+    
+    setSelectedRows(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+
+    if (tipoMonto === 'seleccionar') {
+      setSelectedCells(prev => {
+        const updated = { ...prev };
+        if (isChecking) {
+          const row = deudaGlobalData.find(d => d.id === itemId);
+          if (row) {
+            const rowMeses: string[] = [];
+            for (let mes = 1; mes <= 12; mes++) {
+              if (Number(row[`mes${mes}` as keyof typeof row] || 0) > 0) {
+                rowMeses.push(`mes${mes}`);
+              }
+            }
+            rowMeses.push('deuda');
+            updated[itemId] = rowMeses;
+          }
+        } else {
+          delete updated[itemId];
+        }
+
+        // Recalcular la suma de todos los montos seleccionados para poner en "Monto a Pagar"
+        let nuevoMontoTotal = 0;
+        Object.keys(updated).forEach(id => {
+          const row = deudaGlobalData.find(d => d.id === id);
+          if (row) {
+            updated[id].forEach(key => {
+              if (key !== 'deuda') {
+                nuevoMontoTotal += Number(row[key as keyof typeof row] || 0);
+              }
+            });
+          }
+        });
+        
+        setMontoAPagar(nuevoMontoTotal > 0 ? nuevoMontoTotal.toFixed(2) : '');
+        return updated;
+      });
+    }
+  }, [selectedRows, tipoMonto, deudaGlobalData]);
+
+  // Manejar clic en celdas de meses o deuda total
+  const handleCellClick = useCallback((rowId: string, cellKey: string, cellValue: number) => {
+    if (tipoMonto !== 'seleccionar') return;
+    if (cellValue <= 0) return;
+
+    setSelectedCells(prev => {
+      const current = prev[rowId] || [];
+      let next: string[];
+      
+      if (cellKey === 'deuda') {
+        const row = deudaGlobalData.find(d => d.id === rowId);
+        if (!row) return prev;
+        
+        const hasAllMeses = current.length >= 12 || current.includes('deuda');
+        if (hasAllMeses) {
+          next = [];
+          setSelectedRows(rows => rows.filter(id => id !== rowId));
+        } else {
+          next = [];
+          for (let mes = 1; mes <= 12; mes++) {
+            if (Number(row[`mes${mes}` as keyof typeof row] || 0) > 0) {
+              next.push(`mes${mes}`);
+            }
+          }
+          next.push('deuda');
+          if (!selectedRows.includes(rowId)) {
+            setSelectedRows(rows => [...rows, rowId]);
+          }
+        }
+      } else {
+        if (current.includes(cellKey)) {
+          next = current.filter(k => k !== cellKey && k !== 'deuda');
+          if (next.length === 0) {
+            setSelectedRows(rows => rows.filter(id => id !== rowId));
+          }
+        } else {
+          next = [...current.filter(k => k !== 'deuda'), cellKey];
+          if (!selectedRows.includes(rowId)) {
+            setSelectedRows(rows => [...rows, rowId]);
+          }
+        }
+      }
+
+      const updated = { ...prev, [rowId]: next };
+      
+      // Recalcular la suma de todos los montos seleccionados para poner en "Monto a Pagar"
+      let nuevoMontoTotal = 0;
+      Object.keys(updated).forEach(id => {
+        const row = deudaGlobalData.find(d => d.id === id);
+        if (row) {
+          updated[id].forEach(key => {
+            if (key !== 'deuda') {
+              nuevoMontoTotal += Number(row[key as keyof typeof row] || 0);
+            }
+          });
+        }
+      });
+      
+      setMontoAPagar(nuevoMontoTotal > 0 ? nuevoMontoTotal.toFixed(2) : '');
+      return updated;
+    });
+  }, [tipoMonto, selectedRows, deudaGlobalData]);
+
+  // Manejar el cambio del tipo de selección de monto
+  const handleTipoMontoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTipoMonto(val);
+    setMontoAPagar('');
+    setSelectedCells({});
+    if (val === 'repartir' && selectedAñoOrdinaria) {
+      const defaultSelected = deudaGlobalData
+        .filter(item => item.año === selectedAñoOrdinaria)
+        .map(item => item.id);
+      setSelectedRows(defaultSelected);
+    } else {
+      setSelectedRows([]);
+    }
+  }, [selectedAñoOrdinaria, deudaGlobalData]);
+
+  // Manejar cambio de tabs de deuda
+  const handleDeudaTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setDeudaTabValue(newValue);
+    setMontoAPagar('');
+    setSelectedRows([]);
+    setSelectedCells({});
+    setSelectedResolucion('');
+    setSelectedAño(null);
+    setSelectedResolucionCode(null);
+  };
+
+  // Manejar cambio de monto
+  const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    // Solo permitir n�meros positivos con decimales
+    if (value === '' || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0)) {
+      setMontoAPagar(value);
+    }
+  };
+
+  // Remoción de funciones de deuda fraccionamiento antiguas (manejadas localmente en DeudaFraccionada)
+
+  // Calcular color de celda para pintado vertical en Deuda Fraccionamiento
+  const getCellColorFraccionamiento = (tributoIndex: number, mesIndex: number): string => {
+    // Solo pintar si hay tributos fraccionados cargados
+    if (!tributosFraccionados || tributosFraccionados.length === 0) return 'transparent';
+    
+    // Usar montoAPagar si está disponible, sino usar montoFraccionado
+    let montoNumerico = 0;
+    if (montoAPagar && parseFloat(montoAPagar) > 0) {
+      montoNumerico = parseFloat(montoAPagar);
+    } else if (montoFraccionado && montoFraccionado !== 'S/. 0.00') {
+      montoNumerico = parseFloat(montoFraccionado.replace('S/. ', ''));
+    }
+    
+    if (montoNumerico === 0) return 'transparent';
+    
+    let montoRestante = montoNumerico;
+    
+    // Recorrer columnas verticalmente
+    for (let col = 0; col < 12; col++) {
+      for (let row = 0; row < tributosFraccionados.length; row++) {
+        const valor = tributosFraccionados[row].valores[col];
+        
+        if (montoRestante > 0 && valor > 0) {
+          if (row === tributoIndex && col === mesIndex) {
+            if (montoRestante >= valor) {
+              return '#1976d2'; // Color completo
+            } else if (montoRestante > 0) {
+              const percentage = (montoRestante / valor) * 100;
+              return `linear-gradient(to bottom, #1976d2 ${percentage}%, transparent ${percentage}%)`;
+            }
+          }
+          montoRestante -= Math.min(montoRestante, valor);
+        }
+      }
+    }
+    
+    return 'transparent';
+  };
+
+  // Datos de ejemplo para Deuda Coactiva
+  const expedientesCoactivos: ExpedienteCoactivo[] = [
+    {
+      añoExpediente: 2021,
+      nroExpediente: 'EXP-001-2021',
+      años: [
+        {
+          año: 2019,
+          tributos: [
+            { tributo: 'Parques y Jardines', valores: [30.50, 30.50, 30.50, 30.50, 30.50, 30.50, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'Impuesto Predial', valores: [180.75, 180.75, 180.75, 180.75, 180.75, 180.75, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'Serenazgo', valores: [45.25, 45.25, 45.25, 45.25, 45.25, 45.25, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'Limpieza Publica', valores: [50.00, 50.00, 50.00, 50.00, 50.00, 50.00, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'Formularios D.J', valores: [15.00, 15.00, 15.00, 15.00, 15.00, 15.00, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'TIM Impuesto Predial', valores: [8.50, 8.50, 8.50, 8.50, 8.50, 8.50, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'TIM Parques y Jardines', valores: [5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 0, 0, 0, 0, 0, 0], checked: true },
+            { tributo: 'TIM Serenazgo', valores: [4.25, 4.25, 4.25, 4.25, 4.25, 4.25, 0, 0, 0, 0, 0, 0], checked: true }
+          ]
+        },
+        {
+          año: 2020,
+          tributos: [
+            { tributo: 'Parques y Jardines', valores: [35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50], checked: true },
+            { tributo: 'Impuesto Predial', valores: [200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75], checked: true },
+            { tributo: 'Serenazgo', valores: [50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25], checked: true },
+            { tributo: 'Limpieza Publica', valores: [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00], checked: true },
+            { tributo: 'Formularios D.J', valores: [18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00], checked: true },
+            { tributo: 'TIM Impuesto Predial', valores: [10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50], checked: true },
+            { tributo: 'TIM Parques y Jardines', valores: [6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25], checked: true },
+            { tributo: 'TIM Serenazgo', valores: [5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25], checked: true }
+          ]
+        }
+      ]
+    },
+    {
+      añoExpediente: 2022,
+      nroExpediente: 'EXP-002-2022',
+      años: [
+        {
+          año: 2020,
+          tributos: [
+            { tributo: 'Parques y Jardines', valores: [40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50], checked: true },
+            { tributo: 'Impuesto Predial', valores: [220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75], checked: true },
+            { tributo: 'Serenazgo', valores: [55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25], checked: true },
+            { tributo: 'Limpieza Publica', valores: [60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00], checked: true },
+            { tributo: 'Formularios D.J', valores: [20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00], checked: true },
+            { tributo: 'TIM Impuesto Predial', valores: [12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50], checked: true },
+            { tributo: 'TIM Parques y Jardines', valores: [7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25], checked: true },
+            { tributo: 'TIM Serenazgo', valores: [6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25], checked: true }
+          ]
+        }
+      ]
+    },
+    {
+      añoExpediente: 2023,
+      nroExpediente: 'EXP-003-2023',
+      años: [
+        {
+          año: 2021,
+          tributos: [
+            { tributo: 'Parques y Jardines', valores: [45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50], checked: true },
+            { tributo: 'Impuesto Predial', valores: [250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75], checked: true },
+            { tributo: 'Serenazgo', valores: [60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25], checked: true },
+            { tributo: 'Limpieza Publica', valores: [65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00], checked: true },
+            { tributo: 'Formularios D.J', valores: [22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00], checked: true },
+            { tributo: 'TIM Impuesto Predial', valores: [14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50], checked: true },
+            { tributo: 'TIM Parques y Jardines', valores: [8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25], checked: true },
+            { tributo: 'TIM Serenazgo', valores: [7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25], checked: true }
+          ]
+        },
+        {
+          año: 2022,
+          tributos: [
+            { tributo: 'Parques y Jardines', valores: [48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50], checked: true },
+            { tributo: 'Impuesto Predial', valores: [270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75], checked: true },
+            { tributo: 'Serenazgo', valores: [65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25], checked: true },
+            { tributo: 'Limpieza Publica', valores: [70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00], checked: true },
+            { tributo: 'Formularios D.J', valores: [25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00], checked: true },
+            { tributo: 'TIM Impuesto Predial', valores: [16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50], checked: true },
+            { tributo: 'TIM Parques y Jardines', valores: [9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25], checked: true },
+            { tributo: 'TIM Serenazgo', valores: [8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25], checked: true }
+          ]
+        }
+      ]
+    }
+  ];
+
+  // Manejar selección de expediente en Deuda Coactiva
+  const handleExpedienteClick = (añoExpediente: number) => {
+    setSelectedExpediente(añoExpediente);
+    const expediente = expedientesCoactivos.find(e => e.añoExpediente === añoExpediente);
+    if (expediente) {
+      setAñosCoactivos(expediente.años);
+      setSelectedAñoCoactivo(null);
+      setTributosCoactivos([]);
+      setMontoCoactivo('S/. 0.00');
+    }
+  };
+
+  // Manejar selección de año en Deuda Coactiva
+  const handleAñoCoactivoClick = (año: number) => {
+    setSelectedAñoCoactivo(año);
+    const añoData = añosCoactivos.find(a => a.año === año);
+    if (añoData) {
+      setTributosCoactivos(añoData.tributos);
+      
+      // Calcular deuda coactiva total
+      const totalCoactivo = añoData.tributos
+        .filter(t => t.checked)
+        .reduce((sum, tributo) => {
+          const totalTributo = tributo.valores.reduce((s, v) => s + v, 0);
+          return sum + totalTributo;
+        }, 0);
+      setMontoCoactivo(`S/. ${totalCoactivo.toFixed(2)}`);
+    }
+  };
+
+  // Manejar check de tributos en Deuda Coactiva
+  const handleTributoCoactivoCheck = (index: number) => {
+    const nuevosTributos = tributosCoactivos.map((tributo, i) =>
+      i === index ? { ...tributo, checked: !tributo.checked } : tributo
+    );
+    setTributosCoactivos(nuevosTributos);
+
+    // Recalcular deuda coactiva
+    const totalCoactivo = nuevosTributos
+      .filter(t => t.checked)
+      .reduce((sum, tributo) => {
+        const totalTributo = tributo.valores.reduce((s, v) => s + v, 0);
+        return sum + totalTributo;
+      }, 0);
+    setMontoCoactivo(`S/. ${totalCoactivo.toFixed(2)}`);
+  };
+
+  // Procesar pago de deuda coactiva
+  const procesarPagoDeudaCoactiva = () => {
+    if (!montoAPagar || parseFloat(montoAPagar) <= 0 || !contribuyenteData) {
+      return;
+    }
+
+    const monto = parseFloat(montoAPagar);
+    const conceptos: ConceptoPago[] = [];
+
+    // Verificar que hay datos de tributos coactivos
+    if (!tributosCoactivos || tributosCoactivos.length === 0) {
+      console.log('No hay tributos coactivos cargados');
+      return;
+    }
+
+    // Verificar que hay un expediente y año seleccionados
+    if (!selectedExpediente || !selectedAñoCoactivo) {
+      console.log('No hay expediente o año coactivo seleccionado');
+      return;
+    }
+
+    // Obtener el expediente actual
+    const expedienteActual = expedientesCoactivos.find(e => e.añoExpediente === selectedExpediente);
+    if (!expedienteActual) {
+      console.log('No se encontró el expediente');
+      return;
+    }
+
+    // Usar la misma lógica que getCellColorCoactivo para determinar qué celdas están pintadas
+    const tributosProcesados = new Map<string, {
+      añosAfectados: Set<number>,
+      mesesAfectados: Set<number>,
+      total: number,
+      detalleMeses: { [mes: number]: number },
+      nroExpediente: string,
+      añoExpediente: number
+    }>();
+
+    let montoRestante = monto;
+
+    // Recorrer columnas verticalmente (igual que en getCellColorCoactivo)
+    for (let col = 0; col < 12; col++) {
+      for (let row = 0; row < tributosCoactivos.length; row++) {
+        if (montoRestante <= 0) break;
+
+        const tributo = tributosCoactivos[row];
+
+        // Solo procesar tributos que están marcados (checked)
+        if (!tributo.checked) continue;
+
+        const valor = tributo.valores[col];
+
+        if (valor > 0) {
+          // Calcular cuánto se puede pagar de esta celda
+          const pagoEnCelda = Math.min(montoRestante, valor);
+
+          if (pagoEnCelda > 0) {
+            // Inicializar tributo si no existe
+            if (!tributosProcesados.has(tributo.tributo)) {
+              tributosProcesados.set(tributo.tributo, {
+                añosAfectados: new Set(),
+                mesesAfectados: new Set(),
+                total: 0,
+                detalleMeses: {},
+                nroExpediente: expedienteActual.nroExpediente,
+                añoExpediente: expedienteActual.añoExpediente
+              });
+            }
+
+            const tributoData = tributosProcesados.get(tributo.tributo)!;
+
+            // Agregar datos
+            tributoData.añosAfectados.add(selectedAñoCoactivo);
+            tributoData.mesesAfectados.add(col + 1); // +1 porque los meses van de 1-12
+            tributoData.total += pagoEnCelda;
+
+            // Detalle por mes
+            const mes = col + 1;
+            if (!tributoData.detalleMeses[mes]) {
+              tributoData.detalleMeses[mes] = 0;
+            }
+            tributoData.detalleMeses[mes] += pagoEnCelda;
+
+            // Restar del monto restante
+            montoRestante -= pagoEnCelda;
+          }
+        }
+      }
+
+      if (montoRestante <= 0) break;
+    }
+
+    // Convertir a conceptos para Pagos.tsx
+    tributosProcesados.forEach((data, tributoNombre) => {
+      if (data.total > 0) {
+        const añosArray = Array.from(data.añosAfectados).sort();
+        const mesesArray = Array.from(data.mesesAfectados).sort();
+
+        // Crear descripción con información detallada del expediente coactivo
+        const descripcion = `${tributoNombre} - Expediente: ${data.nroExpediente} (${data.añoExpediente}) - Año: ${añosArray.join(', ')} - Meses: ${mesesArray.join(', ')}`;
+
+        conceptos.push({
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          descripcion,
+          añosAfectados: añosArray,
+          mesesAfectados: mesesArray,
+          total: data.total,
+          detalleMeses: data.detalleMeses
+        });
+      }
+    });
+
+    const datosPago: DatosPagoDeudaOrdinaria = {
+      montoTotal: monto,
+      conceptos,
+      contribuyente: contribuyenteData
+    };
+
+    // Llamar al callback para enviar los datos a Pagos.tsx
+    if (onPagoGenerado) {
+      onPagoGenerado(datosPago);
+    }
+
+    // Cerrar el modal
+    handleClose();
+  };
+
+  // Calcular color de celda para pintado vertical en Deuda Coactiva
+  const getCellColorCoactivo = (tributoIndex: number, mesIndex: number): string => {
+    // Solo pintar si hay tributos coactivos cargados
+    if (!tributosCoactivos || tributosCoactivos.length === 0) return 'transparent';
+    
+    // Usar montoAPagar si está disponible, sino usar montoCoactivo
+    let montoNumerico = 0;
+    if (montoAPagar && parseFloat(montoAPagar) > 0) {
+      montoNumerico = parseFloat(montoAPagar);
+    } else if (montoCoactivo && montoCoactivo !== 'S/. 0.00') {
+      montoNumerico = parseFloat(montoCoactivo.replace('S/. ', ''));
+    }
+    
+    if (montoNumerico === 0) return 'transparent';
+    
+    let montoRestante = montoNumerico;
+    
+    // Recorrer columnas verticalmente
+    for (let col = 0; col < 12; col++) {
+      for (let row = 0; row < tributosCoactivos.length; row++) {
+        const tributo = tributosCoactivos[row];
+        if (tributo.checked) {
+          const valor = tributo.valores[col];
+          
+          if (montoRestante > 0 && valor > 0) {
+            if (row === tributoIndex && col === mesIndex) {
+              if (montoRestante >= valor) {
+                return '#1976d2'; // Color completo
+              } else if (montoRestante > 0) {
+                const percentage = (montoRestante / valor) * 100;
+                return `linear-gradient(to bottom, #1976d2 ${percentage}%, transparent ${percentage}%)`;
+              }
+            }
+            montoRestante -= Math.min(montoRestante, valor);
+          }
+        }
+      }
+    }
+    
+    return 'transparent';
+  };
+
+  // Limpiar formulario al cerrar
+  const handleClose = () => {
+    setMontoAPagar('');
+    setTipoMonto('repartir');
+    setDeudaTabValue(0);
+    setSelectedRows([]);
+    setSelectedCells({});
+    setSelectedAño(null);
+    setSelectedResolucion('');
+    setSelectedResolucionCode(null);
+    setCuotasFraccionamiento([]);
+    setTributosFraccionados([]);
+    setMontoFraccionado('');
+    setSelectedExpediente(null);
+    setSelectedAñoCoactivo(null);
+    setAñosCoactivos([]);
+    setTributosCoactivos([]);
+    setMontoCoactivo('');
+    onClose();
+  };
+
+  // Manejar acción de Nuevo (limpiar campos pero mantener modal abierto)
+  const handleNuevo = () => {
+    setMontoAPagar('');
+    setTipoMonto('repartir');
+    setSelectedRows([]);
+    setSelectedCells({});
+    setSelectedAño(null);
+    setSelectedResolucion('');
+    setSelectedResolucionCode(null);
+    setCuotasFraccionamiento([]);
+    setTributosFraccionados([]);
+    setMontoFraccionado('');
+    setSelectedExpediente(null);
+    setSelectedAñoCoactivo(null);
+    setAñosCoactivos([]);
+    setTributosCoactivos([]);
+    setMontoCoactivo('');
+  };
+
+  // Función para procesar el pago según el tab activo
+  const handlePagar = () => {
+    if (deudaTabValue === 1) {
+      procesarPagoDeudaOrdinaria();
+    } else if (deudaTabValue === 2) {
+      procesarPagoDeudaFraccionamiento();
+    } else if (deudaTabValue === 3) {
+      procesarPagoDeudaCoactiva();
+    }
+  };
+
+  // Configurar atajos de teclado cuando el modal está abierto
+  useModuleHotkeys('Deuda Contribuyente', [
+    {
+      id: 'pagar-deuda',
+      name: 'Pagar',
+      description: 'Procesar el pago de la deuda seleccionada',
+      hotkey: { key: 'F4', preventDefault: true, enabled: open },
+      action: handlePagar,
+      enabled: open && deudaTabValue !== 0 && !!montoAPagar && parseFloat(montoAPagar) > 0,
+      icon: 'payment'
+    },
+    {
+      id: 'nuevo-pago',
+      name: 'Nuevo',
+      description: 'Limpiar campos para nuevo pago',
+      hotkey: { key: 'F2', preventDefault: true, enabled: open },
+      action: handleNuevo,
+      enabled: open && deudaTabValue !== 0 && (!!montoAPagar || selectedRows.length > 0),
+      icon: 'refresh'
+    },
+    {
+      id: 'cerrar-modal',
+      name: 'Cerrar',
+      description: 'Cerrar el modal de deuda',
+      hotkey: { key: 'Escape', preventDefault: true, enabled: open },
+      action: handleClose,
+      enabled: open,
+      icon: 'close'
+    }
+  ]);
+
+  // Auto-cargar datos iniciales cuando se cambia a las pestañas de Fraccionamiento o Coactiva
+  useEffect(() => {
+    if (deudaTabValue === 3 && expedientesCoactivos.length > 0) {
+      // Auto-seleccionar el primer expediente para Deuda Coactiva
+      const primerExpediente = expedientesCoactivos[0];
+      handleExpedienteClick(primerExpediente.añoExpediente);
+      // También auto-seleccionar el primer año dentro de ese expediente
+      if (primerExpediente.años.length > 0) {
+        setTimeout(() => {
+          handleAñoCoactivoClick(primerExpediente.años[0].año);
+        }, 0);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deudaTabValue]);
+
+  return (
+    <StyledDialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="lg"
+      fullWidth
+    >
+      {/* Header */}
+      <HeaderBox>
+        <Box display="flex" alignItems="center" gap={1}>
+          <ReceiptIcon />
+          <Typography variant="h6" fontWeight="bold">
+            Deuda Contribuyente
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={handleClose}
+          sx={{ color: 'white' }}
+          size="small"
+        >
+          <CloseIcon />
+        </IconButton>
+      </HeaderBox>
+
+      <DialogContent sx={{ padding: 3, height: '100%', overflow: 'hidden' }}>
+        <ContentBox>
+          {contribuyenteData ? (
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflow: 'hidden' }}>
+              {/* Tabla de datos del contribuyente */}
+              <Paper elevation={1} sx={{ border: '1px solid #e0e0e0' }}>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
+                          Código
+                        </TableCell>
+                        <TableCell sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
+                          Contribuyente
+                        </TableCell>
+                        <TableCell sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
+                          Dirección
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>{contribuyenteData.codigo || contribuyenteData.codigoPredio || '---'}</TableCell>
+                        <TableCell>{contribuyenteData.contribuyente || '---'}</TableCell>
+                        <TableCell>{contribuyenteData.direccion || contribuyenteData.direccionPredio || '---'}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+
+              {/* Seccion Monto a Pagar */}
+              <Paper elevation={1} sx={{ p: 1, border: '1px solid #e0e0e0', opacity: deudaTabValue === 0 ? 0.5 : 1 }}>
+               
+                {/** TextField Monto */}
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: '0 1 130px', minWidth: '130px' }}>
+                    <TextField
+                      label="Monto a Pagar"
+                      value={montoAPagar}
+                      onChange={handleMontoChange}
+                      size="small"
+                      fullWidth
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      placeholder="0.00"
+                      disabled={deudaTabValue === 0 || deudaTabValue === 2}
+                    />
+                  </Box>
+                  {/** RadioGroup */}
+                  <Box sx={{ flex: '0 1 auto' }}>
+                    <FormControl component="fieldset" size="small" disabled={deudaTabValue === 0 || deudaTabValue === 2}>
+                      <RadioGroup
+                        row
+                        value={tipoMonto}
+                        onChange={handleTipoMontoChange}
+                      >
+                        <FormControlLabel 
+                          value="repartir" 
+                          control={<Radio size="small" />} 
+                          label="Repartir Monto" 
+                        />
+                        <FormControlLabel 
+                          value="seleccionar" 
+                          control={<Radio size="small" />} 
+                          label="Seleccionar Monto" 
+                        />
+                      </RadioGroup>
+                    </FormControl>
+                  </Box>
+                  {/** Button Pagar */}
+                  <Box sx={{ flex: '0 1 auto' }}>
+                    <Tooltip title="Pagar Deuda (F4)" arrow>
+                      <span>
+                        <Button
+                          variant="contained"
+                          onClick={handlePagar}
+                          disabled={
+                            deudaTabValue === 0 ||
+                            !montoAPagar ||
+                            parseFloat(montoAPagar) <= 0 ||
+                            (deudaTabValue === 1 && montoExcedeDeuda()) ||
+                            (deudaTabValue === 2 && (!selectedAño || cuotasFraccionamiento.filter(c => c.checked).length === 0)) ||
+                            (deudaTabValue === 3 && (!selectedExpediente || !selectedAñoCoactivo || tributosCoactivos.filter(t => t.checked).length === 0))
+                          }
+                          sx={{
+                            px: 3,
+                            height: '40px',
+                            backgroundColor: '#1976d2 !important',
+                            color: '#ffffff !important',
+                            '&:hover': {
+                              backgroundColor: '#115293 !important',
+                            },
+                            '&.Mui-disabled': {
+                              backgroundColor: '#e0e0e0 !important',
+                              color: '#a0a0a0 !important',
+                            }
+                          }}
+                        >
+                          Pagar
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                  {/** Button Nuevo */}
+                  <Box sx={{ flex: '0 1 auto' }}>
+                    <Tooltip title="Limpiar Campos (F2)" arrow>
+                      <span>
+                        <Button
+                          variant="outlined"
+                          onClick={handleNuevo}
+                          disabled={deudaTabValue === 0 || (!montoAPagar && selectedRows.length === 0)}
+                          sx={{
+                            px: 3,
+                            height: '40px',
+                            backgroundColor: '#ffffff !important',
+                            borderColor: '#1976d2 !important',
+                            color: '#1976d2 !important',
+                            '&:hover': {
+                              backgroundColor: 'rgba(25, 118, 210, 0.04) !important',
+                              borderColor: '#115293 !important',
+                            },
+                            '&.Mui-disabled': {
+                              borderColor: '#e0e0e0 !important',
+                              color: '#a0a0a0 !important',
+                            }
+                          }}
+                        >
+                          Nuevo
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </Box>
+                
+                {/* Warning message for excess payment */}
+                {montoExcedeDeuda() && (
+                  <Box sx={{ mt: 2 }}>
+                    <Alert severity="warning" icon={<WarningIcon />}>
+                      El monto ingresado excede la deuda total seleccionada
+                    </Alert>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Tabs de tipos de deuda */}
+              <Paper elevation={1} sx={{ flex: 1, border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 2 }}>
+                  <Tabs value={deudaTabValue} onChange={handleDeudaTabChange} variant="scrollable" scrollButtons="auto">
+                    <Tab 
+                      label="Deuda Global" 
+                      icon={<PublicIcon />} 
+                    />
+                    <Tab 
+                      label="Deuda Ordinaria" 
+                      icon={<AccountBalanceIcon />} 
+                    />
+                    <Tab 
+                      label="Deuda Fraccionamiento" 
+                      icon={<PaymentIcon />} 
+                    />
+                    <Tab 
+                      label="Deuda Coactiva" 
+                      icon={<GavelIcon />} 
+                    />
+                  </Tabs>
+                </Box>
+                
+                {/* Contenido de tabs de deuda */}
+                <Box sx={{ flex: 1, p: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+                  {loadingDeudas ? (
+                    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
+                      <CircularProgress size={40} />
+                      <Typography variant="body2" color="text.secondary">
+                        Cargando estado de cuenta del contribuyente...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      {/* Tab Deuda Global */}
+                      {deudaTabValue === 0 && (
+                        <DeudaGlobal allDetails={allDetailsRaw} />
+                      )}
+
+                      {/* Tab Deuda Ordinaria */}
+                      {deudaTabValue === 1 && (
+                        <DeudaOrdinariaComponent
+                          allDetails={allDetailsRaw}
+                          tipoMonto={tipoMonto}
+                          selectedRows={selectedRows}
+                          onRowSelection={handleRowSelection}
+                          getCellColor={getCellColor}
+                          calcularDeudaTotal={() => {
+                            const yearDetails = allDetailsRaw.find(item => item.year === selectedAñoOrdinaria)?.details || [];
+                            return yearDetails
+                              .filter(det => det.saldoNeto > 0)
+                              .reduce((sum, det) => sum + det.saldoNeto, 0);
+                          }}
+                          listAños={listAños}
+                          selectedAño={selectedAñoOrdinaria}
+                          onAñoClick={handleSeleccionarAñoOrdinaria}
+                          onCellClick={handleCellClick}
+                        />
+                      )}
+                      {/* tabs Deuda Fraccionamiento */}
+                      {deudaTabValue === 2 && (
+                        <DeudaFraccionada
+                          codContribuyente={contribuyenteData.codigo || contribuyenteData.codigoPredio || ''}
+                          allDetails={allDetailsRaw}
+                          cuotasFraccionamiento={cuotasFraccionamiento}
+                          setCuotasFraccionamiento={setCuotasFraccionamiento}
+                          selectedAño={selectedAño}
+                          setSelectedAño={setSelectedAño}
+                          selectedResolucion={selectedResolucion}
+                          setSelectedResolucion={setSelectedResolucion}
+                          selectedResolucionCode={selectedResolucionCode}
+                          setSelectedResolucionCode={setSelectedResolucionCode}
+                          montoFraccionado={montoFraccionado}
+                          setMontoFraccionado={setMontoFraccionado}
+                          setMontoAPagar={setMontoAPagar}
+                          setTributosFraccionados={setTributosFraccionados}
+                          getCellColorFraccionamiento={getCellColorFraccionamiento}
+                        />
+                      )}
+                      {/* tabs Deuda Coactiva */}
+                      {deudaTabValue === 3 && (
+                        <DeudaCoactiva
+                          expedientesCoactivos={expedientesCoactivos}
+                          añosCoactivos={añosCoactivos}
+                          tributosCoactivos={tributosCoactivos}
+                          selectedExpediente={selectedExpediente}
+                          selectedAñoCoactivo={selectedAñoCoactivo}
+                          montoCoactivo={montoCoactivo}
+                          onExpedienteClick={handleExpedienteClick}
+                          onAñoCoactivoClick={handleAñoCoactivoClick}
+                          onTributoCoactivoCheck={handleTributoCoactivoCheck}
+                          getCellColorCoactivo={getCellColorCoactivo}
+                        />
+                      )}
+                    </>
+                  )}
+                </Box>
+              </Paper>
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="h6" color="text.secondary">
+                No hay datos de contribuyente disponibles
+              </Typography>
+            </Box>
+          )}
+        </ContentBox>
+      </DialogContent>
+
+      {/* Actions */}
+      <Divider />
+      <DialogActions sx={{ p: 2, flexDirection: 'column', alignItems: 'stretch', gap: 1 }}>
+        {/* Leyenda de Atajos de Teclado */}
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            backgroundColor: '#f5f5f5',
+            borderRadius: 1,
+            border: '1px solid #e0e0e0'
+          }}
+        >
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center', alignItems: 'center' }}>
+            <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mr: 1 }}>
+              Atajos:
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Paper elevation={1} sx={{ px: 1, py: 0.5, fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold', bgcolor: 'white' }}>F2</Paper>
+              <Typography variant="caption" color="text.secondary">Nuevo</Typography>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Paper elevation={1} sx={{ px: 1, py: 0.5, fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold', bgcolor: 'white' }}>F4</Paper>
+              <Typography variant="caption" color="text.secondary">Pagar</Typography>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Paper elevation={1} sx={{ px: 1, py: 0.5, fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold', bgcolor: 'white' }}>Esc</Paper>
+              <Typography variant="caption" color="text.secondary">Cerrar</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Botón Cerrar */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Tooltip title="Cerrar (Esc)" arrow>
+            <Button
+              onClick={handleClose}
+              variant="outlined"
+              color="error"
+              startIcon={<CloseIcon />}
+            >
+              Cerrar
+            </Button>
+          </Tooltip>
+        </Box>
+      </DialogActions>
+
+    </StyledDialog>
+  );
+};
+
+export default DeudaContribuyente;
+export type { DatosPagoDeudaOrdinaria, ConceptoPago };

@@ -1,0 +1,58 @@
+/* src/styles/global.css - Estilos globales complementarios */
+
+/* Scrollbars globales */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Transición suave para el Drawer */
+.MuiDrawer-paper {
+  transition: width 225ms cubic-bezier(0.4, 0, 0.6, 1) 0ms !important;
+}
+
+/* Espaciado vertical consistente en formularios */
+.MuiStack-root > * + * {
+  margin-top: 8px;
+}
+
+/* Paper con padding consistente - Solo para elementos que lo necesiten */
+.MuiPaper-root:not(.MuiAppBar-root):not(.MuiDrawer-paper):not(.MuiMenu-paper):not(.MuiPopover-paper) {
+  padding: 16px;
+}
+
+/* Diálogos con scroll suavizado */
+.MuiDialogContent-root {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Animaciones globales */
+.fadeIn {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ajustes para responsividad */
+@media (max-width: 768px) {
+  .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDrawer-paper) {
+    padding: 12px;
+  }
+}
