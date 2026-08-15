@@ -17,6 +17,7 @@ export interface AuthResponse {
     username: string;
     nombreCompleto?: string;
     roles?: string[];
+    codRol?: number;
   };
   message?: string;
 }
@@ -56,6 +57,7 @@ export interface AuthUser {
   username: string;
   nombreCompleto: string;
   roles: string[];
+  codRol?: number;
   token?: string;
 }
 
@@ -67,6 +69,7 @@ export interface AuthUserStored {
   username: string;
   nombreCompleto: string;
   roles: string[];
+  codRol?: number;
 }
 
 /**

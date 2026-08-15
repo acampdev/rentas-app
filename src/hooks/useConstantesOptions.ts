@@ -180,7 +180,11 @@ export const useTiposFraccionamientoOptions = () => {
 export const useTiposClaseDeInteresOptions = () => {
   return useConstantesOptions('tipos-clase-interes', () => constanteService.obtenerClaseDeInteres());
 };
-
+// TIPOS DE MODO DE TRANSFERENCIA
+export const useTiposModoTransferenciaOptions = () => {
+  return useConstantesOptions('tipos-modo-transferencia', () => constanteService.obtenerTiposModoTransferencia());
+};
+// LETRAS DE VALORES UNITARIOS
 export const useLetraValoresUnitariosOptions = () => {
   const { data = [], isLoading } = useQuery({
     queryKey: ['constantes', 'letras-valores'],
@@ -325,7 +329,9 @@ export const useUsoPredioOptions = () => {
     queryKey: ['constantes', 'usos-predio'],
     queryFn: () => constanteService.listarUsoPredio(),
     staleTime: 24 * 60 * 60 * 1000
-  });
+  }); 
+
+
 
   const options = useMemo(() => data.map(i => ({ value: i.codUso, label: i.descripcion, id: i.codUso })), [data]);
 

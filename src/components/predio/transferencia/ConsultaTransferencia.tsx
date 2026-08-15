@@ -6,8 +6,7 @@ import {
   Grid,
   TextField,
   Button,
-  Checkbox,
-  FormControlLabel,
+  CircularProgress,
   Typography,
   alpha,
   useTheme,
@@ -23,112 +22,77 @@ import {
   Chip
 } from '@mui/material';
 import {
-  PersonSearch as PersonSearchIcon,
   Search as SearchIcon,
-  Add as AddIcon,
   Edit as EditIcon,
   TableChart as TableChartIcon,
   SearchOff as SearchOffIcon
 } from '@mui/icons-material';
-import SelectorContribuyente from '../../modal/SelectorContribuyente';
-
-// Interfaz para Contribuyente seleccionado
-interface ContribuyenteSeleccionado {
-  codigo: number;
-  contribuyente: string;
-  documento: string;
-  direccion: string;
-  telefono?: string;
-  tipoPersona?: 'natural' | 'juridica';
-}
+import { useTransferencia } from '../../../hooks/useTransferencia';
+import type { BuscarTransferenciaPredioParams, TransferenciaPredioData } from '../../../services/transferenciaService';
+import { NotificationService } from '../../utils/Notification';
 
 // Interfaz para el formulario de filtro
 interface FiltroTransferenciaData {
-  anio: number;
-  contribuyente: ContribuyenteSeleccionado | null;
-  canceladas: boolean;
-  porCobrar: boolean;
+  codigoTransferencia: string;
+  codigoPredio: string;
+  anio: string;
+  codContribuyenteVenta: string;
+  codContribuyenteCompra: string;
 }
 
-// Interfaz para los datos de la tabla de transferencias
-interface TransferenciaRow {
-  id: number;
-  fOperacion: string;
-  codComprador: number;
-  comprador: string;
-  dniComprador: string;
-  codVendedor: number;
-  vendedor: string;
-  dniVendedor: string;
-  codPredio: string;
-  direccionPredio: string;
-  nPisos: number;
-  fMinuta: string;
-  autovaluo: number;
-  mora: number;
-  ajuste: number;
-  base: number;
-  tasa: number;
-  impuesto: number;
-  total: number;
-  numero: string;
+const FILTROS_INICIALES: FiltroTransferenciaData = {
+  codigoTransferencia: '',
+  codigoPredio: '',
+  anio: '',
+  codContribuyenteVenta: '',
+  codContribuyenteCompra: ''
+};
+
+interface ConsultaTransferenciaProps {
+  onEditar?: (transferencia: TransferenciaPredioData) => void;
 }
 
-const ConsultaTransferencia: React.FC = () => {
+export const ConsultaTransferencia: React.FC<ConsultaTransferenciaProps> = ({ onEditar }) => {
   const theme = useTheme();
 
-  // Estado para el modal
-  const [openModalContribuyente, setOpenModalContribuyente] = useState(false);
-
   // Estado del formulario de filtro
-  const [filtroData, setFiltroData] = useState<FiltroTransferenciaData>({
-    anio: new Date().getFullYear(),
-    contribuyente: null,
-    canceladas: false,
-    porCobrar: false
-  });
+  const [filtroData, setFiltroData] = useState<FiltroTransferenciaData>(FILTROS_INICIALES);
 
-  // Estado para los resultados de la tabla
-  const [resultados, setResultados] = useState<TransferenciaRow[]>([]);
-
-  // Handler para seleccionar contribuyente
-  const handleSelectContribuyente = (contribuyente: any) => {
-    setFiltroData(prev => ({
-      ...prev,
-      contribuyente: contribuyente
-    }));
-    setOpenModalContribuyente(false);
-  };
+  const { transferencias: resultados, buscarTransferencias, isSearching } = useTransferencia();
 
   // Handler para cambios en el formulario
-  const handleInputChange = (field: keyof FiltroTransferenciaData, value: any) => {
-    setFiltroData(prev => ({
+  const handleInputChange = <K extends keyof FiltroTransferenciaData>(field: K, value: FiltroTransferenciaData[K]) => {
+    setFiltroData((prev) => ({
       ...prev,
       [field]: value
     }));
   };
 
   // Handler para buscar
-  const handleBuscar = () => {
-    console.log('Buscando con filtros:', filtroData);
-    // Aqui se implementara la logica de busqueda
-  };
+  const handleBuscar = async () => {
+    if (!Object.values(filtroData).some((value) => value.trim() !== '')) {
+      NotificationService.warning('Ingrese al menos un filtro para realizar la búsqueda');
+      return;
+    }
 
-  // Handler para nuevo registro - limpia el filtro
-  const handleNuevo = () => {
-    setFiltroData({
-      anio: new Date().getFullYear(),
-      contribuyente: null,
-      canceladas: false,
-      porCobrar: false
-    });
-    console.log('Filtro limpiado');
+    const filtros: BuscarTransferenciaPredioParams = {
+      codTransferencia: filtroData.codigoTransferencia ? Number(filtroData.codigoTransferencia) : undefined,
+      codPredio: filtroData.codigoPredio || undefined,
+      anio: filtroData.anio ? Number(filtroData.anio) : undefined,
+      codContribuyenteVenta: filtroData.codContribuyenteVenta ? Number(filtroData.codContribuyenteVenta) : undefined,
+      codContribuyenteCompra: filtroData.codContribuyenteCompra ? Number(filtroData.codContribuyenteCompra) : undefined
+    };
+
+    try {
+      await buscarTransferencias(filtros);
+    } finally {
+      setFiltroData(FILTROS_INICIALES);
+    }
   };
 
   // Handler para editar una transferencia
-  const handleEditar = (id: number) => {
-    console.log('Editando transferencia:', id);
-    // Aqui se implementara la logica para editar
+  const handleEditar = (transferencia: TransferenciaPredioData) => {
+    onEditar?.(transferencia);
   };
 
   return (
@@ -147,150 +111,75 @@ const ConsultaTransferencia: React.FC = () => {
           Filtros de Busqueda
         </Typography>
 
-        {/* Primera fila: Año, Seleccionar Contribuyente, Codigo, Nombre, Checkboxes */}
+        {/* Filtros de transferencia */}
         <Grid container spacing={2} alignItems="center">
-          {/* Año */}
-          <Grid size={{ xs: 12, sm: 4, md: 1 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <TextField
+              label="Código Transferencia"
+              value={filtroData.codigoTransferencia}
+              onChange={(e) => handleInputChange('codigoTransferencia', e.target.value.replace(/\D/g, ''))}
+              size="small"
+              fullWidth
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <TextField
+              label="Código Predio"
+              value={filtroData.codigoPredio}
+              onChange={(e) => handleInputChange('codigoPredio', e.target.value.replace(/\D/g, ''))}
+              size="small"
+              fullWidth
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 3, md: 1 }}>
             <TextField
               label="Año"
               type="number"
               value={filtroData.anio}
-              onChange={(e) => handleInputChange('anio', parseInt(e.target.value) || new Date().getFullYear())}
+              onChange={(e) => handleInputChange('anio', e.target.value)}
               size="small"
               fullWidth
-              inputProps={{
-                min: 2000,
-                max: 2100
-              }}
+              inputProps={{ min: 2000, max: 2100 }}
             />
           </Grid>
 
-          {/* Button Seleccionar Contribuyente */}
-          <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <TextField
+              label="Cod. Contribuyente Venta"
+              value={filtroData.codContribuyenteVenta}
+              onChange={(e) => handleInputChange('codContribuyenteVenta', e.target.value.replace(/\D/g, ''))}
+              size="small"
+              fullWidth
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <TextField
+              label="Cod. Contribuyente Compra"
+              value={filtroData.codContribuyenteCompra}
+              onChange={(e) => handleInputChange('codContribuyenteCompra', e.target.value.replace(/\D/g, ''))}
+              size="small"
+              fullWidth
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
             <Button
               variant="contained"
-              startIcon={<PersonSearchIcon />}
-              onClick={() => setOpenModalContribuyente(true)}
+              startIcon={isSearching ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
+              onClick={handleBuscar}
               fullWidth
-              sx={{ height: 40 }}
+              disabled={isSearching}
+              sx={{ height: 40, whiteSpace: 'nowrap' }}
             >
-              Selec. Contribuyente
+              Buscar
             </Button>
-          </Grid>
-
-          {/* Codigo Contribuyente */}
-          <Grid size={{ xs: 12, sm: 4, md: 0.75 }}>
-            <TextField
-              label="Codigo"
-              value={filtroData.contribuyente?.codigo || ''}
-              fullWidth
-              size="small"
-              disabled
-              InputProps={{
-                readOnly: true,
-                sx: { backgroundColor: alpha(theme.palette.grey[500], 0.1) }
-              }}
-            />
-          </Grid>
-
-          {/* Nombre Contribuyente */}
-          <Grid size={{ xs: 12, sm: 8, md: 3 }}>
-            <TextField
-              label="Nombre Contribuyente"
-              value={filtroData.contribuyente?.contribuyente || ''}
-              fullWidth
-              size="small"
-              disabled
-              InputProps={{
-                readOnly: true,
-                sx: { backgroundColor: alpha(theme.palette.grey[500], 0.1) }
-              }}
-            />
-          </Grid>
-
-          {/* Checkboxes: Canceladas y Por Cobrar (solo una opcion a la vez) */}
-          <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                height: 40,
-                gap: 1
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtroData.canceladas}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFiltroData(prev => ({ ...prev, canceladas: true, porCobrar: false }));
-                      } else {
-                        setFiltroData(prev => ({ ...prev, canceladas: false }));
-                      }
-                    }}
-                    color="primary"
-                    size="small"
-                  />
-                }
-                label="Canceladas"
-                sx={{ m: 0, whiteSpace: 'nowrap' }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtroData.porCobrar}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFiltroData(prev => ({ ...prev, porCobrar: true, canceladas: false }));
-                      } else {
-                        setFiltroData(prev => ({ ...prev, porCobrar: false }));
-                      }
-                    }}
-                    color="primary"
-                    size="small"
-                  />
-                }
-                label="Por Cobrar"
-                sx={{ m: 0, whiteSpace: 'nowrap' }}
-              />
-            </Box>
-          </Grid>
-
-          {/* Buttons Nuevo y Buscar */}
-          <Grid size={{ xs: 12, sm: 6, md: 2.25 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                height: 40,
-                gap: 1,
-                flexWrap: 'nowrap'
-              }}
-            >
-              {/* Button Nuevo */}
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={handleNuevo}
-                size="small"
-                sx={{ height: 40, whiteSpace: 'nowrap' }}
-              >
-                Nuevo
-              </Button>
-              {/* Button Buscar */}
-              <Button
-                variant="contained"
-                startIcon={<SearchIcon />}
-                onClick={handleBuscar}
-                size="small"
-                sx={{ height: 40, whiteSpace: 'nowrap' }}
-              >
-                Buscar
-              </Button>
-            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -354,25 +243,19 @@ const ConsultaTransferencia: React.FC = () => {
             <TableHead>
               <TableRow>
                 {[
-                  { label: 'F. Operacion', minWidth: 100, align: 'left' as const },
-                  { label: 'Cod Comprador', minWidth: 100, align: 'left' as const },
-                  { label: 'Comprador', minWidth: 180, align: 'left' as const },
-                  { label: 'DNI Comprador', minWidth: 100, align: 'left' as const },
-                  { label: 'Cod Vendedor', minWidth: 100, align: 'left' as const },
-                  { label: 'Vendedor', minWidth: 180, align: 'left' as const },
-                  { label: 'DNI Vendedor', minWidth: 100, align: 'left' as const },
-                  { label: 'Cod Predio', minWidth: 100, align: 'left' as const },
-                  { label: 'Direccion Predio', minWidth: 200, align: 'left' as const },
-                  { label: 'N° Pisos', minWidth: 80, align: 'center' as const },
-                  { label: 'F. Minuta', minWidth: 100, align: 'left' as const },
-                  { label: 'Autovaluo', minWidth: 100, align: 'right' as const },
-                  { label: 'Mora', minWidth: 80, align: 'right' as const },
-                  { label: 'Ajuste', minWidth: 80, align: 'right' as const },
-                  { label: 'Base', minWidth: 80, align: 'right' as const },
-                  { label: 'Tasa', minWidth: 80, align: 'right' as const },
-                  { label: 'Impuesto', minWidth: 100, align: 'right' as const },
-                  { label: 'Total', minWidth: 100, align: 'right' as const },
-                  { label: 'N°', minWidth: 80, align: 'left' as const },
+                  { label: 'Código', minWidth: 80, align: 'left' as const },
+                  { label: 'Año', minWidth: 70, align: 'left' as const },
+                  { label: 'Código Predio', minWidth: 110, align: 'left' as const },
+                  { label: 'Cód. Vendedor', minWidth: 110, align: 'left' as const },
+                  { label: 'Vendedor', minWidth: 170, align: 'left' as const },
+                  { label: 'Cód. Comprador', minWidth: 110, align: 'left' as const },
+                  { label: 'Comprador', minWidth: 170, align: 'left' as const },
+                  { label: 'Porcentaje', minWidth: 90, align: 'right' as const },
+                  { label: 'Fecha Minuta', minWidth: 110, align: 'left' as const },
+                  { label: 'Documento', minWidth: 110, align: 'left' as const },
+                  { label: 'Modo Transferencia', minWidth: 150, align: 'left' as const },
+                  { label: 'Valor Transferencia', minWidth: 130, align: 'right' as const },
+                  { label: 'Constructor', minWidth: 90, align: 'center' as const },
                   { label: 'Acciones', minWidth: 80, align: 'center' as const }
                 ].map((column) => (
                   <TableCell
@@ -397,7 +280,7 @@ const ConsultaTransferencia: React.FC = () => {
             <TableBody>
               {resultados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={20} align="center" sx={{ py: 8, border: 0 }}>
+                  <TableCell colSpan={14} align="center" sx={{ py: 8, border: 0 }}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -433,7 +316,7 @@ const ConsultaTransferencia: React.FC = () => {
               ) : (
                 resultados.map((row, index) => (
                   <TableRow
-                    key={row.id}
+                    key={`${row.codTransferencia}-${index}`}
                     hover
                     sx={{
                       backgroundColor: index % 2 === 0 ? 'transparent' : alpha(theme.palette.grey[500], 0.04),
@@ -444,45 +327,56 @@ const ConsultaTransferencia: React.FC = () => {
                       transition: 'background-color 0.2s ease'
                     }}
                   >
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.fOperacion}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.codComprador}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontWeight: 500 }}>{row.comprador}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.dniComprador}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.codVendedor}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontWeight: 500 }}>{row.vendedor}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.dniVendedor}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.codTransferencia}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.anio}</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.codPredio}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.direccionPredio}</TableCell>
-                    <TableCell align="center" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.nPisos}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.fMinuta}</TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.autovaluo.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.codContribuyenteVenta}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontWeight: 500 }}>
+                      {row.nombreContribuyenteVenta || '-'}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.mora.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                      {row.codContribuyenteCompra}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.ajuste.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontWeight: 500 }}>
+                      {row.nombreContribuyenteCompra || '-'}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.base.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                      {row.porcentajeTransferencia.toLocaleString('es-PE', { maximumFractionDigits: 2 })}%
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.tasa.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.fechaMinuta}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.documento}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                      {row.descripcionModoTransferencia || row.codModoTransferencia}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                      {row.impuesto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell
+                      align="right"
+                      sx={{
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.8rem',
+                        fontFamily: 'monospace',
+                        fontWeight: 600,
+                        color: theme.palette.success.main
+                      }}
+                    >
+                      {row.valorTransferencia.toLocaleString('es-PE', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'monospace', fontWeight: 600, color: theme.palette.success.main }}>
-                      {row.total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    <TableCell align="center">
+                      <Chip
+                        label={row.esConstructor ? 'Sí' : 'No'}
+                        size="small"
+                        color={row.esConstructor ? 'success' : 'default'}
+                        variant="outlined"
+                      />
                     </TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{row.numero}</TableCell>
                     <TableCell align="center">
                       <Tooltip title="Editar transferencia" arrow>
                         <IconButton
                           size="small"
                           color="primary"
-                          onClick={() => handleEditar(row.id)}
+                          onClick={() => handleEditar(row)}
                           sx={{
                             backgroundColor: alpha(theme.palette.primary.main, 0.1),
                             '&:hover': {
@@ -518,15 +412,6 @@ const ConsultaTransferencia: React.FC = () => {
           </Box>
         )}
       </Paper>
-
-      {/* Modal para seleccionar Contribuyente */}
-      <SelectorContribuyente
-        isOpen={openModalContribuyente}
-        onClose={() => setOpenModalContribuyente(false)}
-        onSelectContribuyente={handleSelectContribuyente}
-        title="Seleccionar Contribuyente"
-        selectedId={filtroData.contribuyente?.codigo}
-      />
     </Box>
   );
 };

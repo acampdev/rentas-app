@@ -1,5 +1,5 @@
 // src/components/cuenta/CuentaList.tsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -19,17 +19,20 @@ import {
   IconButton,
   useTheme,
   Divider,
-  alpha
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-const SelectorContribuyente = React.lazy(() => import('../modal/SelectorContribuyente'));
-import { useCuentaCorriente } from '../../hooks/useCuentaCorriente';
-import { formatearNumero, useCuentaDetalle } from './useCuentaDetalle';
+  TextField,
+  alpha,
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+const SelectorContribuyente = React.lazy(
+  () => import("../modal/SelectorContribuyente"),
+);
+import { useCuentaCorriente } from "../../hooks/useCuentaCorriente";
+import { formatearNumero, useCuentaDetalle } from "./useCuentaDetalle";
 
 // Interfaces locales para el componente
 interface CuentaListProps {
@@ -39,11 +42,17 @@ interface CuentaListProps {
   error?: string;
 }
 
+interface ContribuyenteSeleccionado {
+  codigo: number | string;
+  contribuyente?: string;
+  nombreCompleto?: string;
+}
+
 const CuentaList: React.FC<CuentaListProps> = ({
   contribuyenteId,
   predioId,
   loading = false,
-  error
+  error,
 }) => {
   const theme = useTheme();
   // Hook para gestionar cuenta corriente
@@ -54,26 +63,35 @@ const CuentaList: React.FC<CuentaListProps> = ({
     estadoCuentaDetalle,
     loadingDetalle,
     errorDetalle,
-    seleccionarContribuyente,
+    buscarEstadoCuenta,
     verDetalleAnio,
-    limpiarTodo
-  } = useCuentaCorriente();
+    limpiarTodo,
+  } = useCuentaCorriente(contribuyenteId, predioId);
 
   // Estados locales
   const [anioSeleccionado, setAnioSeleccionado] = useState<number | null>(null);
-  const [deudaSeleccionada] = useState<string>('');
+  const [deudaSeleccionada] = useState<string>("");
 
   // Estados para búsqueda
-  const [contribuyenteSeleccionado, setContribuyenteSeleccionado] = useState<any>(null);
-  const [codigoContribuyente, setCodigoContribuyente] = useState<string>('');
+  const [contribuyenteSeleccionado, setContribuyenteSeleccionado] =
+    useState<ContribuyenteSeleccionado | null>(null);
+  const [codigoContribuyente, setCodigoContribuyente] = useState<string>(
+    contribuyenteId == null ? "" : String(contribuyenteId),
+  );
+  const [anioFiltro, setAnioFiltro] = useState("");
+  const [codigoPredio, setCodigoPredio] = useState(
+    predioId == null ? "" : String(predioId),
+  );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [busquedaRealizada, setBusquedaRealizada] = useState(false);
 
   // Estado para controlar tributos expandidos
-  const [tributosExpandidos, setTributosExpandidos] = useState<Set<string>>(new Set());
+  const [tributosExpandidos, setTributosExpandidos] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Función para manejar clic en fila de estado de cuenta
-  const handleFilaClick = async (anio: number) => {
+  const handleFilaClick = (anio: number) => {
     setAnioSeleccionado(anio);
     // Cargar detalle del año seleccionado usando el hook
     verDetalleAnio(anio);
@@ -81,17 +99,23 @@ const CuentaList: React.FC<CuentaListProps> = ({
   };
 
   // Función para buscar cuenta corriente
-  const handleBuscarCuenta = async () => {
+  const handleBuscarCuenta = () => {
     if (!codigoContribuyente) {
-      alert('Por favor seleccione un contribuyente');
+      alert("Por favor seleccione un contribuyente");
       return;
     }
-    // Establecer el contribuyente en el hook
-    seleccionarContribuyente(codigoContribuyente);
+    buscarEstadoCuenta({
+      codContribuyente: codigoContribuyente,
+      anio: anioFiltro ? Number(anioFiltro) : null,
+      codPredio: codigoPredio ? Number(codigoPredio) : null,
+    });
     setBusquedaRealizada(true);
     // Limpiar año seleccionado
     setAnioSeleccionado(null);
-    console.log('Buscando cuenta corriente para contribuyente código:', codigoContribuyente);
+    console.log(
+      "Buscando cuenta corriente para contribuyente código:",
+      codigoContribuyente,
+    );
   };
 
   // Función para abrir selector de contribuyente
@@ -100,7 +124,9 @@ const CuentaList: React.FC<CuentaListProps> = ({
   };
 
   // Función para manejar la selección del contribuyente
-  const handleSelectContribuyente = (contribuyente: any) => {
+  const handleSelectContribuyente = (
+    contribuyente: ContribuyenteSeleccionado,
+  ) => {
     setContribuyenteSeleccionado(contribuyente);
     setCodigoContribuyente(contribuyente.codigo.toString());
     setIsModalOpen(false);
@@ -112,7 +138,7 @@ const CuentaList: React.FC<CuentaListProps> = ({
 
   // Función para toggle expansión de tributo
   const handleToggleTributo = (tributo: string) => {
-    setTributosExpandidos(prev => {
+    setTributosExpandidos((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(tributo)) {
         newSet.delete(tributo);
@@ -123,11 +149,19 @@ const CuentaList: React.FC<CuentaListProps> = ({
     });
   };
 
-  const { tributosUnicos } = useCuentaDetalle(estadoCuentaDetalle, anioSeleccionado);
+  const { tributosUnicos } = useCuentaDetalle(
+    estadoCuentaDetalle,
+    anioSeleccionado,
+  );
 
   if (loading || loadingEstadoCuenta) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -142,13 +176,17 @@ const CuentaList: React.FC<CuentaListProps> = ({
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: "100%" }}>
       {/* Modal de Selección de Contribuyente */}
       <SelectorContribuyente
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSelectContribuyente={handleSelectContribuyente}
-        selectedId={contribuyenteSeleccionado?.codigo}
+        selectedId={
+          contribuyenteSeleccionado
+            ? Number(contribuyenteSeleccionado.codigo)
+            : undefined
+        }
       />
 
       {/* Sección de Búsqueda */}
@@ -156,86 +194,87 @@ const CuentaList: React.FC<CuentaListProps> = ({
         sx={{
           mb: 4,
           borderRadius: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-          border: '1px solid',
-          borderColor: 'divider',
-          position: 'relative',
-          overflow: 'visible',
-          '&::before': {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+          border: "1px solid",
+          borderColor: "divider",
+          position: "relative",
+          overflow: "visible",
+          "&::before": {
             content: '""',
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: '4px',
+            height: "4px",
             background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px'
-          }
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
+          },
         }}
       >
         <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              mb: 2
+              display: "flex",
+              alignItems: "center",
+              mb: 2,
             }}
           >
             <Typography
               variant="subtitle1"
               fontWeight={700}
               sx={{
-                color: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
+                color: "primary.main",
+                display: "flex",
+                alignItems: "center",
                 gap: 1.5,
-                fontSize: '1.1rem'
+                fontSize: "1.1rem",
               }}
             >
-              <PersonSearchIcon color="primary" sx={{ fontSize: '1.5rem' }} /> Búsqueda de Cuenta Corriente
+              <PersonSearchIcon color="primary" sx={{ fontSize: "1.5rem" }} />{" "}
+              Búsqueda de Cuenta Corriente
             </Typography>
           </Box>
           <Divider sx={{ mb: 3 }} />
 
           <Box
             sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
+              display: "flex",
+              flexWrap: "wrap",
               gap: 3,
-              alignItems: 'center',
+              alignItems: "center",
               p: 2.5,
               bgcolor: alpha(theme.palette.primary.main, 0.01),
               borderRadius: 3,
-              border: '1px solid',
-              borderColor: alpha(theme.palette.primary.main, 0.05)
+              border: "1px solid",
+              borderColor: alpha(theme.palette.primary.main, 0.05),
             }}
           >
             {/* Seleccionar Contribuyente*/}
-            <Box sx={{ flex: '1 1 280px', minWidth: '280px' }}>
+            <Box sx={{ flex: "1 1 280px", minWidth: "280px" }}>
               <Button
                 variant="outlined"
                 fullWidth
-                startIcon={<PersonSearchIcon sx={{ fontSize: '1.3rem' }} />}
+                startIcon={<PersonSearchIcon sx={{ fontSize: "1.3rem" }} />}
                 onClick={handleSelectorContribuyente}
                 sx={{
                   height: 56,
                   borderRadius: 2.5,
                   borderWidth: 1.5,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
+                  borderColor: "primary.main",
+                  color: "primary.main",
                   fontWeight: 600,
-                  fontSize: '0.95rem',
-                  textTransform: 'none',
+                  fontSize: "0.95rem",
+                  textTransform: "none",
                   background: alpha(theme.palette.primary.main, 0.03),
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
                     borderWidth: 1.5,
-                    borderColor: 'primary.dark',
+                    borderColor: "primary.dark",
                     background: alpha(theme.palette.primary.main, 0.08),
-                    transform: 'translateY(-2px)',
-                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`
-                  }
+                    transform: "translateY(-2px)",
+                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+                  },
                 }}
               >
                 Seleccionar Contribuyente
@@ -245,11 +284,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
             {/* Información del Contribuyente Seleccionado */}
             <Box
               sx={{
-                flex: '1 1 350px',
-                minWidth: '300px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1
+                flex: "1 1 350px",
+                minWidth: "300px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
               }}
             >
               {contribuyenteSeleccionado ? (
@@ -260,23 +299,23 @@ const CuentaList: React.FC<CuentaListProps> = ({
                     bgcolor: alpha(theme.palette.success.main, 0.04),
                     border: `1px solid ${alpha(theme.palette.success.main, 0.12)}`,
                     boxShadow: `0 2px 8px ${alpha(theme.palette.success.main, 0.03)}`,
-                    display: 'flex',
-                    alignItems: 'center',
+                    display: "flex",
+                    alignItems: "center",
                     gap: 2,
-                    transition: 'all 0.3s ease'
+                    transition: "all 0.3s ease",
                   }}
                 >
                   <Box
                     sx={{
                       width: 40,
                       height: 40,
-                      borderRadius: '50%',
+                      borderRadius: "50%",
                       bgcolor: alpha(theme.palette.success.main, 0.1),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'success.main',
-                      flexShrink: 0
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "success.main",
+                      flexShrink: 0,
                     }}
                   >
                     <PersonSearchIcon fontSize="medium" />
@@ -285,28 +324,35 @@ const CuentaList: React.FC<CuentaListProps> = ({
                     <Typography
                       variant="caption"
                       sx={{
-                        color: 'success.main',
+                        color: "success.main",
                         fontWeight: 700,
-                        fontSize: '0.75rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        display: 'block',
-                        mb: 0.2
+                        fontSize: "0.75rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                        display: "block",
+                        mb: 0.2,
                       }}
                     >
                       Contribuyente Seleccionado
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <Chip
                         label={`Código: ${codigoContribuyente}`}
                         size="small"
                         sx={{
-                          bgcolor: 'success.main',
-                          color: 'white',
+                          bgcolor: "success.main",
+                          color: "white",
                           fontWeight: 700,
-                          fontSize: '0.75rem',
+                          fontSize: "0.75rem",
                           height: 22,
-                          borderRadius: '6px'
+                          borderRadius: "6px",
                         }}
                       />
                       <Typography
@@ -314,11 +360,13 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         noWrap
                         sx={{
                           fontWeight: 700,
-                          color: 'success.dark',
-                          fontSize: '0.9rem'
+                          color: "success.dark",
+                          fontSize: "0.9rem",
                         }}
                       >
-                        {contribuyenteSeleccionado.contribuyente || 'Sin nombre'}
+                        {contribuyenteSeleccionado.contribuyente ||
+                          contribuyenteSeleccionado.nombreCompleto ||
+                          "Sin nombre"}
                       </Typography>
                     </Box>
                   </Box>
@@ -328,41 +376,69 @@ const CuentaList: React.FC<CuentaListProps> = ({
                   sx={{
                     p: 2,
                     borderRadius: 2.5,
-                    background: alpha(theme.palette.action.disabledBackground, 0.3),
+                    background: alpha(
+                      theme.palette.action.disabledBackground,
+                      0.3,
+                    ),
                     border: `1px dashed ${theme.palette.divider}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: 62
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 62,
                   }}
                 >
                   <Typography
                     variant="body2"
                     sx={{
-                      color: 'text.secondary',
-                      fontStyle: 'italic',
-                      fontSize: '0.9rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5
+                      color: "text.secondary",
+                      fontStyle: "italic",
+                      fontSize: "0.9rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
                     }}
                   >
-                    <PersonSearchIcon sx={{ opacity: 0.4 }} /> Seleccione un contribuyente para iniciar consulta
+                    <PersonSearchIcon sx={{ opacity: 0.4 }} /> Seleccione un
+                    contribuyente para iniciar consulta
                   </Typography>
                 </Box>
               )}
             </Box>
 
+            <Box sx={{ flex: "0 1 140px", minWidth: "120px" }}>
+              <TextField
+                fullWidth
+                label="Año"
+                type="number"
+                value={anioFiltro}
+                onChange={(event) => setAnioFiltro(event.target.value)}
+                placeholder="Todos"
+                inputProps={{ min: 1900, max: 9999 }}
+              />
+            </Box>
+
+            <Box sx={{ flex: "0 1 180px", minWidth: "150px" }}>
+              <TextField
+                fullWidth
+                label="Código de predio"
+                type="number"
+                value={codigoPredio}
+                onChange={(event) => setCodigoPredio(event.target.value)}
+                placeholder="Todos"
+                inputProps={{ min: 1 }}
+              />
+            </Box>
+
             {/* Botón de Buscar */}
-            <Box sx={{ flex: '0 1 180px', minWidth: '180px' }}>
+            <Box sx={{ flex: "0 1 180px", minWidth: "180px" }}>
               <Button
                 variant="contained"
                 fullWidth
                 startIcon={
                   loadingEstadoCuenta ? (
-                    <CircularProgress size={20} sx={{ color: 'inherit' }} />
+                    <CircularProgress size={20} sx={{ color: "inherit" }} />
                   ) : (
-                    <SearchIcon sx={{ fontSize: '1.3rem' }} />
+                    <SearchIcon sx={{ fontSize: "1.3rem" }} />
                   )
                 }
                 onClick={handleBuscarCuenta}
@@ -370,30 +446,32 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 sx={{
                   height: 56,
                   borderRadius: 2.5,
-                  backgroundColor: '#10b981 !important',
-                  color: 'white !important',
+                  backgroundColor: "#10b981 !important",
+                  color: "white !important",
                   fontWeight: 700,
-                  fontSize: '1rem',
-                  textTransform: 'none',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    backgroundColor: '#059669 !important',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)'
+                  fontSize: "1rem",
+                  textTransform: "none",
+                  boxShadow: "0 4px 14px rgba(16, 185, 129, 0.3)",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor: "#059669 !important",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 20px rgba(16, 185, 129, 0.4)",
                   },
-                  '&:active': {
-                    transform: 'translateY(0)'
+                  "&:active": {
+                    transform: "translateY(0)",
                   },
-                  '&.Mui-disabled': {
-                    backgroundColor: alpha(theme.palette.action.disabledBackground, 0.12) + ' !important',
-                    color: theme.palette.text.disabled + ' !important',
-                    border: '1px solid ' + theme.palette.divider,
-                    boxShadow: 'none !important'
-                  }
+                  "&.Mui-disabled": {
+                    backgroundColor:
+                      alpha(theme.palette.action.disabledBackground, 0.12) +
+                      " !important",
+                    color: theme.palette.text.disabled + " !important",
+                    border: "1px solid " + theme.palette.divider,
+                    boxShadow: "none !important",
+                  },
                 }}
               >
-                {loadingEstadoCuenta ? 'Buscando...' : 'Buscar'}
+                {loadingEstadoCuenta ? "Buscando..." : "Buscar"}
               </Button>
             </Box>
           </Box>
@@ -405,49 +483,53 @@ const CuentaList: React.FC<CuentaListProps> = ({
         sx={{
           mb: 4,
           borderRadius: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-          border: '1px solid',
-          borderColor: 'divider',
-          position: 'relative',
-          overflow: 'visible',
-          '&::before': {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+          border: "1px solid",
+          borderColor: "divider",
+          position: "relative",
+          overflow: "visible",
+          "&::before": {
             content: '""',
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: '4px',
+            height: "4px",
             background: `linear-gradient(90deg, ${theme.palette.info.main} 0%, ${theme.palette.success.main} 100%)`,
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px'
-          }
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
+          },
         }}
       >
         <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 2
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box
                 sx={{
                   width: 36,
                   height: 36,
                   borderRadius: 1.5,
                   bgcolor: alpha(theme.palette.primary.main, 0.08),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'primary.main'
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "primary.main",
                 }}
               >
-                <AssessmentIcon sx={{ fontSize: '1.2rem' }} />
+                <AssessmentIcon sx={{ fontSize: "1.2rem" }} />
               </Box>
-              <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', fontSize: '1.05rem' }}>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                sx={{ color: "text.primary", fontSize: "1.05rem" }}
+              >
                 Resumen de Estado de Cuenta Anual
               </Typography>
             </Box>
@@ -457,35 +539,44 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 size="small"
                 variant="outlined"
                 color="primary"
-                sx={{ fontWeight: 700, borderRadius: '8px' }}
+                sx={{ fontWeight: 700, borderRadius: "8px" }}
               />
             )}
           </Box>
           <Divider sx={{ mb: 2.5 }} />
 
           {loadingEstadoCuenta && busquedaRealizada ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, py: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 1.5,
+                py: 4,
+              }}
+            >
               <CircularProgress size={28} />
               <Typography color="text.secondary">
-                Consultando el estado de cuenta del contribuyente {codigoContribuyente}...
+                Consultando el estado de cuenta del contribuyente{" "}
+                {codigoContribuyente}...
               </Typography>
             </Box>
           ) : estadoCuentaAnual.length === 0 ? (
             <Alert
-              severity={busquedaRealizada ? 'warning' : 'info'}
+              severity={busquedaRealizada ? "warning" : "info"}
               sx={{
                 borderRadius: 2.5,
                 bgcolor: alpha(theme.palette.info.main, 0.02),
                 border: `1px solid ${alpha(theme.palette.info.main, 0.15)}`,
-                color: 'info.dark',
-                '& .MuiAlert-icon': {
-                  color: 'info.main'
-                }
+                color: "info.dark",
+                "& .MuiAlert-icon": {
+                  color: "info.main",
+                },
               }}
             >
               {busquedaRealizada
                 ? `La consulta se realizó correctamente, pero el contribuyente ${codigoContribuyente} no tiene registros de estado de cuenta.`
-                : 'Seleccione un contribuyente y haga clic en Buscar para visualizar el estado de cuenta anual.'}
+                : "Seleccione un contribuyente y haga clic en Buscar para visualizar el estado de cuenta anual."}
             </Alert>
           ) : (
             <>
@@ -493,10 +584,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 component={Paper}
                 elevation={0}
                 sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  border: "1px solid",
+                  borderColor: "divider",
                   borderRadius: 2.5,
-                  overflow: 'hidden'
+                  overflow: "hidden",
                 }}
               >
                 <Table size="small" sx={{ minWidth: 750 }}>
@@ -506,11 +597,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="center"
                         sx={{
                           bgcolor: alpha(theme.palette.primary.main, 0.05),
-                          color: 'primary.dark',
+                          color: "primary.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          py: 1.5,
                         }}
                       >
                         Año
@@ -519,11 +610,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="right"
                         sx={{
                           bgcolor: alpha(theme.palette.info.main, 0.04),
-                          color: 'info.dark',
+                          color: "info.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          py: 1.5,
                         }}
                       >
                         Total Predial
@@ -532,11 +623,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="right"
                         sx={{
                           bgcolor: alpha(theme.palette.success.main, 0.04),
-                          color: 'success.dark',
+                          color: "success.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          py: 1.5,
                         }}
                       >
                         Total Arbitrial
@@ -545,11 +636,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="right"
                         sx={{
                           bgcolor: alpha(theme.palette.warning.main, 0.04),
-                          color: 'warning.dark',
+                          color: "warning.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          py: 1.5,
                         }}
                       >
                         Total Cargos
@@ -558,11 +649,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="right"
                         sx={{
                           bgcolor: alpha(theme.palette.success.main, 0.08),
-                          color: 'success.dark',
+                          color: "success.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          py: 1.5,
                         }}
                       >
                         Total Pagado
@@ -571,10 +662,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="right"
                         sx={{
                           bgcolor: alpha(theme.palette.error.main, 0.04),
-                          color: 'error.dark',
+                          color: "error.dark",
                           fontWeight: 800,
-                          fontSize: '0.85rem',
-                          py: 1.5
+                          fontSize: "0.85rem",
+                          py: 1.5,
                         }}
                       >
                         Saldo Neto
@@ -587,20 +678,25 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         key={`${fila.anio}-${index}`}
                         onClick={() => handleFilaClick(fila.anio)}
                         sx={{
-                          cursor: 'pointer',
-                          backgroundColor: anioSeleccionado === fila.anio
-                            ? alpha(theme.palette.primary.main, 0.06)
-                            : index % 2 === 0 ? 'white' : alpha(theme.palette.action.hover, 0.3),
-                          transition: 'all 0.2s ease-in-out',
-                          borderLeft: anioSeleccionado === fila.anio
-                            ? `4px solid ${theme.palette.primary.main}`
-                            : '4px solid transparent',
-                          '&:hover': {
-                            backgroundColor: anioSeleccionado === fila.anio
-                              ? alpha(theme.palette.primary.main, 0.1)
-                              : alpha(theme.palette.primary.main, 0.03),
-                            transform: 'translateX(3px)'
-                          }
+                          cursor: "pointer",
+                          backgroundColor:
+                            anioSeleccionado === fila.anio
+                              ? alpha(theme.palette.primary.main, 0.06)
+                              : index % 2 === 0
+                                ? "white"
+                                : alpha(theme.palette.action.hover, 0.3),
+                          transition: "all 0.2s ease-in-out",
+                          borderLeft:
+                            anioSeleccionado === fila.anio
+                              ? `4px solid ${theme.palette.primary.main}`
+                              : "4px solid transparent",
+                          "&:hover": {
+                            backgroundColor:
+                              anioSeleccionado === fila.anio
+                                ? alpha(theme.palette.primary.main, 0.1)
+                                : alpha(theme.palette.primary.main, 0.03),
+                            transform: "translateX(3px)",
+                          },
                         }}
                       >
                         {/* Año */}
@@ -608,10 +704,13 @@ const CuentaList: React.FC<CuentaListProps> = ({
                           align="center"
                           sx={{
                             fontWeight: 700,
-                            fontSize: '0.95rem',
-                            color: anioSeleccionado === fila.anio ? 'primary.main' : 'text.primary',
-                            borderRight: '1px solid rgba(0,0,0,0.05)',
-                            py: 1.2
+                            fontSize: "0.95rem",
+                            color:
+                              anioSeleccionado === fila.anio
+                                ? "primary.main"
+                                : "text.primary",
+                            borderRight: "1px solid rgba(0,0,0,0.05)",
+                            py: 1.2,
                           }}
                         >
                           {fila.anio}
@@ -621,10 +720,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                           align="right"
                           sx={{
                             fontWeight: 600,
-                            fontSize: '0.9rem',
-                            color: 'info.main',
-                            borderRight: '1px solid rgba(0,0,0,0.05)',
-                            py: 1.2
+                            fontSize: "0.9rem",
+                            color: "info.main",
+                            borderRight: "1px solid rgba(0,0,0,0.05)",
+                            py: 1.2,
                           }}
                         >
                           S/ {formatearNumero(fila.totalPredial)}
@@ -634,10 +733,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                           align="right"
                           sx={{
                             fontWeight: 600,
-                            fontSize: '0.9rem',
-                            color: 'success.main',
-                            borderRight: '1px solid rgba(0,0,0,0.05)',
-                            py: 1.2
+                            fontSize: "0.9rem",
+                            color: "success.main",
+                            borderRight: "1px solid rgba(0,0,0,0.05)",
+                            py: 1.2,
                           }}
                         >
                           S/ {formatearNumero(fila.totalArbitrial)}
@@ -647,10 +746,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                           align="right"
                           sx={{
                             fontWeight: 700,
-                            fontSize: '0.9rem',
-                            color: 'text.primary',
-                            borderRight: '1px solid rgba(0,0,0,0.05)',
-                            py: 1.2
+                            fontSize: "0.9rem",
+                            color: "text.primary",
+                            borderRight: "1px solid rgba(0,0,0,0.05)",
+                            py: 1.2,
                           }}
                         >
                           S/ {formatearNumero(fila.totalCargos)}
@@ -659,16 +758,26 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         <TableCell
                           align="right"
                           sx={{
-                            borderRight: '1px solid rgba(0,0,0,0.05)',
-                            py: 1.2
+                            borderRight: "1px solid rgba(0,0,0,0.05)",
+                            py: 1.2,
                           }}
                         >
                           {fila.totalPagado > 0 ? (
-                            <Typography component="span" fontWeight={700} fontSize="0.9rem" color="success.main">
+                            <Typography
+                              component="span"
+                              fontWeight={700}
+                              fontSize="0.9rem"
+                              color="success.main"
+                            >
                               S/ {formatearNumero(fila.totalPagado)}
                             </Typography>
                           ) : (
-                            <Typography component="span" fontSize="0.9rem" color="text.secondary" sx={{ opacity: 0.6 }}>
+                            <Typography
+                              component="span"
+                              fontSize="0.9rem"
+                              color="text.secondary"
+                              sx={{ opacity: 0.6 }}
+                            >
                               S/ 0.00
                             </Typography>
                           )}
@@ -677,11 +786,16 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         <TableCell
                           align="right"
                           sx={{
-                            py: 1.2
+                            py: 1.2,
                           }}
                         >
                           {fila.saldoNeto > 0 ? (
-                            <Typography component="span" fontWeight={800} fontSize="0.95rem" color="error.main">
+                            <Typography
+                              component="span"
+                              fontWeight={800}
+                              fontSize="0.95rem"
+                              color="error.main"
+                            >
                               S/ {formatearNumero(fila.saldoNeto)}
                             </Typography>
                           ) : (
@@ -692,10 +806,13 @@ const CuentaList: React.FC<CuentaListProps> = ({
                               variant="outlined"
                               sx={{
                                 fontWeight: 700,
-                                fontSize: '0.75rem',
-                                bgcolor: alpha(theme.palette.success.main, 0.05),
+                                fontSize: "0.75rem",
+                                bgcolor: alpha(
+                                  theme.palette.success.main,
+                                  0.05,
+                                ),
                                 height: 22,
-                                borderRadius: '6px'
+                                borderRadius: "6px",
                               }}
                             />
                           )}
@@ -711,60 +828,61 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 sx={{
                   mt: 3,
                   p: 2,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   bgcolor: alpha(theme.palette.primary.main, 0.015),
                   borderRadius: 2.5,
-                  border: '1px solid',
-                  borderColor: alpha(theme.palette.primary.main, 0.06)
+                  border: "1px solid",
+                  borderColor: alpha(theme.palette.primary.main, 0.06),
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                   <Box
                     sx={{
                       width: 8,
                       height: 8,
-                      borderRadius: '50%',
-                      bgcolor: 'primary.main',
-                      animation: 'pulse 2s ease-in-out infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                        '50%': { opacity: 0.4, transform: 'scale(0.85)' }
-                      }
+                      borderRadius: "50%",
+                      bgcolor: "primary.main",
+                      animation: "pulse 2s ease-in-out infinite",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 1, transform: "scale(1)" },
+                        "50%": { opacity: 0.4, transform: "scale(0.85)" },
+                      },
                     }}
                   />
                   <Typography
                     variant="body2"
                     sx={{
-                      color: 'primary.main',
+                      color: "primary.main",
                       fontWeight: 600,
-                      fontSize: '0.85rem'
+                      fontSize: "0.85rem",
                     }}
                   >
-                    Haga clic en una fila anual para desglosar el detalle por conceptos.
+                    Haga clic en una fila anual para desglosar el detalle por
+                    conceptos.
                   </Typography>
                 </Box>
                 {deudaSeleccionada && (
                   <Box
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 1.5,
                       px: 2,
                       py: 0.75,
                       bgcolor: alpha(theme.palette.warning.main, 0.05),
                       borderRadius: 1.5,
-                      border: '1px solid',
-                      borderColor: alpha(theme.palette.warning.main, 0.15)
+                      border: "1px solid",
+                      borderColor: alpha(theme.palette.warning.main, 0.15),
                     }}
                   >
                     <Typography
                       variant="body2"
                       sx={{
                         fontWeight: 700,
-                        color: 'warning.dark',
-                        fontSize: '0.8rem'
+                        color: "warning.dark",
+                        fontSize: "0.8rem",
                       }}
                     >
                       Deuda Seleccionada:
@@ -773,8 +891,8 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       variant="body2"
                       sx={{
                         fontWeight: 800,
-                        color: 'warning.dark',
-                        fontSize: '0.85rem'
+                        color: "warning.dark",
+                        fontSize: "0.85rem",
                       }}
                     >
                       {deudaSeleccionada}
@@ -791,49 +909,53 @@ const CuentaList: React.FC<CuentaListProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-          border: '1px solid',
-          borderColor: 'divider',
-          position: 'relative',
-          overflow: 'visible',
-          '&::before': {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+          border: "1px solid",
+          borderColor: "divider",
+          position: "relative",
+          overflow: "visible",
+          "&::before": {
             content: '""',
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: '4px',
+            height: "4px",
             background: `linear-gradient(90deg, ${theme.palette.warning.main} 0%, ${theme.palette.error.main} 100%)`,
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px'
-          }
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
+          },
         }}
       >
         <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 2
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box
                 sx={{
                   width: 36,
                   height: 36,
                   borderRadius: 1.5,
                   bgcolor: alpha(theme.palette.warning.main, 0.08),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'warning.dark'
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "warning.dark",
                 }}
               >
-                <ReceiptLongIcon sx={{ fontSize: '1.2rem' }} />
+                <ReceiptLongIcon sx={{ fontSize: "1.2rem" }} />
               </Box>
-              <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', fontSize: '1.05rem' }}>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                sx={{ color: "text.primary", fontSize: "1.05rem" }}
+              >
                 Detalle por Conceptos y Períodos
               </Typography>
             </Box>
@@ -843,10 +965,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 color="secondary"
                 sx={{
                   fontWeight: 700,
-                  fontSize: '0.85rem',
+                  fontSize: "0.85rem",
                   height: 32,
-                  borderRadius: '16px',
-                  px: 1.5
+                  borderRadius: "16px",
+                  px: 1.5,
                 }}
               />
             )}
@@ -858,33 +980,35 @@ const CuentaList: React.FC<CuentaListProps> = ({
               <CircularProgress />
             </Box>
           ) : errorDetalle ? (
-            <Alert severity="error" sx={{ borderRadius: 2 }}>{errorDetalle}</Alert>
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {errorDetalle}
+            </Alert>
           ) : (
             <TableContainer
               component={Paper}
               elevation={0}
               sx={{
                 maxHeight: 520,
-                overflowX: 'auto',
-                overflowY: 'auto',
-                border: '1px solid',
-                borderColor: 'divider',
+                overflowX: "auto",
+                overflowY: "auto",
+                border: "1px solid",
+                borderColor: "divider",
                 borderRadius: 2.5,
-                '&::-webkit-scrollbar': {
-                  width: '8px',
-                  height: '8px'
+                "&::-webkit-scrollbar": {
+                  width: "8px",
+                  height: "8px",
                 },
-                '&::-webkit-scrollbar-track': {
+                "&::-webkit-scrollbar-track": {
                   backgroundColor: alpha(theme.palette.action.hover, 0.5),
-                  borderRadius: '4px'
+                  borderRadius: "4px",
                 },
-                '&::-webkit-scrollbar-thumb': {
+                "&::-webkit-scrollbar-thumb": {
                   backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                  borderRadius: '4px',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.35)
-                  }
-                }
+                  borderRadius: "4px",
+                  "&:hover": {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.35),
+                  },
+                },
               }}
             >
               <Table size="small" sx={{ minWidth: 1800 }} stickyHeader>
@@ -896,14 +1020,14 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       sx={{
                         backgroundColor: theme.palette.background.paper,
                         backgroundImage: `linear-gradient(${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.08)})`,
-                        color: 'primary.dark',
+                        color: "primary.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        position: 'sticky',
+                        fontSize: "0.85rem",
+                        position: "sticky",
                         left: 0,
                         zIndex: 3,
                         minWidth: 80,
-                        borderRight: '1px solid rgba(0,0,0,0.08)'
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
                       }}
                     >
                       Año
@@ -914,14 +1038,14 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       sx={{
                         backgroundColor: theme.palette.background.paper,
                         backgroundImage: `linear-gradient(${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.08)})`,
-                        color: 'primary.dark',
+                        color: "primary.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        position: 'sticky',
+                        fontSize: "0.85rem",
+                        position: "sticky",
                         left: 80,
                         zIndex: 3,
                         minWidth: 140,
-                        borderRight: '1px solid rgba(0,0,0,0.08)'
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
                       }}
                     >
                       Grupo Tributo
@@ -932,14 +1056,14 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       sx={{
                         backgroundColor: theme.palette.background.paper,
                         backgroundImage: `linear-gradient(${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.08)})`,
-                        color: 'primary.dark',
+                        color: "primary.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        position: 'sticky',
+                        fontSize: "0.85rem",
+                        position: "sticky",
                         left: 220,
                         zIndex: 3,
                         minWidth: 250,
-                        borderRight: '1px solid rgba(0,0,0,0.08)'
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
                       }}
                     >
                       Tributo
@@ -950,14 +1074,14 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       sx={{
                         backgroundColor: theme.palette.background.paper,
                         backgroundImage: `linear-gradient(${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.08)})`,
-                        color: 'primary.dark',
+                        color: "primary.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        position: 'sticky',
+                        fontSize: "0.85rem",
+                        position: "sticky",
                         left: 470,
                         zIndex: 3,
                         minWidth: 100,
-                        borderRight: '1px solid rgba(0,0,0,0.08)'
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
                       }}
                     >
                       Concepto
@@ -967,11 +1091,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       colSpan={12}
                       sx={{
                         bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        color: 'primary.dark',
+                        color: "primary.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        borderRight: '1px solid rgba(0,0,0,0.08)',
-                        py: 1
+                        fontSize: "0.85rem",
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
+                        py: 1,
                       }}
                     >
                       Períodos Mensuales
@@ -981,11 +1105,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       align="center"
                       sx={{
                         bgcolor: alpha(theme.palette.warning.main, 0.06),
-                        color: 'warning.dark',
+                        color: "warning.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        borderRight: '1px solid rgba(0,0,0,0.08)',
-                        minWidth: 120
+                        fontSize: "0.85rem",
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
+                        minWidth: 120,
                       }}
                     >
                       Total Cargos
@@ -995,11 +1119,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       align="center"
                       sx={{
                         bgcolor: alpha(theme.palette.success.main, 0.06),
-                        color: 'success.dark',
+                        color: "success.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        borderRight: '1px solid rgba(0,0,0,0.08)',
-                        minWidth: 120
+                        fontSize: "0.85rem",
+                        borderRight: "1px solid rgba(0,0,0,0.08)",
+                        minWidth: 120,
                       }}
                     >
                       Total Pagado
@@ -1009,10 +1133,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
                       align="center"
                       sx={{
                         bgcolor: alpha(theme.palette.error.main, 0.06),
-                        color: 'error.dark',
+                        color: "error.dark",
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        minWidth: 120
+                        fontSize: "0.85rem",
+                        minWidth: 120,
                       }}
                     >
                       Saldo Neto
@@ -1025,11 +1149,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                         align="center"
                         sx={{
                           bgcolor: alpha(theme.palette.primary.main, 0.05),
-                          color: 'primary.dark',
+                          color: "primary.dark",
                           fontWeight: 700,
-                          fontSize: '0.813rem',
+                          fontSize: "0.813rem",
                           minWidth: 80,
-                          borderRight: '1px solid rgba(0,0,0,0.08)'
+                          borderRight: "1px solid rgba(0,0,0,0.08)",
                         }}
                       >
                         {periodo}
@@ -1041,324 +1165,508 @@ const CuentaList: React.FC<CuentaListProps> = ({
                   {tributosUnicos.size === 0 ? (
                     <TableRow>
                       <TableCell colSpan={19} align="center" sx={{ py: 6 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontStyle: "italic" }}
+                        >
                           {anioSeleccionado
                             ? `No se registran cargos ni abonos para el año ${anioSeleccionado}`
-                            : 'Haga clic en una fila del resumen anual para consultar el detalle por períodos.'}
+                            : "Haga clic en una fila del resumen anual para consultar el detalle por períodos."}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    Array.from(tributosUnicos.entries()).map(([tributo, conceptos]) => {
-                      const isExpanded = tributosExpandidos.has(tributo);
-                      const primerConcepto = conceptos[0];
-                      const mainRowBg = alpha(theme.palette.primary.main, 0.015);
-                      const mainRowHoverBg = alpha(theme.palette.primary.main, 0.04);
+                    Array.from(tributosUnicos.entries()).map(
+                      ([tributo, conceptos]) => {
+                        const isExpanded = tributosExpandidos.has(tributo);
+                        const primerConcepto = conceptos[0];
+                        const mainRowBg = alpha(
+                          theme.palette.primary.main,
+                          0.015,
+                        );
+                        const mainRowHoverBg = alpha(
+                          theme.palette.primary.main,
+                          0.04,
+                        );
 
-                      const groupStickyCellSx = {
-                        position: 'sticky',
-                        backgroundColor: theme.palette.background.paper,
-                        backgroundImage: `linear-gradient(${mainRowBg}, ${mainRowBg})`,
-                        zIndex: 2,
-                        borderRight: '1px solid rgba(0,0,0,0.06)',
-                        transition: 'background-color 0.2s, background-image 0.2s',
-                        'tr:hover &': {
+                        const groupStickyCellSx = {
+                          position: "sticky",
                           backgroundColor: theme.palette.background.paper,
-                          backgroundImage: `linear-gradient(${mainRowHoverBg}, ${mainRowHoverBg})`
-                        }
-                      };
+                          backgroundImage: `linear-gradient(${mainRowBg}, ${mainRowBg})`,
+                          zIndex: 2,
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          transition:
+                            "background-color 0.2s, background-image 0.2s",
+                          "tr:hover &": {
+                            backgroundColor: theme.palette.background.paper,
+                            backgroundImage: `linear-gradient(${mainRowHoverBg}, ${mainRowHoverBg})`,
+                          },
+                        };
 
-                      return (
-                        <React.Fragment key={tributo}>
-                          {/* Fila principal del tributo */}
-                          <TableRow
-                            sx={{
-                              backgroundColor: mainRowBg,
-                              cursor: 'pointer',
-                              '&:hover': {
-                                backgroundColor: mainRowHoverBg
-                              }
-                            }}
-                            onClick={() => handleToggleTributo(tributo)}
-                          >
-                            {/* Año */}
-                            <TableCell
-                              align="center"
+                        return (
+                          <React.Fragment key={tributo}>
+                            {/* Fila principal del tributo */}
+                            <TableRow
                               sx={{
-                                ...groupStickyCellSx,
-                                fontWeight: 700,
-                                left: 0
+                                backgroundColor: mainRowBg,
+                                cursor: "pointer",
+                                "&:hover": {
+                                  backgroundColor: mainRowHoverBg,
+                                },
                               }}
+                              onClick={() => handleToggleTributo(tributo)}
                             >
-                              {primerConcepto.anio}
-                            </TableCell>
-
-                            {/* Grupo Tributo */}
-                            <TableCell
-                              align="center"
-                              sx={{
-                                ...groupStickyCellSx,
-                                left: 80
-                              }}
-                            >
-                              <Chip
-                                label={primerConcepto.grupoTributo}
-                                color={primerConcepto.grupoTributo === 'Arbitrial' ? 'primary' : 'info'}
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontWeight: 700, height: 20, borderRadius: '4px' }}
-                              />
-                            </TableCell>
-
-                            {/* Tributo con botón expandir */}
-                            <TableCell
-                              align="left"
-                              sx={{
-                                ...groupStickyCellSx,
-                                left: 220,
-                                fontWeight: 700
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleTributo(tributo);
-                                  }}
-                                  sx={{
-                                    p: 0.25,
-                                    transition: 'transform 0.2s',
-                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-                                  }}
-                                >
-                                  {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
-                                </IconButton>
-                                <Typography variant="body2" fontWeight={700} noWrap>
-                                  {tributo}
-                                </Typography>
-                              </Box>
-                            </TableCell>
-
-                            {/* Concepto - cantidad */}
-                            <TableCell
-                              sx={{
-                                ...groupStickyCellSx,
-                                left: 470
-                              }}
-                            >
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                {conceptos.length / 3} tributo(s)
-                              </Typography>
-                            </TableCell>
-
-                            {/* Períodos - sumas totales */}
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((col) => {
-                              const sum = conceptos.reduce((acc, c) => {
-                                if (c.concepto === 'F. Venc') return acc;
-                                const value = c[`col${col}` as keyof typeof c];
-                                return acc + (typeof value === 'number' ? value : 0);
-                              }, 0);
-                              return (
-                                <TableCell key={col} align="center" sx={{ borderRight: '1px solid rgba(0,0,0,0.05)' }}>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      fontWeight: 700,
-                                      fontSize: '0.85rem',
-                                      color: sum > 0 ? 'text.primary' : 'text.disabled'
-                                    }}
-                                  >
-                                    {sum > 0 ? formatearNumero(sum) : '-'}
-                                  </Typography>
-                                </TableCell>
-                              );
-                            })}
-
-                            {/* Total Cargos */}
-                            <TableCell
-                              align="right"
-                              sx={{
-                                fontWeight: 800,
-                                color: 'warning.dark',
-                                borderRight: '1px solid rgba(0,0,0,0.05)',
-                                bgcolor: alpha(theme.palette.warning.main, 0.01)
-                              }}
-                            >
-                              {formatearNumero(primerConcepto.totalCargos)}
-                            </TableCell>
-
-                            {/* Total Pagado */}
-                            <TableCell
-                              align="right"
-                              sx={{
-                                fontWeight: 800,
-                                color: 'success.main',
-                                borderRight: '1px solid rgba(0,0,0,0.05)',
-                                bgcolor: alpha(theme.palette.success.main, 0.01)
-                              }}
-                            >
-                              {formatearNumero(primerConcepto.totalPagado)}
-                            </TableCell>
-
-                            {/* Saldo Neto */}
-                            <TableCell
-                              align="right"
-                              sx={{
-                                fontWeight: 900,
-                                color: primerConcepto.saldoNeto > 0 ? 'error.main' : 'success.main',
-                                bgcolor: primerConcepto.saldoNeto > 0 ? alpha(theme.palette.error.main, 0.01) : alpha(theme.palette.success.main, 0.01)
-                              }}
-                            >
-                              {primerConcepto.saldoNeto > 0 ? (
-                                `S/ ${formatearNumero(primerConcepto.saldoNeto)}`
-                              ) : (
-                                <Chip
-                                  label="Al día"
-                                  size="small"
-                                  color="success"
-                                  sx={{ fontWeight: 700, height: 20, fontSize: '0.7rem' }}
-                                />
-                              )}
-                            </TableCell>
-                          </TableRow>
-
-                          {/* Filas de conceptos expandibles */}
-                          {isExpanded && conceptos.map((detalle, idx) => {
-                            const isCargo = detalle.concepto === 'Cargo';
-                            const isPagado = detalle.concepto === 'Pagado';
-                            const rowBg = isCargo ? alpha(theme.palette.warning.main, 0.015) :
-                                          isPagado ? alpha(theme.palette.success.main, 0.015) :
-                                          alpha(theme.palette.info.main, 0.015);
-                            const rowHoverBg = isCargo ? alpha(theme.palette.warning.main, 0.04) :
-                                               isPagado ? alpha(theme.palette.success.main, 0.04) :
-                                               alpha(theme.palette.info.main, 0.04);
-
-                            const stickyCellSx = {
-                              position: 'sticky',
-                              backgroundColor: theme.palette.background.paper,
-                              backgroundImage: `linear-gradient(${rowBg}, ${rowBg})`,
-                              zIndex: 2,
-                              borderRight: '1px solid rgba(0,0,0,0.06)',
-                              transition: 'background-color 0.2s, background-image 0.2s',
-                              'tr:hover &': {
-                                backgroundColor: theme.palette.background.paper,
-                                backgroundImage: `linear-gradient(${rowHoverBg}, ${rowHoverBg})`
-                              }
-                            };
-
-                            return (
-                              <TableRow
-                                key={`${tributo}-${idx}`}
+                              {/* Año */}
+                              <TableCell
+                                align="center"
                                 sx={{
-                                  backgroundColor: rowBg,
-                                  '&:hover': {
-                                    backgroundColor: rowHoverBg
-                                  }
+                                  ...groupStickyCellSx,
+                                  fontWeight: 700,
+                                  left: 0,
                                 }}
                               >
-                                {/* Año - vacío */}
-                                <TableCell sx={{ ...stickyCellSx, left: 0 }} />
+                                {primerConcepto.anio}
+                              </TableCell>
 
-                                {/* Grupo Tributo - vacío */}
-                                <TableCell sx={{ ...stickyCellSx, left: 80 }} />
+                              {/* Grupo Tributo */}
+                              <TableCell
+                                align="center"
+                                sx={{
+                                  ...groupStickyCellSx,
+                                  left: 80,
+                                }}
+                              >
+                                <Chip
+                                  label={primerConcepto.grupoTributo}
+                                  color={
+                                    primerConcepto.grupoTributo === "Arbitrial"
+                                      ? "primary"
+                                      : "info"
+                                  }
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 700,
+                                    height: 20,
+                                    borderRadius: "4px",
+                                  }}
+                                />
+                              </TableCell>
 
-                                {/* Tributo - vacío */}
-                                <TableCell sx={{ ...stickyCellSx, left: 220 }} />
-
-                                {/* Concepto */}
-                                <TableCell sx={{ ...stickyCellSx, left: 470, py: 0.75 }}>
-                                  <Chip
-                                    label={detalle.concepto}
+                              {/* Tributo con botón expandir */}
+                              <TableCell
+                                align="left"
+                                sx={{
+                                  ...groupStickyCellSx,
+                                  left: 220,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  <IconButton
                                     size="small"
-                                    color={isCargo ? 'warning' : isPagado ? 'success' : 'info'}
-                                    variant="outlined"
-                                    sx={{ fontWeight: 700, height: 22, borderRadius: '4px' }}
-                                  />
-                                </TableCell>
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleTributo(tributo);
+                                    }}
+                                    sx={{
+                                      p: 0.25,
+                                      transition: "transform 0.2s",
+                                      transform: isExpanded
+                                        ? "rotate(90deg)"
+                                        : "rotate(0deg)",
+                                    }}
+                                  >
+                                    {isExpanded ? (
+                                      <ExpandMoreIcon fontSize="small" />
+                                    ) : (
+                                      <ChevronRightIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    noWrap
+                                  >
+                                    {tributo}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
 
-                                {/* Períodos */}
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((col) => {
-                                  const value = detalle[`col${col}` as keyof typeof detalle];
+                              {/* Concepto - cantidad */}
+                              <TableCell
+                                sx={{
+                                  ...groupStickyCellSx,
+                                  left: 470,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {conceptos.length / 3} tributo(s)
+                                </Typography>
+                              </TableCell>
+
+                              {/* Períodos - sumas totales */}
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+                                (col) => {
+                                  const sum = conceptos.reduce((acc, c) => {
+                                    if (c.concepto === "F. Venc") return acc;
+                                    const value =
+                                      c[`col${col}` as keyof typeof c];
+                                    return (
+                                      acc +
+                                      (typeof value === "number" ? value : 0)
+                                    );
+                                  }, 0);
                                   return (
-                                    <TableCell key={col} align="center" sx={{ borderRight: '1px solid rgba(0,0,0,0.05)' }}>
-                                      {detalle.concepto === 'F. Venc' ? (
-                                        <Typography variant="body2" sx={{ color: value !== '-' ? 'text.primary' : 'text.disabled', fontSize: '0.813rem' }}>
-                                          {typeof value === 'string' ? value : '-'}
-                                        </Typography>
-                                      ) : (
-                                        (() => {
-                                          const num = typeof value === 'number' ? value : 0;
-                                          if (num === 0) {
-                                            return <Typography variant="body2" sx={{ color: 'text.disabled', opacity: 0.5, fontSize: '0.813rem' }}>-</Typography>;
-                                          }
-                                          return (
+                                    <TableCell
+                                      key={col}
+                                      align="center"
+                                      sx={{
+                                        borderRight:
+                                          "1px solid rgba(0,0,0,0.05)",
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          fontWeight: 700,
+                                          fontSize: "0.85rem",
+                                          color:
+                                            sum > 0
+                                              ? "text.primary"
+                                              : "text.disabled",
+                                        }}
+                                      >
+                                        {sum > 0 ? formatearNumero(sum) : "-"}
+                                      </Typography>
+                                    </TableCell>
+                                  );
+                                },
+                              )}
+
+                              {/* Total Cargos */}
+                              <TableCell
+                                align="right"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "warning.dark",
+                                  borderRight: "1px solid rgba(0,0,0,0.05)",
+                                  bgcolor: alpha(
+                                    theme.palette.warning.main,
+                                    0.01,
+                                  ),
+                                }}
+                              >
+                                {formatearNumero(primerConcepto.totalCargos)}
+                              </TableCell>
+
+                              {/* Total Pagado */}
+                              <TableCell
+                                align="right"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "success.main",
+                                  borderRight: "1px solid rgba(0,0,0,0.05)",
+                                  bgcolor: alpha(
+                                    theme.palette.success.main,
+                                    0.01,
+                                  ),
+                                }}
+                              >
+                                {formatearNumero(primerConcepto.totalPagado)}
+                              </TableCell>
+
+                              {/* Saldo Neto */}
+                              <TableCell
+                                align="right"
+                                sx={{
+                                  fontWeight: 900,
+                                  color:
+                                    primerConcepto.saldoNeto > 0
+                                      ? "error.main"
+                                      : "success.main",
+                                  bgcolor:
+                                    primerConcepto.saldoNeto > 0
+                                      ? alpha(theme.palette.error.main, 0.01)
+                                      : alpha(theme.palette.success.main, 0.01),
+                                }}
+                              >
+                                {primerConcepto.saldoNeto > 0 ? (
+                                  `S/ ${formatearNumero(primerConcepto.saldoNeto)}`
+                                ) : (
+                                  <Chip
+                                    label="Al día"
+                                    size="small"
+                                    color="success"
+                                    sx={{
+                                      fontWeight: 700,
+                                      height: 20,
+                                      fontSize: "0.7rem",
+                                    }}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Filas de conceptos expandibles */}
+                            {isExpanded &&
+                              conceptos.map((detalle, idx) => {
+                                const isCargo = detalle.concepto === "Cargo";
+                                const isPagado = detalle.concepto === "Pagado";
+                                const rowBg = isCargo
+                                  ? alpha(theme.palette.warning.main, 0.015)
+                                  : isPagado
+                                    ? alpha(theme.palette.success.main, 0.015)
+                                    : alpha(theme.palette.info.main, 0.015);
+                                const rowHoverBg = isCargo
+                                  ? alpha(theme.palette.warning.main, 0.04)
+                                  : isPagado
+                                    ? alpha(theme.palette.success.main, 0.04)
+                                    : alpha(theme.palette.info.main, 0.04);
+
+                                const stickyCellSx = {
+                                  position: "sticky",
+                                  backgroundColor:
+                                    theme.palette.background.paper,
+                                  backgroundImage: `linear-gradient(${rowBg}, ${rowBg})`,
+                                  zIndex: 2,
+                                  borderRight: "1px solid rgba(0,0,0,0.06)",
+                                  transition:
+                                    "background-color 0.2s, background-image 0.2s",
+                                  "tr:hover &": {
+                                    backgroundColor:
+                                      theme.palette.background.paper,
+                                    backgroundImage: `linear-gradient(${rowHoverBg}, ${rowHoverBg})`,
+                                  },
+                                };
+
+                                return (
+                                  <TableRow
+                                    key={`${tributo}-${idx}`}
+                                    sx={{
+                                      backgroundColor: rowBg,
+                                      "&:hover": {
+                                        backgroundColor: rowHoverBg,
+                                      },
+                                    }}
+                                  >
+                                    {/* Año - vacío */}
+                                    <TableCell
+                                      sx={{ ...stickyCellSx, left: 0 }}
+                                    />
+
+                                    {/* Grupo Tributo - vacío */}
+                                    <TableCell
+                                      sx={{ ...stickyCellSx, left: 80 }}
+                                    />
+
+                                    {/* Tributo - vacío */}
+                                    <TableCell
+                                      sx={{ ...stickyCellSx, left: 220 }}
+                                    />
+
+                                    {/* Concepto */}
+                                    <TableCell
+                                      sx={{
+                                        ...stickyCellSx,
+                                        left: 470,
+                                        py: 0.75,
+                                      }}
+                                    >
+                                      <Chip
+                                        label={detalle.concepto}
+                                        size="small"
+                                        color={
+                                          isCargo
+                                            ? "warning"
+                                            : isPagado
+                                              ? "success"
+                                              : "info"
+                                        }
+                                        variant="outlined"
+                                        sx={{
+                                          fontWeight: 700,
+                                          height: 22,
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                    </TableCell>
+
+                                    {/* Períodos */}
+                                    {[
+                                      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                    ].map((col) => {
+                                      const value =
+                                        detalle[
+                                          `col${col}` as keyof typeof detalle
+                                        ];
+                                      return (
+                                        <TableCell
+                                          key={col}
+                                          align="center"
+                                          sx={{
+                                            borderRight:
+                                              "1px solid rgba(0,0,0,0.05)",
+                                          }}
+                                        >
+                                          {detalle.concepto === "F. Venc" ? (
                                             <Typography
                                               variant="body2"
                                               sx={{
-                                                fontWeight: 600,
-                                                fontSize: '0.85rem',
-                                                color: isCargo ? 'warning.dark' : 'success.main'
+                                                color:
+                                                  value !== "-"
+                                                    ? "text.primary"
+                                                    : "text.disabled",
+                                                fontSize: "0.813rem",
                                               }}
                                             >
-                                              {formatearNumero(num)}
+                                              {typeof value === "string"
+                                                ? value
+                                                : "-"}
                                             </Typography>
-                                          );
-                                        })()
+                                          ) : (
+                                            (() => {
+                                              const num =
+                                                typeof value === "number"
+                                                  ? value
+                                                  : 0;
+                                              if (num === 0) {
+                                                return (
+                                                  <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                      color: "text.disabled",
+                                                      opacity: 0.5,
+                                                      fontSize: "0.813rem",
+                                                    }}
+                                                  >
+                                                    -
+                                                  </Typography>
+                                                );
+                                              }
+                                              return (
+                                                <Typography
+                                                  variant="body2"
+                                                  sx={{
+                                                    fontWeight: 600,
+                                                    fontSize: "0.85rem",
+                                                    color: isCargo
+                                                      ? "warning.dark"
+                                                      : "success.main",
+                                                  }}
+                                                >
+                                                  {formatearNumero(num)}
+                                                </Typography>
+                                              );
+                                            })()
+                                          )}
+                                        </TableCell>
+                                      );
+                                    })}
+
+                                    {/* Total Cargos */}
+                                    <TableCell
+                                      align="right"
+                                      sx={{
+                                        fontWeight: "bold",
+                                        color: "warning.dark",
+                                        borderRight:
+                                          "1px solid rgba(0,0,0,0.05)",
+                                        bgcolor: isCargo
+                                          ? alpha(
+                                              theme.palette.warning.main,
+                                              0.03,
+                                            )
+                                          : "transparent",
+                                      }}
+                                    >
+                                      {isCargo
+                                        ? formatearNumero(detalle.totalCargos)
+                                        : "-"}
+                                    </TableCell>
+
+                                    {/* Total Pagado */}
+                                    <TableCell
+                                      align="right"
+                                      sx={{
+                                        fontWeight: "bold",
+                                        color: isPagado
+                                          ? "success.main"
+                                          : "text.disabled",
+                                        borderRight:
+                                          "1px solid rgba(0,0,0,0.05)",
+                                        bgcolor: isPagado
+                                          ? alpha(
+                                              theme.palette.success.main,
+                                              0.03,
+                                            )
+                                          : "transparent",
+                                      }}
+                                    >
+                                      {isPagado
+                                        ? formatearNumero(detalle.totalPagado)
+                                        : "-"}
+                                    </TableCell>
+
+                                    {/* Saldo Neto */}
+                                    <TableCell
+                                      align="right"
+                                      sx={{
+                                        fontWeight: "bold",
+                                        color:
+                                          detalle.saldoNeto > 0
+                                            ? "error.main"
+                                            : "success.main",
+                                        bgcolor:
+                                          detalle.saldoNeto > 0
+                                            ? alpha(
+                                                theme.palette.error.main,
+                                                0.03,
+                                              )
+                                            : alpha(
+                                                theme.palette.success.main,
+                                                0.03,
+                                              ),
+                                      }}
+                                    >
+                                      {detalle.concepto !== "F. Venc" ? (
+                                        detalle.saldoNeto > 0 ? (
+                                          formatearNumero(detalle.saldoNeto)
+                                        ) : (
+                                          <Typography
+                                            variant="body2"
+                                            sx={{
+                                              color: "success.main",
+                                              fontWeight: 700,
+                                            }}
+                                          >
+                                            0.00
+                                          </Typography>
+                                        )
+                                      ) : (
+                                        "-"
                                       )}
                                     </TableCell>
-                                  );
-                                })}
-
-                                {/* Total Cargos */}
-                                <TableCell
-                                  align="right"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    color: 'warning.dark',
-                                    borderRight: '1px solid rgba(0,0,0,0.05)',
-                                    bgcolor: isCargo ? alpha(theme.palette.warning.main, 0.03) : 'transparent'
-                                  }}
-                                >
-                                  {isCargo ? formatearNumero(detalle.totalCargos) : '-'}
-                                </TableCell>
-
-                                {/* Total Pagado */}
-                                <TableCell
-                                  align="right"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    color: isPagado ? 'success.main' : 'text.disabled',
-                                    borderRight: '1px solid rgba(0,0,0,0.05)',
-                                    bgcolor: isPagado ? alpha(theme.palette.success.main, 0.03) : 'transparent'
-                                  }}
-                                >
-                                  {isPagado ? formatearNumero(detalle.totalPagado) : '-'}
-                                </TableCell>
-
-                                {/* Saldo Neto */}
-                                <TableCell
-                                  align="right"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    color: detalle.saldoNeto > 0 ? 'error.main' : 'success.main',
-                                    bgcolor: detalle.saldoNeto > 0 ? alpha(theme.palette.error.main, 0.03) : alpha(theme.palette.success.main, 0.03)
-                                  }}
-                                >
-                                  {detalle.concepto !== 'F. Venc' ? (
-                                    detalle.saldoNeto > 0 ? (
-                                      formatearNumero(detalle.saldoNeto)
-                                    ) : (
-                                      <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 700 }}>0.00</Typography>
-                                    )
-                                  ) : '-'}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </React.Fragment>
-                      );
-                    })
+                                  </TableRow>
+                                );
+                              })}
+                          </React.Fragment>
+                        );
+                      },
+                    )
                   )}
                 </TableBody>
               </Table>

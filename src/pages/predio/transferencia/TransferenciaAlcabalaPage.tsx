@@ -19,7 +19,6 @@ import {
   Receipt as ReceiptIcon,
   Search as SearchIcon,
   NavigateNext as NavigateNextIcon,
-  Home as HomeIcon,
   Domain as DomainIcon,
   SwapHoriz as SwapHorizIcon,
   Dashboard as DashboardIcon
@@ -28,13 +27,23 @@ import { Link as RouterLink } from 'react-router-dom';
 import MainLayout from '../../../layout/MainLayout';
 import RegistroTransferencia from '../../../components/predio/transferencia/RegistroTransferencia';
 import ConsultaTransferencia from '../../../components/predio/transferencia/ConsultaTransferencia';
+import type { TransferenciaPredioData } from '../../../services/transferenciaService';
 
 const TransferenciaAlcabalaPage: React.FC = () => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
+  const [transferenciaEditar, setTransferenciaEditar] = useState<TransferenciaPredioData | null>(null);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    if (newValue === 0) {
+      setTransferenciaEditar(null);
+    }
     setActiveTab(newValue);
+  };
+
+  const handleEditarTransferencia = (transferencia: TransferenciaPredioData) => {
+    setTransferenciaEditar(transferencia);
+    setActiveTab(0);
   };
 
   // Breadcrumbs con iconos
@@ -51,10 +60,7 @@ const TransferenciaAlcabalaPage: React.FC = () => {
         <Box sx={{ py: 2 }}>
           {/* Breadcrumb mejorado */}
           <Box sx={{ mb: 3 }}>
-            <Breadcrumbs
-              separator={<NavigateNextIcon fontSize="small" />}
-              aria-label="breadcrumb"
-            >
+            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
               {breadcrumbItems.map((item, index) => {
                 const isLast = index === breadcrumbItems.length - 1;
 
@@ -146,12 +152,7 @@ const TransferenciaAlcabalaPage: React.FC = () => {
 
                 {/* Titulo y descripcion */}
                 <Box>
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    color="text.primary"
-                    sx={{ mb: 1 }}
-                  >
+                  <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
                     Impuesto de Alcabala - Transferencia
                   </Typography>
                   <Stack direction="row" spacing={1} alignItems="center">
@@ -226,29 +227,29 @@ const TransferenciaAlcabalaPage: React.FC = () => {
               }}
             >
               <Tab
-                label="Registro Transferencia"
+                label={transferenciaEditar ? 'Editar Transferencia' : 'Registro Transferencia'}
                 icon={<ReceiptIcon />}
                 iconPosition="start"
               />
-              <Tab
-                label="Consulta Transferencia"
-                icon={<SearchIcon />}
-                iconPosition="start"
-              />
+              <Tab label="Consulta Transferencia" icon={<SearchIcon />} iconPosition="start" />
             </Tabs>
           </Paper>
 
           {/* Panel de Registro Transferencia */}
           {activeTab === 0 && (
             <Box>
-              <RegistroTransferencia />
+              <RegistroTransferencia
+                transferenciaEditar={transferenciaEditar}
+                onGuardado={() => setTransferenciaEditar(null)}
+                onCancelarEdicion={() => setTransferenciaEditar(null)}
+              />
             </Box>
           )}
 
           {/* Panel de Consulta Transferencia */}
           {activeTab === 1 && (
             <Box>
-              <ConsultaTransferencia />
+              <ConsultaTransferencia onEditar={handleEditarTransferencia} />
             </Box>
           )}
         </Box>
@@ -259,15 +260,15 @@ const TransferenciaAlcabalaPage: React.FC = () => {
         styles={{
           '@keyframes pulse': {
             '0%': {
-              opacity: 1,
+              opacity: 1
             },
             '50%': {
-              opacity: 0.5,
+              opacity: 0.5
             },
             '100%': {
-              opacity: 1,
-            },
-          },
+              opacity: 1
+            }
+          }
         }}
       />
     </MainLayout>

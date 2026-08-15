@@ -24,7 +24,7 @@ const AuthHandler: React.FC = () => {
     const checkTokenValidity = async () => {
       if (authService.isTokenExpired()) {
         NotificationService.error('Su sesión ha expirado. Inicie sesión nuevamente.');
-        logout();
+        void logout();
         return;
       }
 

@@ -1,90 +1,119 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
+// hooks/useCuentaCorriente.ts
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import {
   cuentaCorrienteService,
-  EstadoCuentaAnual,
-  EstadoCuentaDetalle
-} from '../services/cuentaCorrienteService';
+  type EstadoCuentaFiltros,
+} from "../services/cuentaCorrienteService";
 
-/**
- * Hook para gestionar la Cuenta Corriente y Estado de Cuenta con React Query
- */
-export const useCuentaCorriente = (codContribuyenteInicial?: number | string) => {
-  const [codContribuyente, setCodContribuyente] = useState<number | string | undefined>(codContribuyenteInicial);
+export const useCuentaCorriente = (
+  codContribuyenteInicial?: number | string,
+  codPredioInicial?: number | string,
+) => {
+  const [filtros, setFiltros] = useState<EstadoCuentaFiltros | null>(() =>
+    codContribuyenteInicial == null
+      ? null
+      : {
+          codContribuyente: codContribuyenteInicial,
+          anio: null,
+          codPredio: codPredioInicial ?? null,
+        },
+  );
   const [anioDetalle, setAnioDetalle] = useState<number | null>(null);
 
-  // Query para Estado de Cuenta Anual
   const {
     data: estadoCuentaAnual = [],
     isLoading: loadingEstadoCuenta,
     isFetching: fetchingEstadoCuenta,
     error: errorEstadoCuenta,
-    refetch: cargarEstadoCuenta
+    refetch: cargarEstadoCuenta,
   } = useQuery({
-    queryKey: ['estado-cuenta-anual', codContribuyente],
-    queryFn: async () => {
-      if (!codContribuyente) return [];
-      return cuentaCorrienteService.listarEstadoCuenta(codContribuyente);
-    },
-    enabled: !!codContribuyente,
-    placeholderData: (prev) => prev
+    queryKey: ["estado-cuenta-anual", filtros],
+    queryFn: () =>
+      filtros ? cuentaCorrienteService.listarEstadoCuenta(filtros) : [],
+    enabled: filtros !== null,
+    placeholderData: (prev) => prev,
   });
 
-  // Query para Detalle de Estado de Cuenta
   const {
     data: estadoCuentaDetalle = [],
     isLoading: loadingDetalle,
+    isFetching: fetchingDetalle,
     error: errorDetalle,
-    refetch: cargarDetalleEstadoCuenta
+    refetch: cargarDetalleEstadoCuenta,
   } = useQuery({
-    queryKey: ['estado-cuenta-detalle', codContribuyente, anioDetalle],
-    queryFn: async () => {
-      if (!codContribuyente || !anioDetalle) return [];
-      return cuentaCorrienteService.listarDetalleEstadoCuenta(codContribuyente, anioDetalle);
-    },
-    enabled: !!codContribuyente && !!anioDetalle,
-    placeholderData: (prev) => prev
+    queryKey: [
+      "estado-cuenta-detalle",
+      filtros?.codContribuyente,
+      anioDetalle,
+      filtros?.codPredio,
+    ],
+    queryFn: () =>
+      filtros && anioDetalle
+        ? cuentaCorrienteService.listarDetalleEstadoCuenta(
+            filtros.codContribuyente,
+            anioDetalle,
+            filtros.codPredio,
+          )
+        : [],
+    enabled: filtros !== null && anioDetalle !== null,
+    placeholderData: (prev) => prev,
   });
 
-  const seleccionarContribuyente = useCallback((id: number | string) => {
-    setCodContribuyente(id);
-    setAnioDetalle(null);
-  }, []);
+  const buscarEstadoCuenta = useCallback(
+    (nuevosFiltros: EstadoCuentaFiltros) => {
+      setFiltros({
+        codContribuyente: nuevosFiltros.codContribuyente,
+        anio: nuevosFiltros.anio || null,
+        codPredio: nuevosFiltros.codPredio || null,
+      });
+      setAnioDetalle(null);
+    },
+    [],
+  );
+
+  const seleccionarContribuyente = useCallback(
+    (
+      id: number | string,
+      anio?: number | string | null,
+      codPredio?: number | string | null,
+    ) => buscarEstadoCuenta({ codContribuyente: id, anio, codPredio }),
+    [buscarEstadoCuenta],
+  );
 
   const verDetalleAnio = useCallback((anio: number) => {
     setAnioDetalle(anio);
   }, []);
 
   const limpiarTodo = useCallback(() => {
-    setCodContribuyente(undefined);
+    setFiltros(null);
     setAnioDetalle(null);
   }, []);
 
   return {
-    // Estados de Estado de Cuenta Anual
     estadoCuentaAnual,
     loadingEstadoCuenta: loadingEstadoCuenta || fetchingEstadoCuenta,
-    errorEstadoCuenta: errorEstadoCuenta ? (errorEstadoCuenta as Error).message : null,
+    errorEstadoCuenta:
+      errorEstadoCuenta instanceof Error ? errorEstadoCuenta.message : null,
 
-    // Estados de Detalle
     estadoCuentaDetalle,
-    loadingDetalle,
-    errorDetalle: errorDetalle ? (errorDetalle as Error).message : null,
+    loadingDetalle: loadingDetalle || fetchingDetalle,
+    errorDetalle: errorDetalle instanceof Error ? errorDetalle.message : null,
 
-    // Variables de control
-    codContribuyente,
+    filtros,
+    codContribuyente: filtros?.codContribuyente,
+    codPredio: filtros?.codPredio,
     anioDetalle,
 
-    // Funciones
+    buscarEstadoCuenta,
     seleccionarContribuyente,
     verDetalleAnio,
     cargarEstadoCuenta,
     cargarDetalleEstadoCuenta,
     limpiarTodo,
-    
-    // Manteniendo compatibilidad con nombres antiguos
+
     cargarDetalle: verDetalleAnio,
     limpiarDetalle: () => setAnioDetalle(null),
-    limpiarEstadoCuenta: () => setCodContribuyente(undefined)
+    limpiarEstadoCuenta: () => setFiltros(null),
   };
 };

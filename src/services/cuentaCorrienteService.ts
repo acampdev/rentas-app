@@ -1,12 +1,19 @@
 // src/services/cuentaCorrienteService.ts
-import BaseApiService from './BaseApiService';
-import { buildApiUrl } from '../config/api.unified.config';
+import BaseApiService from "./BaseApiService";
+import { buildApiUrl, getApiHeaders } from "../config/api.unified.config";
+
+export interface EstadoCuentaFiltros {
+  codContribuyente: number | string;
+  anio?: number | string | null;
+  codPredio?: number | string | null;
+}
 
 /**
  * Interfaces para Estado de Cuenta
  */
 export interface EstadoCuentaAnual {
   codContribuyente: number | null;
+  codPredio?: number | null;
   anio: number;
   totalPredial: number;
   totalArbitrial: number;
@@ -55,6 +62,7 @@ export interface EstadoCuentaAnual {
 
 export interface EstadoCuentaDetalle {
   codContribuyente: number | null;
+  codPredio?: number | null;
   anio: number;
   tributo: string;
   grupoTributo: string;
@@ -104,6 +112,7 @@ export interface EstadoCuentaDetalle {
  */
 export interface EstadoCuentaRaw {
   codContribuyente: number | null;
+  codPredio?: number | null;
   anio: number;
   totalPredial?: number;
   totalArbitrial?: number;
@@ -150,10 +159,27 @@ export interface EstadoCuentaRaw {
   venc_dic?: string | null;
 }
 
+const extraerItemsEstadoCuenta = (payload: unknown): EstadoCuentaRaw[] => {
+  if (Array.isArray(payload)) return payload as EstadoCuentaRaw[];
+  if (!payload || typeof payload !== "object") return [];
+
+  const response = payload as Record<string, unknown>;
+  const data = response.data;
+  if (Array.isArray(data)) return data as EstadoCuentaRaw[];
+  if (data && typeof data === "object") return [data as EstadoCuentaRaw];
+  if ("anio" in response) return [response as unknown as EstadoCuentaRaw];
+  return [];
+};
+
 /**
  * Servicio para gestión de Cuenta Corriente y Estado de Cuenta
  */
-class CuentaCorrienteService extends BaseApiService<EstadoCuentaAnual, void, void, EstadoCuentaRaw> {
+class CuentaCorrienteService extends BaseApiService<
+  EstadoCuentaAnual,
+  void,
+  void,
+  EstadoCuentaRaw
+> {
   private static instance: CuentaCorrienteService;
 
   public static getInstance(): CuentaCorrienteService {
@@ -165,10 +191,11 @@ class CuentaCorrienteService extends BaseApiService<EstadoCuentaAnual, void, voi
 
   private constructor() {
     super(
-      '/api/estadoCuenta',
+      "/api/estadoCuenta",
       {
         normalizeItem: (item: EstadoCuentaRaw) => ({
           codContribuyente: item.codContribuyente,
+          codPredio: item.codPredio ?? null,
           anio: item.anio || 0,
           totalPredial: item.totalPredial || 0,
           totalArbitrial: item.totalArbitrial || 0,
@@ -216,101 +243,100 @@ class CuentaCorrienteService extends BaseApiService<EstadoCuentaAnual, void, voi
         }),
 
         validateItem: (item: EstadoCuentaAnual) => {
-          return !!(item.anio);
-        }
+          return !!item.anio;
+        },
       },
-      'estadoCuenta'
+      "estadoCuenta",
     );
   }
 
   /**
    * Lista el estado de cuenta de un contribuyente
-   * GET /api/estadoCuenta/listar?codContribuyente=10
+   * GET /api/estadoCuenta/listar?codContribuyente=8&anio=&codPredio=
    */
-  async listarEstadoCuenta(codContribuyente: number | string): Promise<EstadoCuentaAnual[]> {
+  async listarEstadoCuenta(
+    filtrosOContribuyente: EstadoCuentaFiltros | number | string,
+    anio?: number | string | null,
+    codPredio?: number | string | null,
+  ): Promise<EstadoCuentaAnual[]> {
     try {
-      console.log('🔄 [CuentaCorrienteService] Listando estado de cuenta para contribuyente:', codContribuyente);
+      const filtros: EstadoCuentaFiltros =
+        typeof filtrosOContribuyente === "object"
+          ? filtrosOContribuyente
+          : { codContribuyente: filtrosOContribuyente, anio, codPredio };
 
       const url = buildApiUrl(`${this.endpoint}/listar`);
-      const queryParams = new URLSearchParams({ codContribuyente: String(codContribuyente) });
+      const queryParams = new URLSearchParams({
+        codContribuyente: String(filtros.codContribuyente),
+        anio: filtros.anio == null ? "" : String(filtros.anio),
+        codPredio: filtros.codPredio == null ? "" : String(filtros.codPredio),
+      });
       const getUrl = `${url}?${queryParams.toString()}`;
 
       const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+        method: "GET",
+        credentials: "include",
+        headers: getApiHeaders(true),
       });
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const responseData = await response.json() as any;
-      let items: EstadoCuentaRaw[] = [];
-
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else if (responseData.data) {
-        items = [responseData.data];
-      } else {
-        items = [responseData];
-      }
+      const items = extraerItemsEstadoCuenta(await response.json());
 
       return this.normalizeData(items);
-
     } catch (error) {
-      console.error('❌ [CuentaCorrienteService] Error listando estado de cuenta:', error);
+      console.error(
+        "❌ [CuentaCorrienteService] Error listando estado de cuenta:",
+        error,
+      );
       throw error;
     }
   }
 
   /**
    * Lista el detalle del estado de cuenta de un contribuyente por año
-   * GET /api/estadoCuenta/listarDetalle?codContribuyente=10&anio=2024
+   * GET /api/estadoCuenta/listarDetalle?codContribuyente=2&anio=2026&codPredio=
    */
   async listarDetalleEstadoCuenta(
     codContribuyente: number | string,
-    anio: number
+    anio: number,
+    codPredio?: number | string | null,
   ): Promise<EstadoCuentaDetalle[]> {
     try {
-      console.log('🔄 [CuentaCorrienteService] Listando detalle para:', { codContribuyente, anio });
+      console.log("🔄 [CuentaCorrienteService] Listando detalle para:", {
+        codContribuyente,
+        anio,
+      });
 
       const url = buildApiUrl(`${this.endpoint}/listarDetalle`);
-      const queryParams = new URLSearchParams({ 
+      const queryParams = new URLSearchParams({
         codContribuyente: String(codContribuyente),
-        anio: String(anio)
+        anio: String(anio),
+        codPredio: codPredio == null ? "" : String(codPredio),
       });
       const getUrl = `${url}?${queryParams.toString()}`;
 
       const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+        method: "GET",
+        credentials: "include",
+        headers: getApiHeaders(true),
       });
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const responseData = await response.json() as any;
-      let items: EstadoCuentaRaw[] = [];
-
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else if (responseData.data) {
-        items = [responseData.data];
-      } else {
-        items = [responseData];
-      }
+      const items = extraerItemsEstadoCuenta(await response.json());
 
       // Normalizar detalles
       return items.map((item) => ({
         codContribuyente: item.codContribuyente,
+        codPredio: item.codPredio ?? null,
         anio: item.anio || 0,
-        tributo: item.tributo || '',
-        grupoTributo: item.grupoTributo || '',
+        tributo: item.tributo || "",
+        grupoTributo: item.grupoTributo || "",
         totalCargos: item.totalCargos || 0,
         totalPagado: item.totalPagado || 0,
         saldoNeto: item.saldoNeto || 0,
@@ -351,9 +377,11 @@ class CuentaCorrienteService extends BaseApiService<EstadoCuentaAnual, void, voi
         venc_nov: item.venc_nov || null,
         venc_dic: item.venc_dic || null,
       }));
-
     } catch (error) {
-      console.error('❌ [CuentaCorrienteService] Error listando detalle:', error);
+      console.error(
+        "❌ [CuentaCorrienteService] Error listando detalle:",
+        error,
+      );
       throw error;
     }
   }

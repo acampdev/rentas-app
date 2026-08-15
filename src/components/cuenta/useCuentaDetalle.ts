@@ -1,27 +1,52 @@
-import { useMemo } from 'react';
-import type { EstadoCuentaDetalle } from '../../services/cuentaCorrienteService';
+// src/components/cuenta/useCuentaDetalle.ts
+import { useMemo } from "react";
+import type { EstadoCuentaDetalle } from "../../services/cuentaCorrienteService";
 
 export type DetalleConcepto = {
+  codPredio?: number | null;
   anio: number;
   grupoTributo: string;
   tributo: string;
-  concepto: 'Cargo' | 'Pagado' | 'F. Venc';
+  concepto: "Cargo" | "Pagado" | "F. Venc";
   totalCargos: number;
   totalPagado: number;
   saldoNeto: number;
 } & Record<`col${number}`, number | string>;
 
-const MONTH_NAMES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'] as const;
+const MONTH_NAMES = [
+  "ene",
+  "feb",
+  "mar",
+  "abr",
+  "may",
+  "jun",
+  "jul",
+  "ago",
+  "sep",
+  "oct",
+  "nov",
+  "dic",
+] as const;
 
-const mapRow = (item: EstadoCuentaDetalle, concept: DetalleConcepto['concepto']): DetalleConcepto => {
-  const columns = Object.fromEntries(MONTH_NAMES.map((month, index) => {
-    const period = index + 1;
-    if (concept === 'F. Venc') return [`col${period}`, item[`venc_${month}`] || '-'];
-    const prefix = concept === 'Cargo' ? 'cargo' : 'abono';
-    return [`col${period}`, item[`${prefix}${period}` as keyof EstadoCuentaDetalle] || 0];
-  })) as Record<`col${number}`, number | string>;
+const mapRow = (
+  item: EstadoCuentaDetalle,
+  concept: DetalleConcepto["concepto"],
+): DetalleConcepto => {
+  const columns = Object.fromEntries(
+    MONTH_NAMES.map((month, index) => {
+      const period = index + 1;
+      if (concept === "F. Venc")
+        return [`col${period}`, item[`venc_${month}`] || "-"];
+      const prefix = concept === "Cargo" ? "cargo" : "abono";
+      return [
+        `col${period}`,
+        item[`${prefix}${period}` as keyof EstadoCuentaDetalle] ?? 0,
+      ];
+    }),
+  ) as Record<`col${number}`, number | string>;
 
   return {
+    codPredio: item.codPredio,
     anio: item.anio,
     grupoTributo: item.grupoTributo,
     tributo: item.tributo,
@@ -33,12 +58,31 @@ const mapRow = (item: EstadoCuentaDetalle, concept: DetalleConcepto['concepto'])
   };
 };
 
-export const useCuentaDetalle = (details: EstadoCuentaDetalle[], selectedYear: number | null) => useMemo(() => {
-  const rows = details.flatMap(item => [mapRow(item, 'Cargo'), mapRow(item, 'Pagado'), mapRow(item, 'F. Venc')]);
-  const filteredRows = selectedYear ? rows.filter(row => row.anio === selectedYear) : [];
-  const groupedRows = new Map<string, DetalleConcepto[]>();
-  filteredRows.forEach(row => groupedRows.set(row.tributo, [...(groupedRows.get(row.tributo) ?? []), row]));
-  return { detalleConceptos: rows, detallesFiltrados: filteredRows, tributosUnicos: groupedRows };
-}, [details, selectedYear]);
+export const useCuentaDetalle = (
+  details: EstadoCuentaDetalle[],
+  selectedYear: number | null,
+) =>
+  useMemo(() => {
+    const rows = details.flatMap((item) => [
+      mapRow(item, "Cargo"),
+      mapRow(item, "Pagado"),
+      mapRow(item, "F. Venc"),
+    ]);
+    const filteredRows =
+      selectedYear !== null
+        ? rows.filter((row) => row.anio === selectedYear)
+        : [];
+    const groupedRows = new Map<string, DetalleConcepto[]>();
+    filteredRows.forEach((row) => {
+      const key = `${row.grupoTributo}:${row.tributo}`;
+      groupedRows.set(key, [...(groupedRows.get(key) ?? []), row]);
+    });
+    return {
+      detalleConceptos: rows,
+      detallesFiltrados: filteredRows,
+      tributosUnicos: groupedRows,
+    };
+  }, [details, selectedYear]);
 
-export const formatearNumero = (value: number | null | undefined): string => (value ?? 0).toFixed(2);
+export const formatearNumero = (value: number | null | undefined): string =>
+  (value ?? 0).toFixed(2);

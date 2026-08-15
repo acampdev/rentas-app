@@ -12,7 +12,7 @@ interface AuthContextType {
   error: string | null;
   isAuthenticated: boolean;
   login: (credentials: AuthCredentials) => Promise<AuthResult>;
-  logout: () => void;
+  logout: () => Promise<void>;
   renewToken: () => Promise<boolean>;
   checkSession: () => Promise<boolean>;
 }
@@ -38,14 +38,14 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const auth = useAuth();
   const { authToken, renewToken } = auth;
-  
+
   // Estado para indicar si hemos verificado la sesión
-  
+
   // Para depuración
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('AuthProvider state:', { 
-        isAuthenticated: auth.isAuthenticated, 
+      console.log('AuthProvider state:', {
+        isAuthenticated: auth.isAuthenticated,
         user: auth.user?.username || 'none',
         loading: auth.loading,
         tokenInMemory: !!auth.authToken,
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!authToken && !getAuthToken()) {
         return false;
       }
-      
+
       // Verificar si el token ha expirado
       const tokenExpiry = sessionStorage.getItem('auth_token_expiry');
       if (tokenExpiry && new Date(tokenExpiry) < new Date()) {
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const renewed = await renewToken();
         return renewed;
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error al verificar sesión:', error);
@@ -83,9 +83,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return await auth.login(credentials);
     } catch (error) {
       console.error('Error en login desde AuthContext:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido en login' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido en login'
       };
     }
   };
@@ -103,11 +103,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkSession
   };
 
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

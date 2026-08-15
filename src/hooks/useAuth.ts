@@ -13,11 +13,11 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
-  
+
   const checkAuth = useCallback(() => {
     const storedUser = getStoredAuthUser();
     const storedToken = getAuthToken();
-    
+
     if (storedUser && storedToken && !authService.isTokenExpired()) {
       try {
         const parsedUser = JSON.parse(storedUser) as AuthUserStored;
@@ -26,6 +26,7 @@ export const useAuth = () => {
           username: parsedUser.username,
           nombreCompleto: parsedUser.nombreCompleto,
           roles: parsedUser.roles,
+          codRol: parsedUser.codRol,
           token: storedToken
         };
         setUser(authUser);
@@ -33,7 +34,7 @@ export const useAuth = () => {
         setIsAuthenticated(true);
       } catch (e) {
         console.error('Error restoring session:', e);
-        authService.logout();
+        void authService.logout();
       }
     } else if (authService.isTokenExpired()) {
       setUser(null);
@@ -51,13 +52,14 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       const result = await authService.login(credentials);
-      
+
       if (result.success && result.user && result.token) {
         const authUser: AuthUser = {
           id: result.user.id,
           username: result.user.username,
           nombreCompleto: result.user.nombreCompleto || result.user.username,
           roles: result.user.roles || ['USER'],
+          codRol: result.user.codRol,
           token: result.token
         };
         setUser(authUser);
@@ -77,12 +79,13 @@ export const useAuth = () => {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async (): Promise<void> => {
+    const logoutRequest = authService.logout();
     setUser(null);
     setAuthToken(null);
     setIsAuthenticated(false);
     setError(null);
+    await logoutRequest;
   }, []);
 
   const register = useCallback(async (data: RegisterData): Promise<RegisterResponse> => {

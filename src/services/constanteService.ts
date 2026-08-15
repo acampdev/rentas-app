@@ -121,6 +121,7 @@ export const CODIGO_CONSTANTE_PADRE = {
   INFORMES: '79',
   ACTOS_ADMINISTRATIVOS: '80',
   LADOS_DIRECCIONES: '81',
+  MODO_TRANSFERENCIA: '83',
   TIPO_FRACCIONAMIENTO: '85',
   MOTIVOS_DE_REGISTRO_DE_PISO: '91',
   CONCEPTO_DE_DESCUENTO_GENERAL: '92',
@@ -270,7 +271,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   obtenerTributos = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.TRIBUTOS);
   obtenerTiposFraccionamiento = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.TIPO_FRACCIONAMIENTO);
   obtenerClaseDeInteres = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.CLASES_DE_INTERES);
- 
+  obtenerTiposModoTransferencia = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.MODO_TRANSFERENCIA);
   /**
    * Obtiene rutas
    */

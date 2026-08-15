@@ -1,6 +1,5 @@
 // services/usuarioService.ts
 import BaseApiService from './BaseApiService';
-import { buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Usuario
@@ -69,11 +68,23 @@ export interface UsuarioRaw {
   usuario?: string | null;
 }
 
+interface UsuarioApiResponse<T> {
+  data?: T;
+  success?: boolean;
+  message?: string;
+}
+
+const extraerUsuario = (response: UsuarioRaw | UsuarioApiResponse<UsuarioRaw>): UsuarioRaw | undefined => {
+  if (typeof response === 'object' && response !== null && 'data' in response) {
+    return response.data;
+  }
+  return response as UsuarioRaw;
+};
+
 /**
  * Servicio para gestion de usuarios
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
- * Todos los metodos funcionan sin token
+ * Todas las operaciones requieren autenticación Bearer.
  */
 class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, UpdateUsuarioDTO, UsuarioRaw> {
   private static instance: UsuarioService;
@@ -99,7 +110,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
           parametroBusqueda: item.parametroBusqueda || null,
           rol: item.rol || '',
           estado: item.estado || '',
-          usuario: item.usuario || null,
+          usuario: item.usuario || null
         }),
         validateItem: (item: UsuarioData) => !!(item.username && item.codUsuario >= 0)
       },
@@ -113,28 +124,21 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async listar(params?: ListarUsuariosParams): Promise<UsuarioData[]> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/listar`);
       const queryParams = new URLSearchParams();
       queryParams.append('parametroBusqueda', params?.parametroBusqueda || '');
 
-      const getUrl = `${url}?${queryParams.toString()}`;
-      const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-      });
+      const response = await this.makeRequest<UsuarioRaw[] | UsuarioApiResponse<UsuarioRaw[] | UsuarioRaw>>(
+        `/listar?${queryParams.toString()}`,
+        { method: 'GET' }
+      );
 
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-
-      const responseData = await response.json() as any;
-      let items: UsuarioRaw[] = [];
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else if (responseData.data) {
-        items = [responseData.data];
+      let items: UsuarioRaw[];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
       } else {
-        items = [responseData];
+        items = response.data ? [response.data] : [];
       }
 
       return this.normalizeData(items);
@@ -150,17 +154,15 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async insertar(datos: CreateUsuarioDTO): Promise<UsuarioData> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/insertar`);
-      const response = await fetch(url, {
+      const response = await this.makeRequest<UsuarioRaw | UsuarioApiResponse<UsuarioRaw>>('/insertar', {
         method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
 
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-
-      const responseData = await response.json() as any;
-      const created = (responseData.data || responseData) as UsuarioRaw;
+      const created = extraerUsuario(response) ?? {
+        ...datos,
+        estado: datos.codEstado
+      };
       return this.normalizeOptions.normalizeItem(created, 0);
     } catch (error) {
       console.error('[UsuarioService] Error al insertar usuario:', error);
@@ -174,17 +176,15 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async actualizar(datos: UpdateUsuarioDTO): Promise<UsuarioData> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/actualizar`);
-      const response = await fetch(url, {
+      const response = await this.makeRequest<UsuarioRaw | UsuarioApiResponse<UsuarioRaw>>('/actualizar', {
         method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
 
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-
-      const responseData = await response.json() as any;
-      const updated = (responseData.data || responseData) as UsuarioRaw;
+      const updated = extraerUsuario(response) ?? {
+        ...datos,
+        estado: datos.codEstado
+      };
       return this.normalizeOptions.normalizeItem(updated, 0);
     } catch (error) {
       console.error('[UsuarioService] Error al actualizar usuario:', error);
@@ -198,14 +198,10 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async cambiarClave(datos: CambiarClaveDTO): Promise<void> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/cambiarClave`);
-      const response = await fetch(url, {
+      await this.makeRequest('/cambiarClave', {
         method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
     } catch (error) {
       console.error('[UsuarioService] Error al cambiar clave:', error);
       throw error;
@@ -218,14 +214,10 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async darBaja(datos: DarBajaDTO): Promise<void> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/darBaja`);
-      const response = await fetch(url, {
+      await this.makeRequest('/darBaja', {
         method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
     } catch (error) {
       console.error('[UsuarioService] Error al dar de baja usuario:', error);
       throw error;
@@ -238,14 +230,10 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async activar(datos: ActivarDTO): Promise<void> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/activar`);
-      const response = await fetch(url, {
+      await this.makeRequest('/activar', {
         method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-
-      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
     } catch (error) {
       console.error('[UsuarioService] Error al activar usuario:', error);
       throw error;
@@ -272,26 +260,16 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
    */
   async verificarSupervisorCajero(username: string, password: string): Promise<boolean> {
     try {
-      const getUrl = buildApiUrl(`${this.endpoint}/verificarSupervisorCajero`, {
-        username,
-        password
-      });
-      console.log('[UsuarioService] GET verificarSupervisorCajero:', getUrl);
+      const queryParams = new URLSearchParams({ username, password });
 
-      const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json() as any;
-      console.log('[UsuarioService] Respuesta verificarSupervisorCajero:', responseData);
+      const response = await this.makeRequest<string | UsuarioApiResponse<unknown>>(
+        `/verificarSupervisorCajero?${queryParams.toString()}`,
+        { method: 'GET' }
+      );
 
       // El backend retorna "data": "Usuario correcto."
-      const rawData = responseData.data || responseData;
+      const rawData =
+        typeof response === 'object' && response !== null && 'data' in response ? response.data : response;
       return String(rawData).toLowerCase().includes('usuario correcto');
     } catch (error) {
       console.error('[UsuarioService] Error al verificar supervisor:', error);

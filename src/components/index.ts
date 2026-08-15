@@ -77,7 +77,7 @@ export {default as SelectorDirecciones } from './modal/SelectorDirecciones';
 
 // Transferencia
 export { default as RegistroTransferencia } from './predio/transferencia/RegistroTransferencia';
-export { default as ConsultaTransferencia } from './predio/transferencia/ConsultaTransferencia';
+export { ConsultaTransferencia } from './predio/transferencia/ConsultaTransferencia';
 export { default as ReporteAlcabala } from './predio/transferencia/ReporteAlcabala';
 
 
