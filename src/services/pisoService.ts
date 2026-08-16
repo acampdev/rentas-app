@@ -245,9 +245,9 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
           montoDepreciacion: item.montoDepreciacion ? parseFloat(String(item.montoDepreciacion)) : null,
           valorUnitarioDepreciado: parseFloat(String(item.valorUnitarioDepreciado || 0)),
           valorAreaConstruida: parseFloat(String(item.valorAreaConstruida || 0)),
-          valorAreasComunes: item.valorAreasComunes ? parseFloat(String(item.valorAreasComunes)) : null,
+          valorAreasComunes: item.valorAreasComunes != null ? parseFloat(String(item.valorAreasComunes)) : null,
           valorConstruccion: parseFloat(String(item.valorConstruccion || 0)),
-          valorOtrasInstalaciones: item.valorOtrasInstalaciones ? parseFloat(String(item.valorOtrasInstalaciones)) : null,
+          valorOtrasInstalaciones: item.valorOtrasInstalaciones != null ? parseFloat(String(item.valorOtrasInstalaciones)) : null,
           valorTerreno: item.valorTerreno ? parseFloat(String(item.valorTerreno)) : null,
           valorTotalConstruccion: item.valorTotalConstruccion ? parseFloat(String(item.valorTotalConstruccion)) : null,
           autoavaluo: item.autoavaluo ? parseFloat(String(item.autoavaluo)) : null,
@@ -273,7 +273,7 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
   /**
    * Consulta pisos usando el API GET con query params
    */
-   async consultarPisos(params: {
+  async consultarPisos(params: {
     codPiso?: number;
     anio?: number;
     codPredio?: string;
@@ -320,6 +320,34 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
       console.error('❌ [PisoService] Error consultando pisos:', error);
       return [];
     }
+  }
+
+  /**
+   * Obtiene el detalle completo de un piso antes de editarlo.
+   * GET /api/piso/all?anio=2025&codPredioBase=5&numeroPiso=1
+   */
+  async consultarPisoParaEdicion(params: {
+    anio: number;
+    codPredioBase: string;
+    numeroPiso: number;
+  }): Promise<PisoData | null> {
+    const queryParams = new URLSearchParams();
+    queryParams.set('anio', String(params.anio));
+    queryParams.set('codPredioBase', String(params.codPredioBase).trim());
+    queryParams.set('numeroPiso', String(params.numeroPiso));
+
+    const response = await this.makeRequest<PisoRaw[] | PisoRaw | { data?: PisoRaw[] | PisoRaw }>(
+      `/all?${queryParams.toString()}`,
+      { method: 'GET' }
+    );
+
+    const rawData = response && typeof response === 'object' && !Array.isArray(response) && 'data' in response
+      ? response.data
+      : response;
+    const items = Array.isArray(rawData) ? rawData : rawData ? [rawData as PisoRaw] : [];
+    const pisos = this.normalizeData(items);
+
+    return pisos.find((piso) => Number(piso.numeroPiso) === Number(params.numeroPiso)) ?? pisos[0] ?? null;
   }
 
   /**

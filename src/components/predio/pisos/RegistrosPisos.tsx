@@ -429,10 +429,10 @@ const RegistrosPisos: React.FC = () => {
         areaConstruida: editData.piso.areaConstruida?.toString() || '',
         materialPredominante: editData.piso.codMaterialEstructural || '',
         formaRegistro: FormaRegistro.INDIVIDUAL,
-        otrasInstalaciones: editData.piso.otrasInstalaciones?.toString() || '0.00',
+        otrasInstalaciones: (editData.piso.valorOtrasInstalaciones ?? editData.piso.otrasInstalaciones)?.toString() || '0.00',
         // Usar el año extraído del codPredio
         anio: datosExtraidos.anio,
-        areasComunes: editData.piso.areasComunes?.toString() || '',
+        areasComunes: (editData.piso.valorAreasComunes ?? editData.piso.areasComunes)?.toString() || '',
         areaTotalConstruccion: editData.piso.areaTotalConstruccion?.toString() || ''
       });
 

@@ -141,6 +141,12 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
     setFiltros(newFiltros);
   }, []);
 
+  const obtenerPisoParaEdicion = useCallback((params: {
+    anio: number;
+    codPredioBase: string;
+    numeroPiso: number;
+  }) => pisoService.consultarPisoParaEdicion(params), []);
+
   return {
     pisos,
     loading,
@@ -149,6 +155,7 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
     setFiltros,
     buscarPisos,
     consultarPisos: buscarPisos, // Alias
+    obtenerPisoParaEdicion,
     guardarPiso: mutationGuardar.mutateAsync,
     crearPiso: mutationGuardar.mutateAsync, // Alias para compatibilidad
     eliminarPiso: mutationEliminar.mutateAsync,

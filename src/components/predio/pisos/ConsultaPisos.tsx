@@ -52,12 +52,14 @@ const ConsultaPisos: React.FC = () => {
     anio: new Date().getFullYear(),
     codPredio: ''
   });
+  const [pisoEditando, setPisoEditando] = useState<number | null>(null);
 
   // Hook de negocio con React Query
   const { 
     pisos, 
     loading, 
     consultarPisos, 
+    obtenerPisoParaEdicion,
     eliminarPiso,
     setFiltros,
     filtros
@@ -139,13 +141,46 @@ const ConsultaPisos: React.FC = () => {
     NotificationService.info('Resultados y filtros de búsqueda limpiados');
   };
 
-  const handleEdit = (piso: any) => {
-    const datosEdicion = {
-      piso: piso,
-      predio: predio || { codPredio: piso.codPredio, anio: piso.anio },
-      modoEdicion: 'editar'
-    };
-    navigate('/predio/pisos/registro', { state: { modoEdicion: 'editar', datosEdicion } });
+  const handleEdit = async (piso: any) => {
+    const anio = Number(piso.anio || filtros.anio || new Date().getFullYear());
+    const codPredioCompleto = String(piso.codPredio || piso.codigoPredio || '').trim();
+    const codPredioBase = String(
+      piso.codPredioBase || filtros.codPredioBase ||
+      (codPredioCompleto.startsWith(String(anio)) ? codPredioCompleto.substring(4) : codPredioCompleto)
+    ).trim();
+    const numeroPiso = Number(piso.numeroPiso);
+
+    if (!codPredioBase || !numeroPiso) {
+      NotificationService.error('No se pudo determinar el predio o número de piso para editar');
+      return;
+    }
+
+    try {
+      setPisoEditando(Number(piso.codPiso || piso.id || numeroPiso));
+      const pisoCompleto = await obtenerPisoParaEdicion({ anio, codPredioBase, numeroPiso });
+
+      if (!pisoCompleto) {
+        NotificationService.warning('No se encontraron los datos completos del piso seleccionado');
+        return;
+      }
+
+      const datosEdicion = {
+        piso: pisoCompleto,
+        predio: predio || {
+          codPredio: pisoCompleto.codPredio || `${anio}${codPredioBase}`,
+          codigoPredio: pisoCompleto.codPredio || `${anio}${codPredioBase}`,
+          codPredioBase,
+          anio
+        },
+        modoEdicion: 'editar'
+      };
+      navigate('/predio/pisos/registro', { state: { modoEdicion: 'editar', datosEdicion } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo consultar el piso seleccionado';
+      NotificationService.error(message);
+    } finally {
+      setPisoEditando(null);
+    }
   };
 
   const handleDelete = async (piso: any) => {
@@ -351,7 +386,16 @@ const ConsultaPisos: React.FC = () => {
                     <TableCell align="center" sx={{ ...cellStyle, fontFamily: 'monospace', fontWeight: 600, color: theme.palette.success.main }}>{formatCurrency(p.valorAreaConstruida)}</TableCell>
                     <TableCell align="center" sx={{ ...cellStyle, fontWeight: 'bold' }}>{p.areaConstruida} m²</TableCell>
                     <TableCell align="center" sx={cellStyle}>
-                      <IconButton size="small" color="primary" onClick={() => handleEdit(p)}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleEdit(p)}
+                        disabled={pisoEditando !== null}
+                      >
+                        {pisoEditando === Number(p.codPiso || p.id || p.numeroPiso)
+                          ? <CircularProgress size={18} />
+                          : <EditIcon fontSize="small" />}
+                      </IconButton>
                       <IconButton size="small" color="error" onClick={() => handleDelete(p)}><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
                   </TableRow>
