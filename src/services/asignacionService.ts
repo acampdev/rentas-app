@@ -1,13 +1,13 @@
 // src/services/asignacionService.ts
-import { buildApiUrl } from '../config/api.unified.config';
+import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
 
 export interface AsignacionPredio {
-  id: number;
+  id: number | string;
   anio: number;
   codPredio: string;
   codPredioBase: number | null;
   codContribuyente: string;
-  codAsignacion: string | null;
+  codAsignacion: number | string | null;
   porcentajeCondomino: number | null;
   porcentajeCondominoDesc: string;
   fechaDeclaracion: string;
@@ -16,224 +16,242 @@ export interface AsignacionPredio {
   fechaVentaStr: string;
   codModoDeclaracion: string;
   modoDeclaracion: string;
-  pensionista: number;
-  pensionistaDesc: string;
+  pensionista: number | null;
+  pensionistaDesc: string | null;
   codEstado: string;
   estado: string;
   codUsuario: number | null;
   nombreContribuyente: string;
   codPredioContribuyente: number | null;
-  // Campos de predio
   direccionCompleta: string;
   autoavaluo: number;
   baseImponible: number;
   impuestoAnual: number;
-  // Campos de compatibilidad (legacy)
   porcentajeCondominio?: number;
   esPensionista?: boolean;
   porcentajeLibre?: number;
 }
 
 export interface AsignacionQueryParams {
-  codPredio?: string;
-  codContribuyente?: string;
-  anio?: number;
+  anio?: number | string;
+  codContribuyente?: number | string;
 }
 
-export interface CreateAsignacionAPIDTO {
+export interface AsignacionPredioDTO {
   anio: number;
   codPredio: string;
   codContribuyente: number;
-  codAsignacion: null;
-  porcentajeCondomino?: number | null;
-  fechaDeclaracion: string; // formato: "YYYY-MM-DD"
-  fechaVenta: string; // formato: "YYYY-MM-DD"
+  codAsignacion: number | string | null;
+  porcentajeCondomino: number | null;
+  fechaDeclaracion: string;
+  fechaVenta: string;
   codModoDeclaracion: string;
-  pensionista: number; // 1 = sí, 0 = no
+  pensionista: number;
   codEstado: string;
 }
 
-class AsignacionService {
-  private baseURL: string;
+export type CreateAsignacionAPIDTO = AsignacionPredioDTO;
 
-  constructor() {
-    this.baseURL = buildApiUrl('/api/asignacionpredio');
+export interface ApiAsignacionResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data: T;
+  pagina?: number | null;
+  limite?: number | null;
+  totalPaginas?: number | null;
+  totalRegistros?: number | null;
+}
+
+export type PrevalidacionBeneficio = ApiAsignacionResponse<string>;
+
+const formatPercentage = (value: number): string =>
+  value.toLocaleString('es-PE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+const toRecord = (value: unknown): Record<string, unknown> => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
+
+const getErrorMessage = (payload: unknown, fallback: string): string => {
+  const response = toRecord(payload);
+  if (typeof response.data === 'string' && response.data.trim()) {
+    return response.data.trim();
   }
+  if (typeof response.message === 'string' && response.message.trim()) {
+    return response.message.trim();
+  }
+  return fallback;
+};
 
-  /**
-   * Helper para normalizar un item de asignación
-   */
-  private normalizeItem(item: any, index: number = 0): AsignacionPredio {
+class AsignacionService {
+  private readonly endpoint = '/api/asignacionpredio';
+
+  private normalizeItem(item: unknown, index = 0): AsignacionPredio {
+    const raw = toRecord(item);
+    const porcentajeRaw = raw.porcentajeCondomino;
+    const porcentaje = porcentajeRaw === null || porcentajeRaw === undefined ? null : Number(porcentajeRaw);
+    const pensionistaRaw = raw.pensionista;
+    const pensionista = pensionistaRaw === null || pensionistaRaw === undefined ? null : Number(pensionistaRaw);
+    const codEstado = String(raw.codEstado || '0201').trim();
+    const codPredio = String(raw.codPredio || '').trim();
+    const codPredioContribuyente = raw.codPredioContribuyente === null || raw.codPredioContribuyente === undefined ? null : Number(raw.codPredioContribuyente);
+    const codAsignacion = raw.codAsignacion === null || raw.codAsignacion === undefined ? null : (raw.codAsignacion as number | string);
+
     return {
-      id: item.codAsignacion || item.codPredioContribuyente || index + 1,
-      anio: item.anio || new Date().getFullYear(),
-      codPredio: (item.codPredio || '').trim(),
-      codPredioBase: item.codPredioBase || null,
-      codContribuyente: item.codContribuyente?.toString() || '',
-      codAsignacion: item.codAsignacion || null,
-      porcentajeCondomino: item.porcentajeCondomino || null,
-      porcentajeCondominoDesc: item.porcentajeCondominoDesc || `${item.porcentajeCondomino || 100}%`,
-      fechaDeclaracion: item.fechaDeclaracion || '',
-      fechaVenta: item.fechaVenta || '',
-      fechaDeclaracionStr: item.fechaDeclaracionStr || '',
-      fechaVentaStr: item.fechaVentaStr || '',
-      codModoDeclaracion: item.codModoDeclaracion || '',
-      modoDeclaracion: item.modoDeclaracion || '',
-      pensionista: item.pensionista || 0,
-      pensionistaDesc: item.pensionistaDesc || (item.pensionista === 1 ? 'Sí' : 'No'),
-      codEstado: item.codEstado || '0201',
-      estado: item.estado || (item.codEstado === "0201" ? "ACTIVO" : "INACTIVO"),
-      codUsuario: item.codUsuario || null,
-      nombreContribuyente: item.nombreContribuyente || item.contribuyente || '',
-      codPredioContribuyente: item.codPredioContribuyente || null,
-      // Campos de predio
-      direccionCompleta: item.direccionCompleta || '',
-      autoavaluo: item.autoavaluo || 0,
-      baseImponible: item.baseImponible || 0,
-      impuestoAnual: item.impuestoAnual || 0,
-      // Campos de compatibilidad (legacy)
-      porcentajeCondominio: item.porcentajeCondomino || 100,
-      esPensionista: item.pensionista === 1,
-      porcentajeLibre: 100 - (item.porcentajeCondomino || 100)
+      id: codAsignacion ?? codPredioContribuyente ?? `${codPredio}-${index}`,
+      anio: Number(raw.anio) || new Date().getFullYear(),
+      codPredio,
+      codPredioBase: raw.codPredioBase === null || raw.codPredioBase === undefined ? null : Number(raw.codPredioBase),
+      codContribuyente: String(raw.codContribuyente || '').trim(),
+      codAsignacion,
+      porcentajeCondomino: porcentaje,
+      porcentajeCondominoDesc: String(raw.porcentajeCondominoDesc || '').trim() || `${formatPercentage(porcentaje ?? 100)} %`,
+      fechaDeclaracion: String(raw.fechaDeclaracion || '').trim(),
+      fechaVenta: String(raw.fechaVenta || '').trim(),
+      fechaDeclaracionStr: String(raw.fechaDeclaracionStr || raw.fechaDeclaracion || '').trim(),
+      fechaVentaStr: String(raw.fechaVentaStr || raw.fechaVenta || '').trim(),
+      codModoDeclaracion: String(raw.codModoDeclaracion || '').trim(),
+      modoDeclaracion: String(raw.modoDeclaracion || '').trim(),
+      pensionista,
+      pensionistaDesc:
+        raw.pensionistaDesc === null || raw.pensionistaDesc === undefined
+          ? pensionista === null
+            ? null
+            : pensionista === 1
+              ? 'Sí'
+              : 'No'
+          : String(raw.pensionistaDesc).trim(),
+      codEstado,
+      estado: String(raw.estado || '').trim() || (codEstado === '0201' ? 'ACTIVO' : 'INACTIVO'),
+      codUsuario: raw.codUsuario === null || raw.codUsuario === undefined ? null : Number(raw.codUsuario),
+      nombreContribuyente: String(raw.nombreContribuyente || raw.contribuyente || '').trim(),
+      codPredioContribuyente,
+      direccionCompleta: String(raw.direccionCompleta || '').trim(),
+      autoavaluo: Number(raw.autoavaluo) || 0,
+      baseImponible: Number(raw.baseImponible) || 0,
+      impuestoAnual: Number(raw.impuestoAnual) || 0,
+      porcentajeCondominio: porcentaje ?? 100,
+      esPensionista: pensionista === 1,
+      porcentajeLibre: 100 - (porcentaje ?? 100)
     };
   }
 
-  /**
-   * Buscar asignaciones de predio por parámetros
-   */
+  private async request(path: string, init: RequestInit): Promise<unknown> {
+    const response = await fetch(buildApiUrl(path), {
+      ...init,
+      credentials: 'include',
+      headers: getApiHeaders(true)
+    });
+
+    const responseText = await response.text();
+    let payload: unknown = responseText;
+    if (responseText) {
+      try {
+        payload = JSON.parse(responseText) as unknown;
+      } catch {
+        payload = responseText;
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(payload, `Error ${response.status}: ${response.statusText}`));
+    }
+    return payload;
+  }
+
   async buscarAsignaciones(params: AsignacionQueryParams): Promise<AsignacionPredio[]> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params.codPredio) queryParams.append('codPredio', params.codPredio);
-      if (params.codContribuyente) queryParams.append('codContribuyente', params.codContribuyente);
-      if (params.anio) queryParams.append('anio', params.anio.toString());
+    const query = new URLSearchParams();
+    if (params.anio !== undefined && params.anio !== '') {
+      query.set('anio', String(params.anio));
+    }
+    if (params.codContribuyente !== undefined && params.codContribuyente !== '') {
+      query.set('codContribuyente', String(params.codContribuyente));
+    }
 
-      const url = `${this.baseURL}?${queryParams.toString()}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    const payload = await this.request(`${this.endpoint}${suffix}`, {
+      method: 'GET'
+    });
+    const response = toRecord(payload);
+    if (response.success === false) {
+      throw new Error(getErrorMessage(payload, 'No se pudieron listar las asignaciones'));
+    }
 
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+    const rawData = 'data' in response ? response.data : payload;
+    const items = Array.isArray(rawData) ? rawData : rawData && typeof rawData === 'object' ? [rawData] : [];
+    const seen = new Set<string>();
 
-      const responseData = await response.json();
-      let items = responseData.success && responseData.data ? responseData.data : responseData;
-      items = Array.isArray(items) ? items : (items.anio || items.codPredio ? [items] : []);
-      
-      // Filtrar duplicados por combinación de anio, codPredio y codContribuyente
-      const seen = new Set<string>();
-      const uniqueItems = items.filter((item: any) => {
-        if (!item) return false;
-        const anioVal = item.anio || '';
-        const predioVal = (item.codPredio || '').toString().trim();
-        const contribVal = (item.codContribuyente || '').toString().trim();
-        const key = `${anioVal}-${predioVal}-${contribVal}`;
-        if (seen.has(key)) {
-          return false;
-        }
+    return items
+      .filter((item) => {
+        const raw = toRecord(item);
+        const key = `${raw.anio || ''}-${String(raw.codPredio || '').trim()}-${String(raw.codContribuyente || '').trim()}`;
+        if (!String(raw.codPredio || '').trim() || seen.has(key)) return false;
         seen.add(key);
         return true;
-      });
-      
-      return uniqueItems.map((item: any, idx: number) => this.normalizeItem(item, idx));
-    } catch (error) {
-      console.error('❌ [AsignacionService] Error al buscar asignaciones:', error);
-      return [];
-    }
+      })
+      .map((item, index) => this.normalizeItem(item, index));
   }
 
   async crearAsignacionAPI(datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
-    try {
-      const response = await fetch(this.baseURL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(datos)
-      });
-      
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-
-      const responseJson = await response.json();
-      const responseData = responseJson.data || responseJson;
-      return this.normalizeItem(responseData);
-    } catch (error) {
-      console.error('❌ [AsignacionService] Error al crear asignación:', error);
-      throw error;
-    }
+    return this.guardarAsignacion('POST', datos);
   }
 
-  /**
-   * Actualizar una asignación de predio existente
-   */
   async actualizarAsignacionAPI(datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
-    try {
-      const response = await fetch(this.baseURL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(datos)
-      });
-      
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-
-      const responseJson = await response.json();
-      const responseData = responseJson.data || responseJson;
-      return this.normalizeItem(responseData);
-    } catch (error) {
-      console.error('❌ [AsignacionService] Error al actualizar asignación:', error);
-      throw error;
-    }
+    return this.guardarAsignacion('PUT', datos);
   }
 
-  /**
-   * Obtener asignación por ID específico
-   */
-  async obtenerAsignacionPorId(id: number): Promise<AsignacionPredio | null> {
-    try {
-      const url = `${this.baseURL}/${id}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-      });
-
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-
-      const responseData = await response.json();
-      return this.normalizeItem(responseData.data || responseData);
-    } catch (error) {
-      console.error('❌ [AsignacionService] Error al obtener asignación por ID:', error);
-      return null;
+  private async guardarAsignacion(method: 'POST' | 'PUT', datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
+    const payload = await this.request(this.endpoint, {
+      method,
+      body: JSON.stringify(datos)
+    });
+    const response = toRecord(payload);
+    if (response.success === false) {
+      throw new Error(getErrorMessage(payload, 'No se pudo guardar la asignación'));
     }
+    const responseData = toRecord(response.data || payload);
+    return this.normalizeItem({ ...datos, ...responseData });
   }
 
-  /**
-   * Desasignar un predio llamando a /desasignar
-   */
-  async desasignarAPI(datos: CreateAsignacionAPIDTO): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/desasignar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(datos)
-      });
-      
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-
-      return await response.json();
-    } catch (error) {
-      console.error('❌ [AsignacionService] Error al desasignar predio:', error);
-      throw error;
+  async desasignarAPI(datos: CreateAsignacionAPIDTO): Promise<ApiAsignacionResponse> {
+    const payload = await this.request(`${this.endpoint}/desasignar`, {
+      method: 'POST',
+      body: JSON.stringify(datos)
+    });
+    const response = toRecord(payload);
+    if (response.success === false) {
+      throw new Error(getErrorMessage(payload, 'No se pudo desasignar el predio'));
     }
+    return {
+      success: response.success !== false,
+      message: String(response.message || 'Desasignación realizada correctamente'),
+      data: response.data ?? payload
+    };
+  }
+
+  async prevalidarBeneficioPensionista(codContribuyente: number | string): Promise<PrevalidacionBeneficio> {
+    return this.prevalidarBeneficio('prevalidarBeneficioPensionista', codContribuyente);
+  }
+
+  async prevalidarBeneficioAdultoMayor(codContribuyente: number | string): Promise<PrevalidacionBeneficio> {
+    return this.prevalidarBeneficio('prevalidarBeneficioAdultoMayor', codContribuyente);
+  }
+
+  private async prevalidarBeneficio(endpoint: string, codContribuyente: number | string): Promise<PrevalidacionBeneficio> {
+    const query = new URLSearchParams({
+      codContribuyente: String(codContribuyente)
+    });
+    const payload = await this.request(`${this.endpoint}/${endpoint}?${query.toString()}`, { method: 'GET' });
+    const response = toRecord(payload);
+    return {
+      success: response.success === true,
+      message: String(response.message || ''),
+      data: typeof response.data === 'string' ? response.data : getErrorMessage(payload, 'Sin información de prevalidación'),
+      pagina: typeof response.pagina === 'number' ? response.pagina : null,
+      limite: typeof response.limite === 'number' ? response.limite : null,
+      totalPaginas: typeof response.totalPaginas === 'number' ? response.totalPaginas : null,
+      totalRegistros: typeof response.totalRegistros === 'number' ? response.totalRegistros : null
+    };
   }
 }
 

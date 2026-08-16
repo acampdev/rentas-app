@@ -1,21 +1,8 @@
 // src/pages/predio/AsignacionPredioPage.tsx
 import React from 'react';
-import {
-  Box,
-  Container,
-  Breadcrumbs,
-  Link,
-  Typography,
-  Paper,
-  Stack,
-  Chip,
-  useTheme,
-  alpha,
-  GlobalStyles
-} from '@mui/material';
+import { Box, Container, Breadcrumbs, Link, Typography, Paper, Stack, Chip, useTheme, alpha, GlobalStyles } from '@mui/material';
 import {
   NavigateNext as NavigateNextIcon,
-  Home as HomeIcon,
   Domain as DomainIcon,
   Assignment as AssignmentIcon,
   PersonAdd as PersonAddIcon,
@@ -24,39 +11,56 @@ import {
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import MainLayout from '../../../layout/MainLayout';
-import {AsignacionPredio} from '../../../components';
+import { AsignacionPredio } from '../../../components';
 import { useAsignacion } from '../../../hooks';
+
+interface AsignacionNavigationState {
+  editMode?: boolean;
+  isDesasignarMode?: boolean;
+  asignacionData?: React.ComponentProps<typeof AsignacionPredio>['datosEdicion'];
+}
 
 const AsignacionPredioPage: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
 
   // Obtener datos de edición desde navigation state
-  const navigationState = location.state as any;
+  const navigationState = location.state as AsignacionNavigationState | null;
   const isEditMode = navigationState?.editMode === true;
   const isDesasignarMode = navigationState?.isDesasignarMode === true;
   const asignacionDataFromConsulta = navigationState?.asignacionData || null;
 
-  // Debug: mostrar datos recibidos
-  React.useEffect(() => {
-    if ((isEditMode || isDesasignarMode) && asignacionDataFromConsulta) {
-      console.log('📋 [AsignacionPredioPage] Modo edición/desasignar activado:', { isEditMode, isDesasignarMode });
-      console.log('📋 [AsignacionPredioPage] Datos recibidos:', asignacionDataFromConsulta);
-    }
-  }, [isEditMode, isDesasignarMode, asignacionDataFromConsulta]);
-
   // Hook para manejo de asignaciones
-  const { crearAsignacionAPI, actualizarAsignacionAPI, desasignarAPI, loading, error } = useAsignacion();
-  
+  const { crearAsignacionAPI, actualizarAsignacionAPI, desasignarAPI, prevalidarBeneficioPensionista, prevalidarBeneficioAdultoMayor, isCreating, error } =
+    useAsignacion();
+
   // Breadcrumbs con iconos - Cambia según modo edición/desasignación
   const breadcrumbItems = [
-    { label: 'Módulo', path: '/', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
-    { label: 'Predio', path: '/predio', icon: <DomainIcon sx={{ fontSize: 20 }} /> },
-    { label: 'Asignación', path: '/predio/asignacion/consulta', icon: <AssignmentIcon sx={{ fontSize: 20 }} /> },
+    {
+      label: 'Módulo',
+      path: '/',
+      icon: <DashboardIcon sx={{ fontSize: 20 }} />
+    },
+    {
+      label: 'Predio',
+      path: '/predio',
+      icon: <DomainIcon sx={{ fontSize: 20 }} />
+    },
+    {
+      label: 'Asignación',
+      path: '/predio/asignacion/consulta',
+      icon: <AssignmentIcon sx={{ fontSize: 20 }} />
+    },
     {
       label: isDesasignarMode ? 'Desasignación' : isEditMode ? 'Edición' : 'Registro',
       active: true,
-      icon: isDesasignarMode ? <AssignmentIcon sx={{ fontSize: 20 }} /> : isEditMode ? <EditIcon sx={{ fontSize: 20 }} /> : <PersonAddIcon sx={{ fontSize: 20 }} />
+      icon: isDesasignarMode ? (
+        <AssignmentIcon sx={{ fontSize: 20 }} />
+      ) : isEditMode ? (
+        <EditIcon sx={{ fontSize: 20 }} />
+      ) : (
+        <PersonAddIcon sx={{ fontSize: 20 }} />
+      )
     }
   ];
 
@@ -66,13 +70,10 @@ const AsignacionPredioPage: React.FC = () => {
         <Box sx={{ py: 2 }}>
           {/* Breadcrumb mejorado */}
           <Box sx={{ mb: 3 }}>
-            <Breadcrumbs
-              separator={<NavigateNextIcon fontSize="small" />}
-              aria-label="breadcrumb"
-            >
+            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
               {breadcrumbItems.map((item, index) => {
                 const isLast = index === breadcrumbItems.length - 1;
-                
+
                 if (isLast || item.active) {
                   return (
                     <Chip
@@ -81,7 +82,7 @@ const AsignacionPredioPage: React.FC = () => {
                       size="small"
                       icon={item.icon}
                       color="primary"
-                      sx={{ 
+                      sx={{
                         fontWeight: 600,
                         '& .MuiChip-icon': {
                           fontSize: 18
@@ -102,8 +103,8 @@ const AsignacionPredioPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 0.5,
-                      '&:hover': { 
-                        color: theme.palette.primary.main 
+                      '&:hover': {
+                        color: theme.palette.primary.main
                       }
                     }}
                   >
@@ -158,15 +159,10 @@ const AsignacionPredioPage: React.FC = () => {
                 >
                   <AssignmentIcon sx={{ fontSize: 32 }} />
                 </Box>
-                
+
                 {/* Título y descripción */}
                 <Box>
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    color="text.primary"
-                    sx={{ mb: 1 }}
-                  >
+                  <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
                     {isDesasignarMode ? 'Desasignación de Predio' : isEditMode ? 'Edición de Asignación' : 'Asignación de Predios'}
                   </Typography>
                   <Stack direction="row" spacing={1} alignItems="center">
@@ -175,8 +171,7 @@ const AsignacionPredioPage: React.FC = () => {
                         ? `Desasignando predio ${asignacionDataFromConsulta?.codPredio || ''} del contribuyente`
                         : isEditMode
                           ? `Editando asignación del predio ${asignacionDataFromConsulta?.codPredio || ''}`
-                          : 'Gestione la asignación de predios a contribuyentes y genere PU individual o masivo'
-                      }
+                          : 'Gestione la asignación de predios a contribuyentes y genere PU individual o masivo'}
                     </Typography>
                   </Stack>
                 </Box>
@@ -210,7 +205,7 @@ const AsignacionPredioPage: React.FC = () => {
                     </Typography>
                   </Stack>
                 </Paper>
-                
+
                 <Paper
                   sx={{
                     px: 2,
@@ -235,7 +230,9 @@ const AsignacionPredioPage: React.FC = () => {
             onCrearAsignacion={crearAsignacionAPI}
             onActualizarAsignacion={actualizarAsignacionAPI}
             onDesasignar={desasignarAPI}
-            loading={loading}
+            onPrevalidarPensionista={prevalidarBeneficioPensionista}
+            onPrevalidarAdultoMayor={prevalidarBeneficioAdultoMayor}
+            loading={isCreating}
             error={error}
             isEditMode={isEditMode}
             isDesasignarMode={isDesasignarMode}
@@ -243,22 +240,21 @@ const AsignacionPredioPage: React.FC = () => {
           />
         </Box>
       </Container>
-      
-      
+
       {/* Estilos globales para animación */}
       <GlobalStyles
         styles={{
           '@keyframes pulse': {
             '0%': {
-              opacity: 1,
+              opacity: 1
             },
             '50%': {
-              opacity: 0.5,
+              opacity: 0.5
             },
             '100%': {
-              opacity: 1,
-            },
-          },
+              opacity: 1
+            }
+          }
         }}
       />
     </MainLayout>

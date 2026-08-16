@@ -1,18 +1,10 @@
 // src/pages/predio/ConsultaAsignacionPage.tsx
 import React from 'react';
-import {
-  Box,
-  Container,
-  Breadcrumbs,
-  Link,
-  Typography
-} from '@mui/material';
-import {
-  NavigateNext as NavigateNextIcon
-} from '@mui/icons-material';
+import { Box, Container, Breadcrumbs, Link, Typography } from '@mui/material';
+import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import MainLayout from '../../../layout/MainLayout';
-import {ConsultaAsignacion} from '../../../components';
+import { ConsultaAsignacion } from '../../../components';
 
 const ConsultaAsignacionPage: React.FC = () => {
   // Breadcrumbs
@@ -32,7 +24,7 @@ const ConsultaAsignacionPage: React.FC = () => {
             <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />}>
               {breadcrumbItems.map((item, index) => {
                 const isLast = index === breadcrumbItems.length - 1;
-                
+
                 if (isLast || item.active) {
                   return (
                     <Typography key={item.label} color="text.primary">
@@ -41,13 +33,7 @@ const ConsultaAsignacionPage: React.FC = () => {
                   );
                 }
                 return (
-                  <Link
-                    key={item.label}
-                    component={RouterLink}
-                    to={item.path || '/'}
-                    underline="hover"
-                    color="inherit"
-                  >
+                  <Link key={item.label} component={RouterLink} to={item.path || '/'} underline="hover" color="inherit">
                     {item.label}
                   </Link>
                 );
@@ -58,8 +44,6 @@ const ConsultaAsignacionPage: React.FC = () => {
           <ConsultaAsignacion />
         </Box>
       </Container>
-
-     
     </MainLayout>
   );
 };

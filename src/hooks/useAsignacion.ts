@@ -1,101 +1,99 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// src/hooks/useAsignacion.ts
 import { useCallback, useState } from 'react';
-import { asignacionService, AsignacionPredio, AsignacionQueryParams, CreateAsignacionAPIDTO } from '../services/asignacionService';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { NotificationService } from '../components/utils/Notification';
+import { asignacionService, type AsignacionQueryParams, type CreateAsignacionAPIDTO } from '../services/asignacionService';
 
-/**
- * Hook para gestionar asignaciones de predio con React Query
- */
-export const useAsignacion = (paramsIniciales?: AsignacionQueryParams) => {
+const hasQueryParams = (params: AsignacionQueryParams): boolean => params.anio !== undefined || params.codContribuyente !== undefined;
+
+const getErrorMessage = (error: unknown, fallback: string): string => (error instanceof Error && error.message ? error.message : fallback);
+
+export const useAsignacion = (paramsIniciales: AsignacionQueryParams = {}) => {
   const queryClient = useQueryClient();
-  const [params, setParams] = useState<AsignacionQueryParams>(paramsIniciales || {});
-  console.log('🧪 [useAsignacion] Render del hook, params actuales:', params);
+  const [params, setParams] = useState<AsignacionQueryParams>(paramsIniciales);
 
-  // Query para listar asignaciones
-  const {
-    data: asignaciones = [],
-    isLoading: loading,
-    error,
-    refetch: buscarAsignaciones
-  } = useQuery({
+  const query = useQuery({
     queryKey: ['asignaciones', params],
-    queryFn: async () => {
-      console.log('🧪 [useAsignacion] queryFn ejecutándose con params:', params);
-      // Evitar llamar al API con parámetros vacíos para no provocar errores 403 o consultas masivas innecesarias
-      if (!params.codPredio && !params.codContribuyente && !params.anio) {
-        console.log('🧪 [useAsignacion] queryFn omitiendo llamada API (params vacíos)');
-        return [];
-      }
-      try {
-        const data = await asignacionService.buscarAsignaciones(params);
-        console.log('🧪 [useAsignacion] queryFn resultado API:', data);
-        return data;
-      } catch (err) {
-        console.error('🧪 [useAsignacion] queryFn error API:', err);
-        throw err;
-      }
-    },
-    placeholderData: (prev) => prev
+    queryFn: () => asignacionService.buscarAsignaciones(params),
+    enabled: hasQueryParams(params),
+    placeholderData: (previousData) => previousData
   });
 
-  // Mutación para crear asignación
+  const buscarAsignaciones = useCallback(
+    async (newParams: AsignacionQueryParams) => {
+      const normalizedParams: AsignacionQueryParams = {
+        ...(newParams.anio !== undefined && newParams.anio !== '' ? { anio: newParams.anio } : {}),
+        ...(newParams.codContribuyente !== undefined && newParams.codContribuyente !== '' ? { codContribuyente: newParams.codContribuyente } : {})
+      };
+      setParams(normalizedParams);
+      return queryClient.fetchQuery({
+        queryKey: ['asignaciones', normalizedParams],
+        queryFn: () => asignacionService.buscarAsignaciones(normalizedParams)
+      });
+    },
+    [queryClient]
+  );
+
   const mutationCrear = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.crearAsignacionAPI(datos),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       NotificationService.success('Asignación de predio creada correctamente');
     },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al crear asignación de predio');
+    onError: (error: unknown) => {
+      NotificationService.error(getErrorMessage(error, 'Error al crear la asignación de predio'));
     }
   });
 
-  // Mutación para actualizar asignación
   const mutationActualizar = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.actualizarAsignacionAPI(datos),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       NotificationService.success('Asignación de predio actualizada correctamente');
     },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al actualizar asignación de predio');
+    onError: (error: unknown) => {
+      NotificationService.error(getErrorMessage(error, 'Error al actualizar la asignación de predio'));
     }
   });
 
-  // Mutación para desasignar predio
   const mutationDesasignar = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.desasignarAPI(datos),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       NotificationService.success('Desasignación realizada correctamente');
     },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al desasignar el predio');
+    onError: (error: unknown) => {
+      NotificationService.error(getErrorMessage(error, 'Error al desasignar el predio'));
     }
   });
 
+  const prevalidarBeneficioPensionista = useCallback(
+    (codContribuyente: number | string) => asignacionService.prevalidarBeneficioPensionista(codContribuyente),
+    []
+  );
+
+  const prevalidarBeneficioAdultoMayor = useCallback(
+    (codContribuyente: number | string) => asignacionService.prevalidarBeneficioAdultoMayor(codContribuyente),
+    []
+  );
+
+  const limpiarAsignaciones = useCallback(() => setParams({}), []);
+  const limpiarError = useCallback(() => {
+    void queryClient.resetQueries({ queryKey: ['asignaciones'] });
+  }, [queryClient]);
+
   return {
-    asignaciones,
-    loading,
-    error: error ? (error as Error).message : null,
-    
-    // Acciones
-    buscarAsignaciones: (newParams: AsignacionQueryParams) => {
-      setParams(newParams);
-      return Promise.resolve();
-    },
-    obtenerAsignacionPorId: (id: number) => 
-      queryClient.fetchQuery({
-        queryKey: ['asignacion', id],
-        queryFn: () => asignacionService.obtenerAsignacionPorId(id)
-      }),
+    asignaciones: query.data ?? [],
+    loading: query.isFetching,
+    error: query.error ? getErrorMessage(query.error, 'Error al consultar las asignaciones') : null,
+    buscarAsignaciones,
     crearAsignacionAPI: mutationCrear.mutateAsync,
     actualizarAsignacionAPI: mutationActualizar.mutateAsync,
     desasignarAPI: mutationDesasignar.mutateAsync,
-    limpiarAsignaciones: () => setParams({}),
-    limpiarError: () => {},
-    
-    // Estados de mutación
+    prevalidarBeneficioPensionista,
+    prevalidarBeneficioAdultoMayor,
+    limpiarAsignaciones,
+    limpiarError,
     isCreating: mutationCrear.isPending || mutationActualizar.isPending || mutationDesasignar.isPending
   };
 };
