@@ -90,17 +90,6 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
     placeholderData: (prev) => prev
   });
 
-  // Query para usos de predio
-  const {
-    data: usosPredio = [],
-    isLoading: loadingUsos,
-    refetch: cargarUsosPredio
-  } = useQuery({
-    queryKey: ['predios-usos'],
-    queryFn: () => predioService.obtenerUsosPredio(),
-    staleTime: 24 * 60 * 60 * 1000 // Cache por 24 horas (datos estáticos)
-  });
-
   // Mutación para crear predio
   const mutationCrear = useMutation({
     mutationFn: async (datos: PredioFormData & { 
@@ -185,13 +174,11 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
 
   return {
     predios,
-    loading: loadingPredios || loadingUsos,
+    loading: loadingPredios,
     error: errorPredios ? (errorPredios as Error).message : null,
-    usosPredio,
     // Acciones (Manteniendo compatibilidad)
     cargarPredios,
     cargarTodosPredios,
-    cargarUsosPredio,
     buscarPredios: (filtros: FiltroPredio) => {
       setFiltrosBusqueda({
         anio: filtros.anio,

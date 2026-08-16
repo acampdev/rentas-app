@@ -78,16 +78,14 @@ const SelectorPredio: React.FC<SelectorPredioProps> = ({
     predios,
     loading,
     error,
-    cargarTodosPredios,
     buscarPrediosConFiltros
-  } = usePredios();
+  } = usePredios({ enabled: false });
 
   // Cargar predios al abrir el modal
   useEffect(() => {
     if (isOpen) {
-      console.log('🔓 [SelectorPredio] Modal abierto, cargando todos los predios desde /all');
-      // Llamar explícitamente a cargarTodosPredios que usa GET /api/predio/all
-      cargarTodosPredios().catch(err => {
+      console.log('🔓 [SelectorPredio] Modal abierto, cargando predios del año actual');
+      buscarPrediosConFiltros(anio, '').catch(err => {
         console.error('❌ [SelectorPredio] Error al cargar predios:', err);
       });
     }
@@ -148,14 +146,14 @@ const SelectorPredio: React.FC<SelectorPredioProps> = ({
   };
 
   const handleLimpiar = async () => {
-    setAnio(new Date().getFullYear());
+    const anioActual = new Date().getFullYear();
+    setAnio(anioActual);
     setCodPredioBase('');
     setParametroBusqueda('');
     setHasSearched(false);
     setPage(0);
 
-    // Recargar todos los predios
-    await cargarTodosPredios();
+    await buscarPrediosConFiltros(anioActual, '');
   };
 
   const handleSelectPredio = (predio: Predio) => {

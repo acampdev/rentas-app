@@ -98,7 +98,7 @@ const RegistrosPisos: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { crearPiso, guardarPiso, loading } = usePisos();
-  const { predios: prediosDisponibles, buscarPrediosConFiltros, loading: loadingPredios } = usePredios();
+  const { predios: prediosDisponibles, buscarPrediosConFiltros, loading: loadingPredios } = usePredios({ enabled: false });
 
   // Obtener datos de edición desde navigation state
   const navigationState = location.state as any;

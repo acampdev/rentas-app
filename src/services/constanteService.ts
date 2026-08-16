@@ -169,11 +169,11 @@ export interface UbicacionAreaVerdeRaw {
  * Interface para los datos de uso de predio crudos
  */
 export interface UsoPredioRaw {
-  codUso?: number;
-  descripcion?: string;
-  codCriterio?: number;
-  anio?: number;
-  codGrupoUso?: number;
+  codUso?: number | null;
+  descripcion?: string | null;
+  codCriterio?: number | null;
+  anio?: number | null;
+  codGrupoUso?: number | null;
 }
 
 /**
@@ -327,18 +327,20 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
 
   async listarUsoPredio(): Promise<UsoPredioData[]> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/listarUsoPredio`);
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : data.data || []) as UsoPredioRaw[];
-      return items.map((i: UsoPredioRaw) => ({
-        codUso: i.codUso || 0,
-        descripcion: i.descripcion || '',
-        codCriterio: i.codCriterio || 0,
-        anio: i.anio || 0,
-        codGrupoUso: i.codGrupoUso || 0
-      }));
+      const response = await this.makeRequest<UsoPredioRaw[] | { data?: UsoPredioRaw[] }>('/listarUsoPredio', {
+        method: 'GET'
+      });
+      const items = Array.isArray(response) ? response : response?.data || [];
+
+      return items
+        .map((i) => ({
+          codUso: Number(i.codUso ?? 0),
+          descripcion: String(i.descripcion ?? '').trim(),
+          codCriterio: Number(i.codCriterio ?? 0),
+          anio: Number(i.anio ?? 0),
+          codGrupoUso: Number(i.codGrupoUso ?? 0)
+        }))
+        .filter((i) => i.codUso > 0 && i.descripcion !== '');
     } catch (error) {
       return [];
     }

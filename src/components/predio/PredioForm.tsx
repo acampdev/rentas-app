@@ -100,6 +100,7 @@ const PredioForm: React.FC<PredioFormProps> = ({
           {...field}
           options={opts}
           getOptionLabel={(o) => o?.label || ''}
+          getOptionKey={(o) => String(o?.value ?? o?.id ?? o?.label ?? '')}
           value={opts.find(opt => String(opt.value) === String(field.value)) || null}
           onChange={(_, val) => field.onChange(val?.value || '')}
           disabled={l || customDisabled}

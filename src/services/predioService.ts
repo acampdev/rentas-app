@@ -459,46 +459,49 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
     try {
       console.log('📡 [PredioService] Obteniendo usos de predios desde API');
 
-      const responseData = await this.makeRequest<Array<{
-        codUsoPredio: number;
-        codGrupoUso: number;
-        descripcionUso: string;
-      }> | { success: boolean, data: unknown }>('/usos', {
+      type UsoPredioApi = {
+        codUsoPredio?: number | string;
+        codUso?: number | string;
+        codigo?: number | string;
+        codGrupoUso?: number | string;
+        descripcionUso?: string;
+        descripcion?: string;
+        nombreUso?: string;
+      };
+
+      const responseData = await this.makeRequest<UsoPredioApi[] | { success?: boolean, data?: UsoPredioApi[] | UsoPredioApi }>('/usos', {
         method: 'GET'
       });
       
-      // Manejar diferentes formatos de respuesta
-      let usosData: Array<{
+      let usosData: UsoPredioApi[] = [];
+
+      if (Array.isArray(responseData)) {
+        usosData = responseData;
+      } else if (responseData?.data) {
+        usosData = Array.isArray(responseData.data) ? responseData.data : [responseData.data];
+      }
+
+      const usosUnicos = new Map<number, {
         codUsoPredio: number;
         codGrupoUso: number;
         descripcionUso: string;
-      }> = [];
+      }>();
 
-      if (responseData && (responseData as { success?: boolean }).success && (responseData as { data?: unknown }).data) {
-        const resp = responseData as { data: unknown };
-        usosData = Array.isArray(resp.data) ? (resp.data as Array<{
-          codUsoPredio: number;
-          codGrupoUso: number;
-          descripcionUso: string;
-        }>) : [resp.data as {
-          codUsoPredio: number;
-          codGrupoUso: number;
-          descripcionUso: string;
-        }];
-      } else if (Array.isArray(responseData)) {
-        usosData = responseData;
-      } else {
-        return [];
-      }
+      usosData.forEach((item) => {
+        const codigo = Number(item.codUsoPredio ?? item.codUso ?? item.codigo);
+        const descripcion = String(item.descripcionUso ?? item.descripcion ?? item.nombreUso ?? '').trim();
+        const codGrupoUso = Number(item.codGrupoUso ?? 0);
 
-      // Mapear los datos
-      const usosMapeados = usosData.map((item) => ({
-        codUsoPredio: item.codUsoPredio,
-        codGrupoUso: item.codGrupoUso,
-        descripcionUso: item.descripcionUso
-      }));
+        if (Number.isFinite(codigo) && codigo > 0 && descripcion && !usosUnicos.has(codigo)) {
+          usosUnicos.set(codigo, {
+            codUsoPredio: codigo,
+            codGrupoUso: Number.isFinite(codGrupoUso) ? codGrupoUso : 0,
+            descripcionUso: descripcion
+          });
+        }
+      });
 
-      return usosMapeados;
+      return Array.from(usosUnicos.values());
 
     } catch (error: unknown) {
       console.error('❌ [PredioService] Error al obtener usos de predios:', error);

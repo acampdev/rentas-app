@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { NotificationService } from '../components/utils/Notification';
-import { usePredios } from './usePredioAPI';
 import constanteService from '../services/constanteService';
 import {
   useCondicionPropiedadOptions,
@@ -14,7 +13,8 @@ import {
   useClasificacionPredio,
   useGrupoUsoOptions,
   useEstadoPredioOptions,
-  useAnioOptions
+  useAnioOptions,
+  useUsoPredioOptions
 } from './useConstantesOptions';
 
 import { Arancel } from '../models/Arancel';
@@ -139,33 +139,30 @@ export const usePredioForm = (
   const { options: clasificacionPredioData, loading: loadingClasificacionPredio, error: errorClasificacionPredio } = useClasificacionPredio();
   const { options: criterioUsoData, loading: loadingCriterioUso, error: errorCriterioUso } = useGrupoUsoOptions();
   const { options: aniosData, loading: loadingAnios, error: errorAnios } = useAnioOptions();
+  const { options: usoPredioData, loading: loadingUsoPredio, error: errorUsoPredio } = useUsoPredioOptions();
 
-  // El formulario solo necesita el catálogo de usos; no debe solicitar /api/predio/all.
-  const { usosPredio } = usePredios({ enabled: false });
-
-  const usoPredioData = useMemo(() => usosPredio.map(uso => ({
-    value: uso.codUsoPredio.toString(),
-    label: uso.descripcionUso
-  })), [usosPredio]);
-
-  // Lógica de filtrado de clasificación por uso
-  const usoPredioValue = watch('usoPredio');
+  // La clasificación determina si corresponde seleccionar un uso de predio.
   const clasificacionPredioValue = watch('clasificacionPredio');
 
-  const clasificacionPredioFiltrada = useMemo(() => {
-    if (!clasificacionPredioData || !usoPredioValue) return clasificacionPredioData || [];
-    const usoPredioLabel = usoPredioData.find(up => up.value === usoPredioValue)?.label?.toUpperCase() || '';
-    if (usoPredioLabel.includes('CASA') || usoPredioLabel.includes('HABITACION')) {
-      return clasificacionPredioData.filter(cp => cp.label?.toUpperCase().includes('CASA'));
-    }
-    return clasificacionPredioData.filter(cp => !cp.label?.toUpperCase().includes('CASA'));
-  }, [clasificacionPredioData, usoPredioValue, usoPredioData]);
+  const clasificacionPredioFiltrada = clasificacionPredioData || [];
 
   const isUsoPredioDisabled = useMemo(() => {
     if (!clasificacionPredioValue) return false;
-    const label = clasificacionPredioData?.find(cp => cp.value === clasificacionPredioValue)?.label?.toUpperCase() || '';
-    return label.includes('CASA') && label.includes('HABITACION');
+    const codigo = String(clasificacionPredioValue).trim();
+    const opcion = clasificacionPredioData?.find(cp => String(cp.value).trim() === codigo);
+    const label = (opcion?.label || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
+
+    return codigo === '0501' || (label.includes('CASA') && label.includes('HABITACION'));
   }, [clasificacionPredioValue, clasificacionPredioData]);
+
+  useEffect(() => {
+    if (isUsoPredioDisabled) {
+      setValue('usoPredio', '');
+    }
+  }, [isUsoPredioDisabled, setValue]);
 
   // Handlers
   const handleSelectArancel = useCallback((arancel: Arancel) => {
@@ -221,7 +218,7 @@ export const usePredioForm = (
         condicion: loadingCondicion,
         tipo: loadingTipoPredio,
         conductor: loadingConductor,
-        uso: false,
+        uso: loadingUsoPredio,
         estado: loadingEstadoPredio,
         modo: loadingModoDeclaracion,
         clasificacion: loadingClasificacionPredio,
@@ -232,7 +229,7 @@ export const usePredioForm = (
         condicion: errorCondicion,
         tipo: errorTipoPredio,
         conductor: errorConductor,
-        uso: null,
+        uso: errorUsoPredio,
         estado: errorEstadoPredio,
         modo: errorModoDeclaracion,
         clasificacion: errorClasificacionPredio,

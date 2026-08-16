@@ -27,4 +27,26 @@ describe('PredioService filter API contract', () => {
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('parametroBusqueda');
     expect(predios[0]).toMatchObject({ codPredioBase: '30', anio: 2026 });
   });
+
+  it('normalizes and deduplicates predio usage options returned by the API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({
+      data: [
+        { codUso: 10, descripcion: 'Comercio', codGrupoUso: 2 },
+        { codUso: 10, descripcion: 'Comercio duplicado', codGrupoUso: 2 },
+        { codUsoPredio: 11, descripcionUso: 'Industria', codGrupoUso: 3 },
+        { codUso: null, descripcion: '' }
+      ]
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const usos = await predioService.obtenerUsosPredio();
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      'http://26.161.18.122:8085/api/predio/usos'
+    );
+    expect(usos).toEqual([
+      { codUsoPredio: 10, codGrupoUso: 2, descripcionUso: 'Comercio' },
+      { codUsoPredio: 11, codGrupoUso: 3, descripcionUso: 'Industria' }
+    ]);
+  });
 });

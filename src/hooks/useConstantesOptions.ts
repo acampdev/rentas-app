@@ -76,57 +76,65 @@ export const useTipoViaOptions = () => {
 export const useCondicionPropiedadOptions = () => {
   return useConstantesOptions('condicion-propiedad', () => constanteService.obtenerTiposCondicionPropiedad());
 };
-
+// TIPOS DE TIPO DE PREDIOS
 export const useTipoPredioOptions = () => {
   return useConstantesOptions('tipo-predio', () => constanteService.obtenerTiposTipoPredio());
 };
 
+// TIPOS DE ESTADO DE PREDIOS
 export const useEstadoPredioOptions = () => {
   return useConstantesOptions('estado-predio', () => constanteService.obtenerTiposEstadoPredio());
 };
 
+// TIPOS DE ESTADO DE CONSERVACION
 export const useEstadoConservacionOptions = () => {
   return useConstantesOptions('estado-conservacion', () => constanteService.obtenerTiposEstadosConservacion());
 };
 
+// TIPOS DE CLASIFICACION DE PREDIOS
 export const useClasificacionPredio = () => {
   return useConstantesOptions('clasificacion-predio', () => constanteService.obtenerTiposCasa());
 };
 
+// TIPOS DE LISTA DE CONDUCTORES
 export const useListaConductorOptions = () => {
   return useConstantesOptions('lista-conductor', () => constanteService.obtenerTiposListaConductor());
 };
 
+// TIPOS DE MATERIAL ESTRUCTURAL
 export const useTiposMaterialPredominante = () => {
   return useConstantesOptions('material-estructural', () => constanteService.obtenerTiposMaterialEstructural());
 };
-
+// TIPOS DE MATERIAL PREDOMINANTE
 export const useMaterialPredominante = useTiposMaterialPredominante;
 
+// TIPOS DE NIVEL DE ANTIGUEDAD
 export const useTipoNivelAntiguedad = () => {
   return useConstantesOptions('nivel-antiguedad', () => constanteService.obtenerTiposNivelAntiguedad());
 };
-
+// TIPOS DE LADOS DE DIRECCION
 export const useTiposLadosDireccion = () => {
   return useConstantesOptions('lados-direcciones', () => constanteService.obtenerTiposLadosDirecciones());
 };
 
+// TIPOS DE MODO DE DECLARACION
 export const useModoDeclaracionOptions = () => {
   return useConstantesOptions('modo-declaracion', () => constanteService.obtenerTiposModoDeclaracion());
 };
 
+// TIPOS DE ESTADOS
 export const useEstadoOptions = () => {
   return useConstantesOptions('estados', () => constanteService.obtenerTiposEstado());
 };
-// TIPOS DE INTERES
+// TIPOS DE TIPOS DE INTERES
 export const useTiposInteresOptions = () => {
   return useConstantesOptions('tipos-interes', () => constanteService.obtenerTiposInteres());
 };
-
+// TIPOS DE ESTADO DE RECIBO
 export const useTiposEstadoReciboOptions = () => {
   return useConstantesOptions('tipos-estado-recibo', () => constanteService.obtenerTiposEstadoRecibo());
 };
-
+// TIPOS DE MOTIVOS
 export const useTiposMotivoOptions = () => {
   return useConstantesOptions('tipos-motivo', () => constanteService.obtenerTiposMotivo());
 };
@@ -134,35 +142,35 @@ export const useTiposMotivoOptions = () => {
 export const useTiposMesesOptions = () => {
   return useConstantesOptions('tipos-meses', () => constanteService.obtenerTiposMeses());
 };
-
+// TIPOS DE ESTADOS DE PREDIOS
 export const useTiposEstadosPredioOptions = () => {
   return useConstantesOptions('tipos-estados-predio', () => constanteService.obtenerTiposEstadosPredio());
 };
-
+// TIPOS DE TIPO DE PREDIOS
 export const useTiposTipoPredioOptions = () => {
   return useConstantesOptions('tipos-tipo-predio', () => constanteService.obtenerTiposTipoPredio());
 };
-
+// TIPOS DE CONDICION DE PROPIEDAD
 export const useTiposCondicionPropiedadOptions = () => {
   return useConstantesOptions('tipos-condicion-propiedad', () => constanteService.obtenerTiposCondicionPropiedad());
 };
-
+// TIPOS DE TIPO DE VIA
 export const useTiposTipoViaOptions = () => {
   return useConstantesOptions('tipos-tipo-via', () => constanteService.obtenerTiposTipoVia());
 };
-
+// TIPOS DE ESTADOS DE CONSERVACION
 export const useTiposEstadosConservacionOptions = () => {
   return useConstantesOptions('tipos-estados-conservacion', () => constanteService.obtenerTiposEstadosConservacion());
 };
-
+// TIPOS DE LADOS DE DIRECCION
 export const useTiposLadosDireccionOptions = () => {
   return useConstantesOptions('tipos-lados-direccion', () => constanteService.obtenerTiposLadosDirecciones());
 };
-
+// TIPOS DE LISTA DE CONDUCTORES
 export const useTiposListaConductorOptions = () => {
   return useConstantesOptions('tipos-lista-conductor', () => constanteService.obtenerTiposListaConductor());
 };
-
+// TIPOS DE LISTA DE USO
 export const useTiposListaUsoOptions = () => {
   return useConstantesOptions('tipos-lista-uso', () => constanteService.obtenerTiposListaUso());
 };
@@ -326,7 +334,7 @@ export const useUbicacionAreaVerdeOptions = () => {
 
 export const useUsoPredioOptions = () => {
   const { data = [], isLoading } = useQuery({
-    queryKey: ['constantes', 'usos-predio'],
+    queryKey: ['constantes', 'usos-predio', 'listarUsoPredio-v2'],
     queryFn: () => constanteService.listarUsoPredio(),
     staleTime: 24 * 60 * 60 * 1000
   }); 
