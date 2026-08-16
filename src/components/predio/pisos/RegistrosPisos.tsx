@@ -675,11 +675,17 @@ const RegistrosPisos: React.FC = () => {
     // El API puede devolver TEXTO o CÓDIGO dependiendo del año/configuración
     const {
       categoriaCodigoToTexto,
-      categoriaTextoToCodigo,
       subcategoriaCodigoToTexto,
-      subcategoriaTextoToCodigo,
       letraCodigoToLetra
     } = mapeosDiccionarios;
+
+    const normalizarComparacion = (valor: unknown): string => String(valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
 
 
     // Obtener valores de búsqueda (el value del select es el código: 1001, 100101, etc.)
@@ -692,6 +698,8 @@ const RegistrosPisos: React.FC = () => {
     // Convertir código a texto para búsqueda
     const categoriaTexto = categoriaCodigoToTexto[categoriaCodigo] || categoriaCodigo;
     const subcategoriaTexto = subcategoriaCodigoToTexto[subcategoriaCodigo] || subcategoriaCodigo;
+    const categoriaTextoNormalizado = normalizarComparacion(categoriaTexto);
+    const subcategoriaTextoNormalizado = normalizarComparacion(subcategoriaTexto);
 
     console.log('🔄 [RegistrosPisos] Valores para búsqueda:', {
       categoriaCodigo,
@@ -708,23 +716,24 @@ const RegistrosPisos: React.FC = () => {
       const valorCat = String(valor.categoria).trim().toUpperCase();
       const valorSub = String(valor.subcategoria).trim().toUpperCase();
       const valorLetra = String(valor.letra).trim().toUpperCase();
+      const valorCatNormalizado = normalizarComparacion(valor.categoria);
+      const valorSubNormalizado = normalizarComparacion(valor.subcategoria);
+      const valorLetraNormalizado = normalizarComparacion(valor.letra);
 
       // Comparar categoría: acepta código o texto
       const categoriaMatch =
-        valorCat === categoriaTexto.toUpperCase() ||
         valorCat === categoriaCodigo ||
-        categoriaTextoToCodigo[valorCat] === categoriaCodigo;
+        valorCatNormalizado === categoriaTextoNormalizado;
 
       // Comparar subcategoría: acepta código o texto
       const subcategoriaMatch =
-        valorSub === subcategoriaTexto.toUpperCase() ||
         valorSub === subcategoriaCodigo ||
-        subcategoriaTextoToCodigo[valorSub] === subcategoriaCodigo;
+        valorSubNormalizado === subcategoriaTextoNormalizado;
 
       // Comparar letra: acepta letra directa o código de letra
       const letraMatch =
-        valorLetra === letraValor.toUpperCase() ||
-        letraCodigoToLetra[valorLetra] === letraValor.toUpperCase() ||
+        valorLetraNormalizado === normalizarComparacion(letraValor) ||
+        normalizarComparacion(letraCodigoToLetra[valorLetra]) === normalizarComparacion(letraValor) ||
         valorLetra === letraId;
 
       // Comparar año (asegurar que ambos sean números)
