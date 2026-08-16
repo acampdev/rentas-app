@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePredios } from './usePredioAPI';
 import { Predio } from '../models/Predio';
-import { Direccion } from '../models/Direcciones';
+
+const ANIO_ACTUAL = new Date().getFullYear();
 
 export const useConsultaPredios = () => {
   const navigate = useNavigate();
@@ -10,20 +11,22 @@ export const useConsultaPredios = () => {
     predios,
     loading,
     cargarPredios,
-    cargarTodosPredios,
     buscarPredios,
     buscarPrediosConFiltros,
     cargarEstadisticas
-  } = usePredios();
+  } = usePredios({
+    anio: ANIO_ACTUAL,
+    codPredioBase: '',
+    parametroBusqueda: '',
+    isAll: false
+  });
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [orderBy, setOrderBy] = useState<'anio' | 'codigo'>('codigo');
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [filtros, setFiltros] = useState({
     codigoPredio: '',
-    anio: new Date().getFullYear(),
+    anio: ANIO_ACTUAL,
     codPredioBase: '',
     parametroBusqueda: '',
     estadoPredio: '',
@@ -32,8 +35,7 @@ export const useConsultaPredios = () => {
 
   useEffect(() => {
     cargarEstadisticas();
-    cargarTodosPredios();
-  }, [cargarEstadisticas, cargarTodosPredios]);
+  }, [cargarEstadisticas]);
 
   const filteredPredios = useMemo(() => {
     let filtered = [...predios];
@@ -44,22 +46,12 @@ export const useConsultaPredios = () => {
         p.conductor?.toLowerCase().includes(term)
       );
     }
-    return filtered.sort((a, b) => {
-      const aVal = orderBy === 'anio' ? (a.anio || 0) : (a.codPredioBase || a.codigoPredio || '');
-      const bVal = orderBy === 'anio' ? (b.anio || 0) : (b.codPredioBase || b.codigoPredio || '');
-      return order === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
-    });
-  }, [predios, searchTerm, orderBy, order]);
+    return filtered;
+  }, [predios, searchTerm]);
 
   const paginatedPredios = useMemo(() => {
     return filteredPredios.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredPredios, page, rowsPerPage]);
-
-  const handleSort = (column: 'anio' | 'codigo') => {
-    if (orderBy === column) setOrder(order === 'asc' ? 'desc' : 'asc');
-    else { setOrderBy(column); setOrder('desc'); }
-    setPage(0);
-  };
 
   const handleBuscar = useCallback(() => {
     if (filtros.codPredioBase || filtros.parametroBusqueda) {
@@ -70,7 +62,7 @@ export const useConsultaPredios = () => {
     // Limpiar automáticamente los filtros tras iniciar la búsqueda
     setFiltros({
       codigoPredio: '',
-      anio: new Date().getFullYear(),
+      anio: ANIO_ACTUAL,
       codPredioBase: '',
       parametroBusqueda: '',
       estadoPredio: '',
@@ -82,15 +74,15 @@ export const useConsultaPredios = () => {
   const handleLimpiarFiltros = useCallback(() => {
     setFiltros({
       codigoPredio: '',
-      anio: new Date().getFullYear(),
+      anio: ANIO_ACTUAL,
       codPredioBase: '',
       parametroBusqueda: '',
       estadoPredio: '',
       condicionPropiedad: ''
     });
     setSearchTerm('');
-    cargarTodosPredios();
-  }, [cargarTodosPredios]);
+    buscarPrediosConFiltros(ANIO_ACTUAL, '', '');
+  }, [buscarPrediosConFiltros]);
 
   const handleEdit = (predio: Predio) => {
     navigate(`/predio/editar/${predio.anio || new Date().getFullYear()}/${predio.codPredioBase || predio.codigoPredio}`);
@@ -109,13 +101,10 @@ export const useConsultaPredios = () => {
     rowsPerPage,
     searchTerm,
     setSearchTerm,
-    orderBy,
-    order,
     filtros,
     setFiltros,
     setPage,
     setRowsPerPage,
-    handleSort,
     handleBuscar,
     handleLimpiarFiltros,
     handleEdit,
@@ -124,7 +113,16 @@ export const useConsultaPredios = () => {
   };
 };
 
-export const formatDireccion = (direccion: any): string => {
+interface DireccionConsulta {
+  nombreTipoVia?: string;
+  nombreVia?: string;
+  cuadra?: string | number;
+  loteInicial?: string | number;
+  nombreBarrio?: string;
+  descripcion?: string;
+}
+
+export const formatDireccion = (direccion?: string | DireccionConsulta | null): string => {
   if (!direccion) return 'Sin dirección';
   if (typeof direccion === 'string') return direccion;
   const parts = [];

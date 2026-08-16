@@ -15,22 +15,16 @@ import {
   Stack,
   Typography,
   Chip,
-  Tooltip,
   Button,
   CircularProgress,
   useTheme,
   alpha
 } from '@mui/material';
 import {
-  Refresh as RefreshIcon,
   Edit as EditIcon,
   Visibility as VisibilityIcon,
   Add as AddIcon,
-  FilterList as FilterIcon,
   Home as HomeIcon,
-  Terrain as TerrainIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -46,18 +40,13 @@ const ConsultaPredios: React.FC = () => {
     paginatedPredios,
     page,
     rowsPerPage,
-    orderBy,
-    order,
     filtros,
     setFiltros,
     setPage,
     setRowsPerPage,
-    handleSort,
     handleBuscar,
-    handleLimpiarFiltros,
     handleEdit,
-    handleView,
-    cargarPredios
+    handleView
   } = useConsultaPredios();
 
   const getEstadoChip = (estado?: string) => {
@@ -168,8 +157,8 @@ const ConsultaPredios: React.FC = () => {
           <Table stickyHeader sx={{ minWidth: 1300 }}>
             <TableHead>
               <TableRow>
-                <TableCell onClick={() => handleSort('anio')} sx={{ cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>AÑO {orderBy === 'anio' && (order === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</TableCell>
-                <TableCell onClick={() => handleSort('codigo')} sx={{ cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>CÓDIGO {orderBy === 'codigo' && (order === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>AÑO</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>CÓDIGO</TableCell>
                 <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>DIRECCIÓN</TableCell>
                 <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>CONDUCTOR</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>ÁREA m²</TableCell>

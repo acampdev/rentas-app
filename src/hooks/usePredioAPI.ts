@@ -50,23 +50,19 @@ const mapPredioDataToModel = (data: PredioData): Predio => {
   };
 };
 
-interface UsoPredioOption {
-  codUsoPredio: number;
-  codGrupoUso: number;
-  descripcionUso: string;
+interface PredioQueryFilters {
+  anio?: number;
+  codPredioBase?: string;
+  parametroBusqueda?: string;
+  isAll?: boolean;
 }
 
 /**
  * Hook personalizado para gestión de predios con React Query
  */
-export const usePredios = () => {
+export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true }) => {
   const queryClient = useQueryClient();
-  const [filtrosBusqueda, setFiltrosBusqueda] = useState<{
-    anio?: number;
-    codPredioBase?: string;
-    parametroBusqueda?: string;
-    isAll?: boolean;
-  }>({ isAll: true });
+  const [filtrosBusqueda, setFiltrosBusqueda] = useState<PredioQueryFilters>(() => filtrosIniciales);
 
   // Query para listar predios (Todos o con filtros)
   const {
