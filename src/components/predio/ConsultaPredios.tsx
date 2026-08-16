@@ -65,8 +65,6 @@ const ConsultaPredios: React.FC = () => {
           <Box sx={{ flex: '0 0 90px' }}><TextField fullWidth size="small" label="Año" type="number" value={filtros.anio} onChange={(e) => setFiltros({ ...filtros, anio: parseInt(e.target.value) })} /></Box>
           {/* Código Predio */}
           <Box sx={{ flex: '0 0 120px' }}><TextField fullWidth size="small" label="Código Predio" value={filtros.codPredioBase} onChange={(e) => setFiltros({ ...filtros, codPredioBase: e.target.value })} /></Box>
-          {/* Búsqueda */}
-          <Box sx={{ flex: '1 1 450px' }}><TextField fullWidth size="small" label="Búsqueda" value={filtros.parametroBusqueda} onChange={(e) => setFiltros({ ...filtros, parametroBusqueda: e.target.value })} /></Box>
           {/* Botones */}
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             {/* Botón para buscar predios */}

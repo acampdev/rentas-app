@@ -99,16 +99,6 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
     staleTime: 24 * 60 * 60 * 1000 // Cache por 24 horas (datos estáticos)
   });
 
-  // Query para estadísticas
-  const {
-    data: estadisticas = null,
-    isLoading: loadingStats,
-    refetch: cargarEstadisticas
-  } = useQuery({
-    queryKey: ['predios-stats'],
-    queryFn: () => predioService.obtenerEstadisticas()
-  });
-
   // Mutación para crear predio
   const mutationCrear = useMutation({
     mutationFn: async (datos: PredioFormData & { 
@@ -160,7 +150,6 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['predios'] });
-      queryClient.invalidateQueries({ queryKey: ['predios-stats'] });
       NotificationService.success(`Predio ${data.codPredio || 'nuevo'} creado exitosamente`);
     },
     onError: (err: Error) => {
@@ -169,9 +158,22 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
   });
 
   const buscarPrediosConFiltros = useCallback((anio?: number, codPredioBase?: string, parametroBusqueda?: string) => {
-    setFiltrosBusqueda({ anio, codPredioBase, parametroBusqueda, isAll: false });
-    return cargarPredios();
-  }, [cargarPredios]);
+    const nuevosFiltros: PredioQueryFilters = {
+      anio,
+      codPredioBase,
+      parametroBusqueda,
+      isAll: false
+    };
+    setFiltrosBusqueda(nuevosFiltros);
+
+    return queryClient.fetchQuery({
+      queryKey: ['predios', nuevosFiltros],
+      queryFn: async () => {
+        const data = await predioService.buscarPrediosConFiltros({ anio, codPredioBase });
+        return data.map(mapPredioDataToModel);
+      }
+    });
+  }, [queryClient]);
 
   const cargarTodosPredios = useCallback(() => {
     setFiltrosBusqueda({ isAll: true });
@@ -180,11 +182,9 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
 
   return {
     predios,
-    loading: loadingPredios || loadingUsos || loadingStats,
+    loading: loadingPredios || loadingUsos,
     error: errorPredios ? (errorPredios as Error).message : null,
     usosPredio,
-    estadisticas,
-
     // Acciones (Manteniendo compatibilidad)
     cargarPredios,
     cargarTodosPredios,
@@ -199,7 +199,6 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
     },
     buscarPrediosConFiltros,
     crearPredio: mutationCrear.mutateAsync,
-    cargarEstadisticas,
     isCreating: mutationCrear.isPending
   };
 };

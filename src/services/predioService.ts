@@ -1,7 +1,6 @@
 // src/services/predioService.ts
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, getAuthenticatedUserCode } from '../config/api.unified.config';
-import { NotificationService } from '../components/utils/Notification';
+import { getAuthenticatedUserCode } from '../config/api.unified.config';
 
 
 /**
@@ -81,19 +80,6 @@ export interface BusquedaPredioParams {
 }
 
 /**
- * Respuesta de la API
- */
-interface PredioApiListResponse {
-  success: boolean;
-  message: string;
-  data: PredioData[];
-  pagina?: number | null;
-  limite?: number | null;
-  totalPaginas?: number | null;
-  totalRegistros?: number | null;
-}
-
-/**
  * Interfaz para los datos crudos que vienen del API de Predio
  */
 export interface PredioRaw {
@@ -108,18 +94,22 @@ export interface PredioRaw {
   codCondicionPropiedad?: string | number | null;
   codDireccion?: string | number | null;
   codUsoPredio?: string | number | null;
+  codUso?: string | number | null;
   fechaAdquisicion?: string | null;
+  fechaAdquisicionStr?: string | null;
   numeroCondominos?: string | number;
   codListaConductor?: string | number;
   codUbicacionAreaVerde?: string | number | null;
   areaTerreno?: string | number;
   numeroPisos?: string | number;
   totalAreaConstruccion?: string | number | null;
+  areaTotalConstruida?: string | number | null;
   valorTotalConstruccion?: string | number | null;
   valorTerreno?: string | number | null;
   valorOtrasInstalaciones?: string | number | null;
   autoavaluo?: string | number | null;
   codEstado?: string | null;
+  codEstadoPredio?: string | null;
   rutaImagenPlano?: string | null;
   codUsuario?: number | null;
   direccion?: string;
@@ -144,6 +134,7 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
       '/api/predio',
       {
         normalizeItem: (item: PredioRaw) => {
+          const totalAreaConstruccion = item.totalAreaConstruccion ?? item.areaTotalConstruida;
           // Debug: Ver valores crudos del API
           if (process.env.NODE_ENV === 'development') {
             console.log('[PredioService] Normalizando item:', {
@@ -163,19 +154,21 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
             codTipoPredio: item.codTipoPredio?.toString() || null,
             codCondicionPropiedad: item.codCondicionPropiedad?.toString() || null,
             codDireccion: item.codDireccion?.toString() || null,
-            codUsoPredio: item.codUsoPredio?.toString() || null,
-            fechaAdquisicion: item.fechaAdquisicion,
+            codUsoPredio: (item.codUsoPredio ?? item.codUso)?.toString() || null,
+            fechaAdquisicion: item.fechaAdquisicion || item.fechaAdquisicionStr,
             numeroCondominos: item.numeroCondominos?.toString(),
             codListaConductor: item.codListaConductor?.toString(),
             codUbicacionAreaVerde: item.codUbicacionAreaVerde?.toString() || null,
             areaTerreno: parseFloat(item.areaTerreno?.toString() || '0'),
             numeroPisos: typeof item.numeroPisos === 'string' ? parseInt(item.numeroPisos) : item.numeroPisos,
-            totalAreaConstruccion: typeof item.totalAreaConstruccion === 'string' ? parseFloat(item.totalAreaConstruccion) : item.totalAreaConstruccion,
+            totalAreaConstruccion: totalAreaConstruccion == null
+              ? totalAreaConstruccion
+              : Number(totalAreaConstruccion),
             valorTotalConstruccion: typeof item.valorTotalConstruccion === 'string' ? parseFloat(item.valorTotalConstruccion) : item.valorTotalConstruccion,
             valorTerreno: typeof item.valorTerreno === 'string' ? parseFloat(item.valorTerreno) : item.valorTerreno,
             valorOtrasInstalaciones: typeof item.valorOtrasInstalaciones === 'string' ? parseFloat(item.valorOtrasInstalaciones) : item.valorOtrasInstalaciones,
             autoavaluo: typeof item.autoavaluo === 'string' ? parseFloat(item.autoavaluo) : (item.autoavaluo || undefined),
-            codEstado: item.codEstado,
+            codEstado: item.codEstado || item.codEstadoPredio,
             rutaImagenPlano: item.rutaImagenPlano,
             codUsuario: item.codUsuario || null,
             direccion: item.direccion,
@@ -213,7 +206,6 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
   /**
    * Obtiene todos los predios usando el endpoint /all
    * GET: /api/predio/all
-   * NO requiere autenticación
    */
   async obtenerTodosPredios(): Promise<PredioData[]> {
     try {
@@ -247,21 +239,17 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
 
   /**
    * Busca predios con filtros específicos
-   * GET: /api/predio?anio=2024&codPredioBase=4&parametroBusqueda=
-   * NO requiere autenticación
-   * IMPORTANTE: La API requiere SIEMPRE los 3 parámetros (anio, codPredioBase, parametroBusqueda)
+   * GET: /api/predio/all?codPredioBase=30&anio=2026
    */
   async buscarPrediosConFiltros(params: BusquedaPredioParams): Promise<PredioData[]> {
     try {
       console.log('🔍 [PredioService] Buscando predios con filtros:', params);
 
-      // La API requiere SIEMPRE los 3 parámetros, usar valores por defecto si no se proporcionan
       const queryParams = new URLSearchParams();
-      queryParams.append('anio', (params.anio || new Date().getFullYear()).toString());
       queryParams.append('codPredioBase', params.codPredioBase || '');
-      queryParams.append('parametroBusqueda', params.parametroBusqueda || '');
+      queryParams.append('anio', (params.anio || new Date().getFullYear()).toString());
 
-      const queryString = `?${queryParams.toString()}`;
+      const queryString = `/all?${queryParams.toString()}`;
       console.log('📡 [PredioService] GET Query:', queryString);
 
       const responseData = await this.makeRequest<PredioRaw[] | { data: PredioRaw[], success?: boolean }>(queryString, {
@@ -419,7 +407,7 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
   
   /**
    * Obtiene estadísticas de predios
-   * NO requiere autenticación (método GET)
+   * Calculadas a partir del listado completo.
    */
   async obtenerEstadisticas(): Promise<{
     total: number;

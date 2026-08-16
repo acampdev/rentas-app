@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePredios } from './usePredioAPI';
 import { Predio } from '../models/Predio';
@@ -11,77 +11,47 @@ export const useConsultaPredios = () => {
     predios,
     loading,
     cargarPredios,
-    buscarPredios,
-    buscarPrediosConFiltros,
-    cargarEstadisticas
+    buscarPrediosConFiltros
   } = usePredios({
     anio: ANIO_ACTUAL,
     codPredioBase: '',
-    parametroBusqueda: '',
     isAll: false
   });
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filtros, setFiltros] = useState({
-    codigoPredio: '',
     anio: ANIO_ACTUAL,
-    codPredioBase: '',
-    parametroBusqueda: '',
-    estadoPredio: '',
-    condicionPropiedad: ''
+    codPredioBase: ''
   });
 
-  useEffect(() => {
-    cargarEstadisticas();
-  }, [cargarEstadisticas]);
-
-  const filteredPredios = useMemo(() => {
-    let filtered = [...predios];
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.codigoPredio?.toLowerCase().includes(term) ||
-        p.conductor?.toLowerCase().includes(term)
-      );
-    }
-    return filtered;
-  }, [predios, searchTerm]);
+  const filteredPredios = predios;
 
   const paginatedPredios = useMemo(() => {
     return filteredPredios.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredPredios, page, rowsPerPage]);
 
-  const handleBuscar = useCallback(() => {
-    if (filtros.codPredioBase || filtros.parametroBusqueda) {
-      buscarPrediosConFiltros(filtros.anio, filtros.codPredioBase, filtros.parametroBusqueda);
-    } else {
-      buscarPredios(filtros);
+  const handleBuscar = useCallback(async () => {
+    const { anio, codPredioBase } = filtros;
+    setPage(0);
+
+    try {
+      await buscarPrediosConFiltros(anio, codPredioBase);
+      setFiltros({
+        anio: ANIO_ACTUAL,
+        codPredioBase: ''
+      });
+    } catch {
+      // React Query conserva el error para mostrarlo sin perder los filtros ingresados.
     }
-    // Limpiar automáticamente los filtros tras iniciar la búsqueda
-    setFiltros({
-      codigoPredio: '',
-      anio: ANIO_ACTUAL,
-      codPredioBase: '',
-      parametroBusqueda: '',
-      estadoPredio: '',
-      condicionPropiedad: ''
-    });
-    setSearchTerm('');
-  }, [filtros, buscarPredios, buscarPrediosConFiltros]);
+  }, [filtros, buscarPrediosConFiltros]);
 
   const handleLimpiarFiltros = useCallback(() => {
     setFiltros({
-      codigoPredio: '',
       anio: ANIO_ACTUAL,
-      codPredioBase: '',
-      parametroBusqueda: '',
-      estadoPredio: '',
-      condicionPropiedad: ''
+      codPredioBase: ''
     });
-    setSearchTerm('');
-    buscarPrediosConFiltros(ANIO_ACTUAL, '', '');
+    buscarPrediosConFiltros(ANIO_ACTUAL, '');
   }, [buscarPrediosConFiltros]);
 
   const handleEdit = (predio: Predio) => {
@@ -99,8 +69,6 @@ export const useConsultaPredios = () => {
     paginatedPredios,
     page,
     rowsPerPage,
-    searchTerm,
-    setSearchTerm,
     filtros,
     setFiltros,
     setPage,
