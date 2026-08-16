@@ -14,12 +14,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   IconButton,
-  InputAdornment,
   TablePagination,
   Stack,
-  MenuItem,
   CircularProgress,
   Tooltip,
 } from "@mui/material";
@@ -28,12 +25,10 @@ import {
   Visibility as ViewIcon,
   Print as PrintIcon,
   FilterList as FilterIcon,
-  CalendarToday as CalendarIcon,
   Clear as ClearIcon,
   Download as DownloadIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { es } from "date-fns/locale";
@@ -42,6 +37,11 @@ import { fraccionamientoService } from "../../services/fraccionamientoService";
 import type { Fraccionamiento } from "../../types/fraccionamiento.types";
 import SelectorContribuyente from "../modal/SelectorContribuyente";
 import { NotificationService } from "../utils/Notification";
+import type { ContribuyenteListItem } from "../../hooks/useContribuyentes";
+import ConvenioDeuda from "./modal/ConvenioDeuda";
+import EstadoCuenta from "./modal/EstadoCuenta";
+import ResolucionJefatural from "./modal/ResolucionJefatural";
+import EstadoDeuda from "./modal/EstadoDeuda";
 
 const ConsultaFraccionamiento: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +49,17 @@ const ConsultaFraccionamiento: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [modalContribuyente, setModalContribuyente] = useState(false);
-  const [contribuyente, setContribuyente] = useState<any>(null);
+  const [contribuyente, setContribuyente] =
+    useState<ContribuyenteListItem | null>(null);
+  const [contribuyenteResultado, setContribuyenteResultado] =
+    useState<ContribuyenteListItem | null>(null);
+  const [fraccionamientoSeleccionado, setFraccionamientoSeleccionado] =
+    useState<Fraccionamiento | null>(null);
+  const [modalConvenioDeuda, setModalConvenioDeuda] = useState(false);
+  const [modalEstadoCuenta, setModalEstadoCuenta] = useState(false);
+  const [modalResolucionJefatural, setModalResolucionJefatural] =
+    useState(false);
+  const [modalEstadoDeuda, setModalEstadoDeuda] = useState(false);
   const [fraccionamientos, setFraccionamientos] = useState<Fraccionamiento[]>(
     [],
   );
@@ -68,6 +78,9 @@ const ConsultaFraccionamiento: React.FC = () => {
       });
 
       setFraccionamientos(data || []);
+      setContribuyenteResultado(contribuyente);
+      setFraccionamientoSeleccionado(data?.[0] ?? null);
+      setPage(0);
       if (!data || data.length === 0) {
         NotificationService.info(
           "No se encontraron fraccionamientos para este contribuyente",
@@ -77,12 +90,13 @@ const ConsultaFraccionamiento: React.FC = () => {
           `Se encontraron ${data.length} fraccionamientos`,
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error al buscar fraccionamientos:", err);
       NotificationService.error(
-        err.message || "Error al buscar fraccionamientos",
+        err instanceof Error ? err.message : "Error al buscar fraccionamientos",
       );
       setFraccionamientos([]);
+      setFraccionamientoSeleccionado(null);
     } finally {
       setLoading(false);
       setContribuyente(null);
@@ -91,8 +105,55 @@ const ConsultaFraccionamiento: React.FC = () => {
 
   const handleLimpiar = useCallback(() => {
     setContribuyente(null);
+    setContribuyenteResultado(null);
     setFraccionamientos([]);
+    setFraccionamientoSeleccionado(null);
+    setModalConvenioDeuda(false);
+    setModalEstadoCuenta(false);
+    setModalResolucionJefatural(false);
+    setModalEstadoDeuda(false);
+    setPage(0);
   }, []);
+
+  const handleAbrirConvenio = useCallback(() => {
+    if (!fraccionamientoSeleccionado) {
+      NotificationService.warning(
+        "Seleccione un fraccionamiento de la tabla para generar el convenio",
+      );
+      return;
+    }
+    setModalConvenioDeuda(true);
+  }, [fraccionamientoSeleccionado]);
+
+  const handleAbrirEstadoDeuda = useCallback(() => {
+    if (!fraccionamientoSeleccionado) {
+      NotificationService.warning(
+        "Seleccione un fraccionamiento de la tabla para generar el estado de deuda",
+      );
+      return;
+    }
+    setModalEstadoDeuda(true);
+  }, [fraccionamientoSeleccionado]);
+
+  const handleAbrirResolucionJefatural = useCallback(() => {
+    if (!fraccionamientoSeleccionado) {
+      NotificationService.warning(
+        "Seleccione un fraccionamiento de la tabla para generar la resolución jefatural",
+      );
+      return;
+    }
+    setModalResolucionJefatural(true);
+  }, [fraccionamientoSeleccionado]);
+
+  const handleAbrirEstadoCuenta = useCallback(() => {
+    if (!fraccionamientoSeleccionado) {
+      NotificationService.warning(
+        "Seleccione un fraccionamiento de la tabla para generar el estado de cuenta",
+      );
+      return;
+    }
+    setModalEstadoCuenta(true);
+  }, [fraccionamientoSeleccionado]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -103,21 +164,6 @@ const ConsultaFraccionamiento: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case "APROBADO":
-        return "success";
-      case "PENDIENTE":
-        return "warning";
-      case "RECHAZADO":
-        return "error";
-      case "CANCELADO":
-        return "default";
-      default:
-        return "default";
-    }
   };
 
   return (
@@ -364,6 +410,9 @@ const ConsultaFraccionamiento: React.FC = () => {
                       <TableRow
                         key={row.id ? `fracc-${row.id}` : `row-${index}`}
                         hover
+                        selected={fraccionamientoSeleccionado === row}
+                        onClick={() => setFraccionamientoSeleccionado(row)}
+                        sx={{ cursor: "pointer" }}
                       >
                         <TableCell align="center" sx={{ px: 2 }}>
                           {row.codContribuyente}
@@ -423,7 +472,8 @@ const ConsultaFraccionamiento: React.FC = () => {
                               <IconButton
                                 size="small"
                                 color="primary"
-                                onClick={() => {
+                                onClick={(event) => {
+                                  event.stopPropagation();
                                   navigate(
                                     `/fraccionamiento/cronograma/${row.id}`,
                                     { state: row },
@@ -434,7 +484,14 @@ const ConsultaFraccionamiento: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Imprimir convenio">
-                              <IconButton size="small">
+                              <IconButton
+                                size="small"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFraccionamientoSeleccionado(row);
+                                  setModalConvenioDeuda(true);
+                                }}
+                              >
                                 <PrintIcon />
                               </IconButton>
                             </Tooltip>
@@ -464,10 +521,71 @@ const ConsultaFraccionamiento: React.FC = () => {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </Paper>
+        {/* Acciones documentarias del fraccionamiento */}
+        <Paper elevation={2} sx={{ p: 2, mt: 2, borderRadius: 2 }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              flexWrap: "nowrap",
+              overflowX: "auto",
+            }}
+          >
+            {[
+              { label: "Convenio Deuda", onClick: handleAbrirConvenio },
+              { label: "Estado de Cuenta", onClick: handleAbrirEstadoCuenta },
+              {
+                label: "Resolución Jefatural",
+                onClick: handleAbrirResolucionJefatural,
+              },
+              { label: "Estado de Deuda", onClick: handleAbrirEstadoDeuda },
+            ].map(({ label, onClick }) => (
+              <Button
+                key={label}
+                variant="outlined"
+                onClick={onClick}
+                sx={{
+                  flex: "1 0 0",
+                  minWidth: 180,
+                  height: 40,
+                  whiteSpace: "nowrap",
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </Stack>
+        </Paper>
         <SelectorContribuyente
           isOpen={modalContribuyente}
           onClose={() => setModalContribuyente(false)}
           onSelectContribuyente={(c) => setContribuyente(c)}
+        />
+        <ConvenioDeuda
+          open={modalConvenioDeuda}
+          onClose={() => setModalConvenioDeuda(false)}
+          fraccionamiento={fraccionamientoSeleccionado}
+          contribuyente={contribuyenteResultado}
+        />
+        <EstadoCuenta
+          open={modalEstadoCuenta}
+          onClose={() => setModalEstadoCuenta(false)}
+          fraccionamiento={fraccionamientoSeleccionado}
+          contribuyente={contribuyenteResultado}
+        />
+        <ResolucionJefatural
+          open={modalResolucionJefatural}
+          onClose={() => setModalResolucionJefatural(false)}
+          fraccionamiento={fraccionamientoSeleccionado}
+          contribuyente={contribuyenteResultado}
+        />
+        <EstadoDeuda
+          open={modalEstadoDeuda}
+          onClose={() => setModalEstadoDeuda(false)}
+          fraccionamiento={fraccionamientoSeleccionado}
+          contribuyente={contribuyenteResultado}
         />
       </Container>
     </LocalizationProvider>

@@ -1,5 +1,5 @@
 // src/services/fraccionamientoService.ts
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
 import type {
   Fraccionamiento,
   DeudaFraccionamiento,
@@ -7,7 +7,8 @@ import type {
   SolicitudFraccionamientoForm,
   AprobacionFraccionamientoForm,
   FraccionamientoFiltros,
-  EstadisticasFraccionamiento
+  EstadisticasFraccionamiento,
+  CronogramaContribuyente
 } from '../types/fraccionamiento.types';
 
 /**
@@ -352,16 +353,44 @@ class FraccionamientoService {
     return await response.blob();
   }
 
-  async listarCronogramaContribuyente(codContribuyente: number | string): Promise<any[]> {
-    const url = buildApiUrl('/api/fraccionamiento/listarCronogramaContri', { codContribuyente: String(codContribuyente) });
+  async listarCronogramaContribuyente(codContribuyente: number | string): Promise<CronogramaContribuyente[]> {
+    const url = buildApiUrl('/api/fraccionamiento/listarCronogramaContri', {
+      codContribuyente: String(codContribuyente)
+    });
     const response = await fetch(url, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' }
+      headers: getApiHeaders(true),
+      credentials: 'include'
     });
 
     if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : (result.data || [result]);
+    const result = (await response.json()) as { data?: unknown } | unknown[];
+    const items = Array.isArray(result)
+      ? result
+      : Array.isArray(result.data)
+        ? result.data
+        : result.data
+          ? [result.data]
+          : [];
+
+    return items.map((item) => {
+      const raw = item as Record<string, unknown>;
+      return {
+        anio: Number(raw.anio) || 0,
+        codResolucion: Number(raw.codResolucion) || 0,
+        numeroCuota: Number(raw.numeroCuota) || 0,
+        saldoInicio: Number(raw.saldoInicio) || 0,
+        interes: Number(raw.interes) || 0,
+        amortizacion: Number(raw.amortizacion) || 0,
+        montoCuota: Number(raw.montoCuota) || 0,
+        fechaVencimiento: String(raw.fechaVencimiento || ''),
+        pagado: raw.pagado === true || String(raw.pagado).toLowerCase() === 'true',
+        fechaPago: raw.fechaPago ? String(raw.fechaPago) : null,
+        montoPagado: raw.montoPagado === null || raw.montoPagado === undefined ? null : Number(raw.montoPagado),
+        numeroPago: raw.numeroPago === null || raw.numeroPago === undefined ? null : Number(raw.numeroPago),
+        codContribuyente: Number(raw.codContribuyente) || Number(codContribuyente)
+      };
+    });
   }
 
   async getAll(filtros?: FraccionamientoFiltros): Promise<Fraccionamiento[]> {

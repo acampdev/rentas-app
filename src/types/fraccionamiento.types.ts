@@ -82,6 +82,22 @@ export interface CuotaFraccionamiento {
   numeroPago?: number | null;
 }
 
+export interface CronogramaContribuyente {
+  anio: number;
+  codResolucion: number;
+  numeroCuota: number;
+  saldoInicio: number;
+  interes: number;
+  amortizacion: number;
+  montoCuota: number;
+  fechaVencimiento: string;
+  pagado: boolean;
+  fechaPago: string | null;
+  montoPagado: number | null;
+  numeroPago: number | null;
+  codContribuyente: number;
+}
+
 export type EstadoFraccionamiento = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'VIGENTE' | 'CANCELADO' | 'VENCIDO';
 
 export type EstadoCuota = 'PENDIENTE' | 'PAGADA' | 'VENCIDA' | 'PARCIAL';
