@@ -43,7 +43,8 @@ const NuevoPredio: FC = memo(() => {
   const [loadingPredio, setLoadingPredio] = useState(false);
 
   // Hook para gestión de predios con API integrada
-  const { crearPredio, loading } = usePredios();
+  // Crear/editar no requiere precargar el listado completo de predios.
+  const { crearPredio, loading } = usePredios({ enabled: false });
 
   // Mapeos de texto a código para los Autocomplete
   const mapCondicionPropiedad: Record<string, string> = {

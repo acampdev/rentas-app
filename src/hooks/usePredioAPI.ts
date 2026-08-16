@@ -55,6 +55,7 @@ interface PredioQueryFilters {
   codPredioBase?: string;
   parametroBusqueda?: string;
   isAll?: boolean;
+  enabled?: boolean;
 }
 
 /**
@@ -85,6 +86,7 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
       }
       return data.map(mapPredioDataToModel);
     },
+    enabled: filtrosBusqueda.enabled !== false,
     placeholderData: (prev) => prev
   });
 
@@ -162,7 +164,8 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
       anio,
       codPredioBase,
       parametroBusqueda,
-      isAll: false
+      isAll: false,
+      enabled: true
     };
     setFiltrosBusqueda(nuevosFiltros);
 
@@ -176,7 +179,7 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
   }, [queryClient]);
 
   const cargarTodosPredios = useCallback(() => {
-    setFiltrosBusqueda({ isAll: true });
+    setFiltrosBusqueda({ isAll: true, enabled: true });
     return cargarPredios();
   }, [cargarPredios]);
 
@@ -193,7 +196,8 @@ export const usePredios = (filtrosIniciales: PredioQueryFilters = { isAll: true 
       setFiltrosBusqueda({
         anio: filtros.anio,
         codPredioBase: filtros.codigoPredio,
-        isAll: false
+        isAll: false,
+        enabled: true
       });
       return Promise.resolve();
     },

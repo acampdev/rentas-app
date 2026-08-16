@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { predioService } from '../services/predioService';
 import { NotificationService } from '../components/utils/Notification';
 import { usePredios } from './usePredioAPI';
 import constanteService from '../services/constanteService';
@@ -141,8 +140,8 @@ export const usePredioForm = (
   const { options: criterioUsoData, loading: loadingCriterioUso, error: errorCriterioUso } = useGrupoUsoOptions();
   const { options: aniosData, loading: loadingAnios, error: errorAnios } = useAnioOptions();
 
-  const { usosPredio, cargarUsosPredio } = usePredios();
-  useEffect(() => { cargarUsosPredio(); }, [cargarUsosPredio]);
+  // El formulario solo necesita el catálogo de usos; no debe solicitar /api/predio/all.
+  const { usosPredio } = usePredios({ enabled: false });
 
   const usoPredioData = useMemo(() => usosPredio.map(uso => ({
     value: uso.codUsoPredio.toString(),
