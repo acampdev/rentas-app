@@ -14,8 +14,6 @@ import {
   Skeleton,
   CircularProgress,
   Autocomplete,
-  FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio
@@ -57,6 +55,12 @@ interface PersonaFormProps {
   showGuardarButton?: boolean;
 }
 
+const normalizarEtiqueta = (label: string) => label
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .trim();
+
 const PersonaFormMUI: React.FC<PersonaFormProps> = ({
   form,
   isJuridica = false,
@@ -71,9 +75,10 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
   const nFinca = watch('nFinca');
   const otroNumero = watch('otroNumero');
   const tipoDocumento = watch('tipoDocumento');
+  const numeroDocumento = watch('numeroDocumento');
 
   // Hook para gestión de personas
-  const { error: errorPersona } = usePersonas();
+  const { error: errorPersona, listarPersona } = usePersonas();
   
   // Hook para gestión de contribuyentes
   const { 
@@ -82,7 +87,7 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
 
   // Cargar opciones dinámicas usando hooks personalizados
   const { 
-    options: tipoDocumentoOptions, 
+    options: tipoDocumentoOptionsCatalogo,
     loading: loadingTipoDoc, 
     error: errorTipoDoc 
   } = useTipoDocumentoOptions(isJuridica);
@@ -98,6 +103,67 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
     loading: loadingSexo, 
     error: errorSexo 
   } = useSexoOptions();
+
+  const tipoDocumentoOptions = React.useMemo(() => {
+    if (isJuridica) {
+      const opcionRuc = tipoDocumentoOptionsCatalogo.find((option) =>
+        normalizarEtiqueta(option.label).includes('RUC')
+      );
+
+      return opcionRuc
+        ? [opcionRuc]
+        : [{ value: BUSINESS_CODES.TIPO_DOCUMENTO.RUC, label: 'RUC', id: BUSINESS_CODES.TIPO_DOCUMENTO.RUC }];
+    }
+
+    return tipoDocumentoOptionsCatalogo.filter((option) => {
+      const codigo = String(option.value).trim();
+      const etiqueta = normalizarEtiqueta(option.label);
+
+      const esDni =
+        (codigo === BUSINESS_CODES.TIPO_DOCUMENTO.DNI || etiqueta.includes('DNI')) &&
+        !etiqueta.includes('SIN DNI');
+      const esPartidaNacimiento = etiqueta.includes('PARTIDA') && etiqueta.includes('NACIMIENTO');
+      const esSinDni = etiqueta.includes('SIN DNI');
+      const esCarnetExtranjeria =
+        codigo === BUSINESS_CODES.TIPO_DOCUMENTO.CE ||
+        etiqueta.includes('CARNET') ||
+        etiqueta.includes('EXTRANJER');
+
+      return esDni || esPartidaNacimiento || esSinDni || esCarnetExtranjeria;
+    });
+  }, [isJuridica, tipoDocumentoOptionsCatalogo]);
+
+  const tipoContribuyenteAnterior = React.useRef(isJuridica);
+
+  React.useEffect(() => {
+    if (loadingTipoDoc || tipoDocumentoOptions.length === 0) return;
+
+    const tipoActual = String(form.getValues('tipoDocumento') || '').trim();
+    const tipoPermitido = tipoDocumentoOptions.some(
+      (option) => String(option.value).trim() === tipoActual
+    );
+    const cambioTipoContribuyente = tipoContribuyenteAnterior.current !== isJuridica;
+    tipoContribuyenteAnterior.current = isJuridica;
+
+    if (!tipoPermitido || cambioTipoContribuyente) {
+      const codigoPreferido = isJuridica
+        ? BUSINESS_CODES.TIPO_DOCUMENTO.RUC
+        : BUSINESS_CODES.TIPO_DOCUMENTO.DNI;
+      const opcionPreferida = tipoDocumentoOptions.find(
+        (option) => String(option.value).trim() === codigoPreferido
+      ) ?? tipoDocumentoOptions[0];
+
+      form.setValue('tipoDocumento', String(opcionPreferida.value), {
+        shouldDirty: cambioTipoContribuyente,
+        shouldValidate: true
+      });
+      form.setValue('numeroDocumento', '', {
+        shouldDirty: cambioTipoContribuyente,
+        shouldValidate: false
+      });
+      form.clearErrors('numeroDocumento');
+    }
+  }, [form, isJuridica, loadingTipoDoc, tipoDocumentoOptions]);
 
   // Verificar si hay algún error de carga
   const hasLoadingErrors = errorTipoDoc || errorEstadoCivil || errorSexo;
@@ -116,94 +182,182 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
     },
   };
 
-  // Función helper para determinar el placeholder del número de documento
-  const getNumeroDocumentoPlaceholder = () => {
-    const selectedOption = tipoDocumentoOptions.find(opt => opt.value === tipoDocumento);
-    if (!selectedOption) return 'Número';
-    
-    // Usar el código de la constante para determinar el formato
-    switch (tipoDocumento) {
-      case BUSINESS_CODES.TIPO_DOCUMENTO.DNI: // DNI
-        return '12345678';
-      case BUSINESS_CODES.TIPO_DOCUMENTO.RUC: // RUC
-        return '20123456789';
-      default:
-        return 'Número';
-    }
-  };
-
-  // Función helper para validar número de documento
-  const getDocumentoPattern = () => {
-    // Convertir a string y limpiar para comparación robusta
+  const documentoConfig = React.useMemo(() => {
     const tipoDoc = String(tipoDocumento || '').trim();
+    const etiqueta = normalizarEtiqueta(
+      tipoDocumentoOptions.find((option) => String(option.value).trim() === tipoDoc)?.label || ''
+    );
 
-    // DNI: 8 dígitos
-    if (tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.DNI || tipoDoc.toUpperCase().includes('DNI')) {
-      return /^\d{8}$/;
+    if (
+      tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.DNI ||
+      (etiqueta.includes('DNI') && !etiqueta.includes('SIN DNI'))
+    ) {
+      return {
+        pattern: /^\d{8}$/,
+        maxLength: 8,
+        placeholder: '12345678',
+        errorMessage: 'DNI debe tener 8 dígitos'
+      };
     }
-    // RUC: 11 dígitos
-    if (tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.RUC || tipoDoc.toUpperCase().includes('RUC')) {
-      return /^\d{11}$/;
-    }
-    // Carnet de Extranjería: hasta 12 caracteres alfanuméricos
-    if (tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.CE) {
-      return /^[A-Za-z0-9]{1,12}$/;
-    }
-    // Pasaporte: hasta 12 caracteres alfanuméricos
-    if (tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.PASAPORTE) {
-      return /^[A-Za-z0-9]{1,12}$/;
-    }
-    // Default
-    return /^.+$/;
-  };
 
-  const getDocumentoMaxLength = () => {
-    // Convertir a string y limpiar para comparación robusta
-    const tipoDoc = String(tipoDocumento || '').trim();
+    if (tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.RUC || etiqueta.includes('RUC')) {
+      return {
+        pattern: /^\d{11}$/,
+        maxLength: 11,
+        placeholder: '20123456789',
+        errorMessage: 'RUC debe tener 11 dígitos'
+      };
+    }
 
-    // DNI: 8 dígitos
-    if (tipoDoc === '4101' || tipoDoc.toUpperCase().includes('DNI')) {
-      return 8;
+    if (
+      tipoDoc === BUSINESS_CODES.TIPO_DOCUMENTO.CE ||
+      etiqueta.includes('CARNET') ||
+      etiqueta.includes('EXTRANJER')
+    ) {
+      return {
+        pattern: /^\d{9}$/,
+        maxLength: 9,
+        placeholder: '123456789',
+        errorMessage: 'Carnet de Extranjería debe tener 9 dígitos'
+      };
     }
-    // RUC: 11 dígitos
-    if (tipoDoc === '4102' || tipoDoc.toUpperCase().includes('RUC')) {
-      return 11;
-    }
-    // Carnet de Extranjería: 12 dígitos
-    if (tipoDoc === '4103') {
-      return 12;
-    }
-    // Pasaporte: 12 dígitos
-    if (tipoDoc === '4104') {
-      return 12;
-    }
-    // Default
-    return 15;
-  };
 
-  const getDocumentoErrorMessage = () => {
-    // Convertir a string y limpiar para comparación robusta
-    const tipoDoc = String(tipoDocumento || '').trim();
+    if (etiqueta.includes('PARTIDA') && etiqueta.includes('NACIMIENTO')) {
+      return {
+        pattern: /^\d{1,15}$/,
+        maxLength: 15,
+        placeholder: 'Número de partida',
+        errorMessage: 'Partida de Nacimiento debe tener entre 1 y 15 dígitos'
+      };
+    }
 
-    // DNI: 8 dígitos
-    if (tipoDoc === '4101' || tipoDoc.toUpperCase().includes('DNI')) {
-      return 'DNI debe tener 8 dígitos';
+    if (etiqueta.includes('SIN DNI')) {
+      return {
+        pattern: /^\d{1,15}$/,
+        maxLength: 15,
+        placeholder: 'Número identificador',
+        errorMessage: 'Sin DNI debe tener entre 1 y 15 dígitos'
+      };
     }
-    // RUC: 11 dígitos
-    if (tipoDoc === '4102' || tipoDoc.toUpperCase().includes('RUC')) {
-      return 'RUC debe tener 11 dígitos';
+
+    return {
+      pattern: /^\d{1,15}$/,
+      maxLength: 15,
+      placeholder: 'Número',
+      errorMessage: 'El documento debe contener únicamente números'
+    };
+  }, [tipoDocumento, tipoDocumentoOptions]);
+
+  const [consultandoDocumento, setConsultandoDocumento] = React.useState(false);
+  const [mensajeConsulta, setMensajeConsulta] = React.useState<string | null>(null);
+  const [estadoConsulta, setEstadoConsulta] = React.useState<'success' | 'info' | 'error'>('info');
+  const ultimaConsultaRef = React.useRef('');
+  const consultaActivaRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const tipo = String(tipoDocumento || '').trim();
+    const numero = String(numeroDocumento || '').trim();
+    const documentoValido = tipo !== '' && documentoConfig.pattern.test(numero);
+
+    if (!documentoValido) {
+      consultaActivaRef.current += 1;
+      ultimaConsultaRef.current = '';
+      setConsultandoDocumento(false);
+      setMensajeConsulta(null);
+
+      if (form.getValues('codPersona')) {
+        form.setValue('codPersona', null);
+        form.setValue('nombres', '');
+        form.setValue('razonSocial', '');
+        form.setValue('apellidoPaterno', '');
+        form.setValue('apellidoMaterno', '');
+        form.setValue('fechaNacimiento', null);
+        form.setValue('estadoCivil', '');
+        form.setValue('sexo', BUSINESS_CODES.SEXO.MASCULINO);
+        form.setValue('telefono', '');
+        form.setValue('direccion', null);
+        form.setValue('nFinca', '');
+        form.setValue('otroNumero', '');
+      }
+      return;
     }
-    // Carnet de Extranjería
-    if (tipoDoc === '4103') {
-      return 'Carnet de Extranjería debe tener máximo 12 caracteres';
-    }
-    // Pasaporte
-    if (tipoDoc === '4104') {
-      return 'Pasaporte debe tener máximo 12 caracteres';
-    }
-    // Default
-    return 'Formato inválido';
-  };
+
+    const claveConsulta = `${tipo}:${numero}`;
+    if (ultimaConsultaRef.current === claveConsulta) return;
+
+    const timer = window.setTimeout(async () => {
+      ultimaConsultaRef.current = claveConsulta;
+      const consultaActual = ++consultaActivaRef.current;
+      setConsultandoDocumento(true);
+      setMensajeConsulta(null);
+
+      try {
+        const personas = await listarPersona(tipo, numero);
+        if (consultaActual !== consultaActivaRef.current) return;
+
+        const personaEncontrada = personas.find(
+          (persona) => String(persona.numerodocumento).trim() === numero
+        ) ?? personas[0];
+
+        if (!personaEncontrada) {
+          form.setValue('codPersona', null);
+          setEstadoConsulta('info');
+          setMensajeConsulta('No existe una persona con este documento. Puede continuar con el registro.');
+          return;
+        }
+
+        form.setValue('codPersona', personaEncontrada.codPersona);
+        form.setValue('tipoDocumento', String(personaEncontrada.codTipoDocumento || tipo));
+        form.setValue('numeroDocumento', personaEncontrada.numerodocumento || numero);
+        form.setValue('nombres', isJuridica ? '' : (personaEncontrada.nombres || ''));
+        form.setValue(
+          'razonSocial',
+          isJuridica ? (personaEncontrada.razonSocial || personaEncontrada.nombres || '') : ''
+        );
+        form.setValue('apellidoPaterno', personaEncontrada.apellidopaterno || '');
+        form.setValue('apellidoMaterno', personaEncontrada.apellidomaterno || '');
+        form.setValue(
+          'fechaNacimiento',
+          personaEncontrada.fechanacimiento
+            ? String(personaEncontrada.fechanacimiento).slice(0, 10)
+            : null
+        );
+        form.setValue('estadoCivil', personaEncontrada.codestadocivil || '');
+        form.setValue('sexo', personaEncontrada.codsexo || BUSINESS_CODES.SEXO.MASCULINO);
+        form.setValue('telefono', personaEncontrada.telefono || '');
+        form.setValue(
+          'direccion',
+          personaEncontrada.codDireccion
+            ? {
+                id: personaEncontrada.codDireccion,
+                descripcion: personaEncontrada.direccion || 'Dirección registrada'
+              }
+            : null
+        );
+        form.setValue(
+          'nFinca',
+          personaEncontrada.lote != null ? String(personaEncontrada.lote) : ''
+        );
+        form.setValue('otroNumero', personaEncontrada.otros || '');
+        form.clearErrors();
+        setEstadoConsulta('success');
+        setMensajeConsulta(
+          `Persona encontrada. El formulario está en modo edición (código ${personaEncontrada.codPersona}).`
+        );
+      } catch {
+        if (consultaActual !== consultaActivaRef.current) return;
+        ultimaConsultaRef.current = '';
+        setEstadoConsulta('error');
+        setMensajeConsulta('No se pudo consultar el documento. Verifique la conexión e intente nuevamente.');
+      } finally {
+        if (consultaActual === consultaActivaRef.current) {
+          setConsultandoDocumento(false);
+        }
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [documentoConfig.pattern, form, isJuridica, listarPersona, numeroDocumento, tipoDocumento]);
 
 
   return (
@@ -222,6 +376,12 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
         {hasLoadingErrors && (
           <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 2 }}>
             Algunas opciones no pudieron cargarse. Se están usando valores por defecto.
+          </Alert>
+        )}
+
+        {mensajeConsulta && (
+          <Alert severity={estadoConsulta} sx={{ mb: 2 }}>
+            {mensajeConsulta}
           </Alert>
         )}
 
@@ -251,8 +411,17 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                       {...field}
                       options={tipoDocumentoOptions}
                       getOptionLabel={(option) => option?.label || ''}
-                      value={tipoDocumentoOptions.find(opt => opt.value === field.value) || null}
-                      onChange={(_, newValue) => field.onChange(newValue?.value || '')}
+                      value={tipoDocumentoOptions.find(
+                        (option) => String(option.value) === String(field.value)
+                      ) || null}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue?.value || '');
+                        form.setValue('numeroDocumento', '', {
+                          shouldDirty: true,
+                          shouldValidate: false
+                        });
+                        form.clearErrors('numeroDocumento');
+                      }}
                       disabled={disablePersonaFields || loadingTipoDoc}
                       size="small"
                       renderInput={(params) => (
@@ -293,8 +462,8 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                 rules={{
                   required: 'Requerido',
                   pattern: {
-                    value: getDocumentoPattern(),
-                    message: getDocumentoErrorMessage()
+                    value: documentoConfig.pattern,
+                    message: documentoConfig.errorMessage
                   }
                 }}
                 render={({ field }) => (
@@ -303,7 +472,7 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                     fullWidth
                     size="small"
                     label="Número de Documento"
-                    placeholder={getNumeroDocumentoPlaceholder()}
+                    placeholder={documentoConfig.placeholder}
                     disabled={disablePersonaFields}
                     error={!!errors.numeroDocumento}
                     helperText={String(errors.numeroDocumento?.message || '')}
@@ -311,14 +480,12 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                     onChange={(e) => {
                       // Solo permitir números
                       const value = e.target.value.replace(/[^0-9]/g, '');
-                      // Usar la función getDocumentoMaxLength para obtener el límite correcto
-                      // RUC (4102): 11 dígitos, DNI (4101): 8 dígitos, otros: 15
-                      const maxLen = getDocumentoMaxLength();
+                      const maxLen = documentoConfig.maxLength;
                       const truncatedValue = value.slice(0, maxLen);
                       field.onChange(truncatedValue);
                     }}
                     inputProps={{
-                      maxLength: getDocumentoMaxLength(),
+                      maxLength: documentoConfig.maxLength,
                       inputMode: 'numeric',
                       pattern: '[0-9]*'
                     }}
@@ -327,7 +494,10 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                         <InputAdornment position="start">
                           <PersonIcon sx={{ fontSize: 16 }} />
                         </InputAdornment>
-                      )
+                      ),
+                      endAdornment: consultandoDocumento
+                        ? <CircularProgress size={18} />
+                        : undefined
                     }}
                   />
                 )}
@@ -359,7 +529,9 @@ const PersonaFormMUI: React.FC<PersonaFormProps> = ({
                     placeholder={isJuridica ? 'Ingrese razón social' : 'Ingrese nombres'}
                     disabled={disablePersonaFields}
                     error={!!errors[isJuridica ? 'razonSocial' : 'nombres']}
-                    helperText={String((errors as any)[isJuridica ? 'razonSocial' : 'nombres']?.message || '')}
+                    helperText={String(
+                      (isJuridica ? errors.razonSocial : errors.nombres)?.message || ''
+                    )}
                     sx={fieldStyles}
                     onChange={(e) => {
                       if (!isJuridica) {

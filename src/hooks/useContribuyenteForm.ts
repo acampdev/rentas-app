@@ -8,6 +8,7 @@ import { ContribuyenteData } from '../services/contribuyenteService';
 import { getAuthenticatedUserCode } from '../config/api.unified.config';
 
 export interface ContribuyenteFormValues {
+  codPersona: number | null;
   esPersonaJuridica: boolean;
   tipoDocumento: string;
   numeroDocumento: string;
@@ -33,7 +34,7 @@ interface UseContribuyenteFormProps {
   }) => void | Promise<void>;
   onEdit?: () => void;
   onNew?: () => void;
-  initialData?: Partial<ContribuyenteFormValues> & Record<string, any>;
+  initialData?: Partial<ContribuyenteFormValues> & Record<string, unknown>;
 }
 
 export const useContribuyenteForm = ({
@@ -51,6 +52,7 @@ export const useContribuyenteForm = ({
   // Formulario principal
   const principalForm = useForm<ContribuyenteFormValues>({
     defaultValues: {
+      codPersona: initialData?.codPersona || null,
       esPersonaJuridica: initialData?.esPersonaJuridica || false,
       tipoDocumento: initialData?.tipoDocumento || BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
       numeroDocumento: initialData?.numeroDocumento || '',
@@ -73,6 +75,7 @@ export const useContribuyenteForm = ({
   // Formulario para cónyuge/representante
   const conyugeRepresentanteForm = useForm<ContribuyenteFormValues>({
     defaultValues: {
+      codPersona: null,
       esPersonaJuridica: false,
       tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
       numeroDocumento: '',
@@ -97,6 +100,7 @@ export const useContribuyenteForm = ({
   useEffect(() => {
     if (initialData) {
       const formData: ContribuyenteFormValues = {
+        codPersona: initialData.codPersona || null,
         esPersonaJuridica: initialData.esPersonaJuridica || false,
         tipoDocumento: initialData.tipoDocumento || BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
         numeroDocumento: initialData.numeroDocumento || '',
@@ -209,7 +213,7 @@ export const useContribuyenteForm = ({
     }
 
     return {
-      codPersona: null,
+      codPersona: formData.codPersona,
       codTipopersona: esJuridica ? BUSINESS_CODES.TIPO_PERSONA.JURIDICA : BUSINESS_CODES.TIPO_PERSONA.NATURAL,
       codTipoDocumento: codTipoDocumento,
       numerodocumento: formData.numeroDocumento?.toString() || '',
@@ -235,6 +239,7 @@ export const useContribuyenteForm = ({
     principalForm.clearErrors();
     conyugeRepresentanteForm.clearErrors();
     principalForm.reset({
+      codPersona: null,
       esPersonaJuridica: false,
       tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
       numeroDocumento: '',
@@ -251,6 +256,7 @@ export const useContribuyenteForm = ({
       fechaNacimiento: null
     });
     conyugeRepresentanteForm.reset({
+      codPersona: null,
       esPersonaJuridica: false,
       tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
       numeroDocumento: '',
@@ -282,7 +288,15 @@ export const useContribuyenteForm = ({
       const { contribuyenteService } = await import('../services/contribuyenteService');
 
       const personaPrincipalData = convertirDatosPersona(data, esPersonaJuridica);
-      const personaPrincipal = await personaService.crearPersonaAPI(personaPrincipalData);
+      const personaPrincipal = data.codPersona
+        ? {
+            ...await personaService.actualizarPersonaAPI({
+              ...personaPrincipalData,
+              codPersona: data.codPersona
+            }),
+            codPersona: data.codPersona
+          }
+        : await personaService.crearPersonaAPI(personaPrincipalData);
 
       if (!personaPrincipal || !personaPrincipal.codPersona) {
         console.error('❌ [useContribuyenteForm] Error al crear persona principal, respuesta:', personaPrincipal);
@@ -294,7 +308,15 @@ export const useContribuyenteForm = ({
         const conyugeData = conyugeRepresentanteForm.getValues();
         if (conyugeData.numeroDocumento && (conyugeData.nombres || conyugeData.razonSocial)) {
           const conyugePersonaData = convertirDatosPersona(conyugeData, false);
-          const conyugePersona = await personaService.crearPersonaAPI(conyugePersonaData);
+          const conyugePersona = conyugeData.codPersona
+            ? {
+                ...await personaService.actualizarPersonaAPI({
+                  ...conyugePersonaData,
+                  codPersona: conyugeData.codPersona
+                }),
+                codPersona: conyugeData.codPersona
+              }
+            : await personaService.crearPersonaAPI(conyugePersonaData);
           if (conyugePersona && conyugePersona.codPersona) {
             conyugeRepresentanteId = conyugePersona.codPersona;
           }
@@ -324,9 +346,11 @@ export const useContribuyenteForm = ({
       }
 
       handleNuevo();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      NotificationService.error(error.message || 'Error al guardar contribuyente');
+      NotificationService.error(
+        error instanceof Error ? error.message : 'Error al guardar contribuyente'
+      );
     } finally {
       setInternalLoading(false);
     }
