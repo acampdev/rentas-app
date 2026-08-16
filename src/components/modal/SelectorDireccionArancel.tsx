@@ -32,7 +32,6 @@ import {
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 
-import { useAranceles } from '../../hooks/useAranceles';
 import { ArancelData } from '../../services/arancelService';
 import arancelService from '../../services/arancelService';
 import { formatCurrency } from '../../utils/formatters';
@@ -55,14 +54,11 @@ const SelectorDireccionArancel: React.FC<SelectorDireccionArancelProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Hook de aranceles
-  const { eliminarArancel } = useAranceles();
-
   // Estados para selección
   const [selectedArancel, setSelectedArancel] = useState<ArancelData | null>(null);
 
   // Estados para búsqueda
-  const [anioSeleccionado, setAnioSeleccionado] = useState<number | null>(null);
+  const [anioSeleccionado, setAnioSeleccionado] = useState<number | null>(() => new Date().getFullYear());
   const [codDireccionBusqueda, setCodDireccionBusqueda] = useState<number | null>(null);
   const [parametroBusqueda, setParametroBusqueda] = useState<string>('');
 
@@ -107,8 +103,11 @@ const SelectorDireccionArancel: React.FC<SelectorDireccionArancelProps> = ({
       setLoadingBusqueda(true);
       console.log('🔄 [SelectorDireccionArancel] Buscando con API general:', { parametroBusqueda, anioSeleccionado });
 
-      // Siempre cargar todos los aranceles primero
-      let resultados: ArancelData[] = await arancelService.obtenerTodosAranceles();
+      // La tabla consulta por defecto los aranceles del año seleccionado.
+      let resultados: ArancelData[] = await arancelService.listarArancelesGeneral({
+        anio: anioSeleccionado ?? undefined,
+        parametroBusqueda: 'a'
+      });
       console.log('✅ [SelectorDireccionArancel] Total aranceles cargados:', resultados.length);
 
       // Filtrar localmente por parámetro de búsqueda si existe
@@ -148,46 +147,7 @@ const SelectorDireccionArancel: React.FC<SelectorDireccionArancelProps> = ({
     }
   }, [parametroBusqueda, anioSeleccionado]);
 
-  // Efecto para cargar aranceles iniciales cuando se abre el modal
-  useEffect(() => {
-    if (open) {
-      const cargarArancelesIniciales = async () => {
-        try {
-          setLoadingBusqueda(true);
-          console.log('🔄 [SelectorDireccionArancel] Cargando aranceles iniciales...');
-
-          if (useGeneralApi) {
-            let resultados = await arancelService.obtenerTodosAranceles();
-
-            if (anioSeleccionado !== null && anioSeleccionado > 0) {
-              resultados = resultados.filter(arancel => arancel.anio === anioSeleccionado);
-            }
-
-            setArancelesEncontrados(resultados);
-          } else {
-            const resultados = await arancelService.listarAranceles({
-              codDireccion: undefined,
-              anio: undefined,
-              parametroBusqueda: '',
-              codUsuario: getAuthenticatedUserCode()
-            });
-            setArancelesEncontrados(resultados);
-          }
-
-          console.log('✅ [SelectorDireccionArancel] Aranceles iniciales cargados');
-        } catch (error) {
-          console.error('❌ [SelectorDireccionArancel] Error cargando aranceles iniciales:', error);
-          setArancelesEncontrados([]);
-        } finally {
-          setLoadingBusqueda(false);
-        }
-      };
-
-      cargarArancelesIniciales();
-    }
-  }, [open, useGeneralApi]);
-
-  // Efecto para recargar cuando cambia el año o parámetro de búsqueda
+  // Carga inicial y recarga cuando cambia el año o parámetro de búsqueda.
   useEffect(() => {
     if (open && useGeneralApi) {
       const timer = setTimeout(() => {
