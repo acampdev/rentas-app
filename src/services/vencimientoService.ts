@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interface para los datos de Vencimiento
@@ -56,15 +57,14 @@ class VencimientoService extends BaseApiService<VencimientoData, CreateVencimien
 
   async obtenerPorAnio(anio: number): Promise<VencimientoData[]> {
     const url = buildApiUrl(`${this.endpoint}?anio=${anio}`);
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    const res = await response.json() as any;
-    return this.normalizeData(res.data || res);
+    const res = await apiClient.request<{ data?: VencimientoRaw[] } | VencimientoRaw[]>(url);
+    const data = Array.isArray(res) ? res : (res.data ?? []);
+    return this.normalizeData(data);
   }
 
   async crearVencimientos(anio: number): Promise<VencimientoData[]> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ anio })

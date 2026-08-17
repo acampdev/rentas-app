@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import MainLayout from '../../../layout/MainLayout';
-import { RegistroTIM } from '../../../components';
+import RegistroTIM from '../../../components/escalas/RegistroTIM';
 
 const RegistroTIMPage: React.FC = () => {
   return (

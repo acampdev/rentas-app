@@ -71,7 +71,7 @@ const ConsultaUsers: React.FC = () => {
   // Cargar resultados inmediatamente cuando se monta la pestaña de consulta
   useEffect(() => {
     cargarUsuarios({ parametroBusqueda: '' });
-  }, []);
+  }, [cargarUsuarios]);
 
   const { control, handleSubmit, reset } = useForm<SearchFilters>({
     defaultValues: {

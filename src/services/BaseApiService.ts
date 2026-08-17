@@ -1,7 +1,10 @@
 // src/services/BaseApiService.ts
 
-import { buildApiUrl, API_CONFIG, getApiHeaders } from '../config/api.unified.config';
+import { API_CONFIG } from '../config/api.unified.config';
 import { NotificationService } from '../components/utils/Notification';
+import apiClient, { ApiClientError as ApiError, getApiErrorMessage } from './apiClient';
+
+export { ApiClientError as ApiError } from './apiClient';
 
 /**
  * Tipos base para los servicios
@@ -15,6 +18,8 @@ export interface ApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;
+  mensaje?: string;
+  detail?: string;
   errors?: Record<string, string[]>;
 }
 
@@ -35,46 +40,8 @@ export interface QueryParams {
   [key: string]: any;
 }
 
-/**
- * Clase de error personalizada para API
- */
-export class ApiError extends Error {
-  public statusCode: number;
-  public data: unknown;
-  public errors?: Record<string, string[]>;
-
-  constructor(message: string, statusCode: number, data?: unknown) {
-    super(message);
-    this.name = 'ApiError';
-    this.statusCode = statusCode;
-    this.data = data;
-    this.errors = (data as Record<string, unknown>)?.errors as Record<string, string[]> | undefined;
-  }
-}
-
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
-
-const createAttemptSignal = (externalSignal?: AbortSignal | null) => {
-  const controller = new AbortController();
-  const abortFromExternalSignal = () => controller.abort(externalSignal?.reason);
-
-  if (externalSignal?.aborted) {
-    abortFromExternalSignal();
-  } else {
-    externalSignal?.addEventListener('abort', abortFromExternalSignal, { once: true });
-  }
-
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
-  return {
-    signal: controller.signal,
-    cleanup: () => {
-      clearTimeout(timeoutId);
-      externalSignal?.removeEventListener('abort', abortFromExternalSignal);
-    }
-  };
-};
 
 const isRetryableError = (
   error: unknown,
@@ -127,87 +94,23 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
     options: RequestInit = {},
     retries: number = API_CONFIG.retries
   ): Promise<R> {
-    const url = buildApiUrl(this.endpoint + path);
     const method = (options.method || 'GET').toUpperCase();
-    
-    const finalHeaders = new Headers({
-      ...getApiHeaders(true),
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
+    const finalHeaders = new Headers(options.headers);
+    finalHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    finalHeaders.set('Pragma', 'no-cache');
+    finalHeaders.set('Expires', '0');
 
-    if (options.headers) {
-      new Headers(options.headers).forEach((value, key) => {
-        finalHeaders.set(key, value);
-      });
-    }
-    
     const finalOptions: RequestInit = {
       ...options,
       method,
       headers: finalHeaders
     };
-    
-    // Si hay body, asegurarse de que sea string
-    if (options.body && typeof options.body !== 'string') {
-      finalOptions.body = JSON.stringify(options.body);
-    }
-
-    console.log(`🌐 [${this.constructor.name}] ${method} ${url}`);
-    console.log(`🔐 [${this.constructor.name}] Autenticación Bearer:`, finalHeaders.has('Authorization'));
 
     const maxRetries = RETRYABLE_METHODS.has(method) ? Math.max(0, retries) : 0;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      const { signal, cleanup } = createAttemptSignal(options.signal);
-
       try {
-        const response = await fetch(url, {
-          ...finalOptions,
-          credentials: 'include',
-          signal,
-        });
-        
-        console.log(`📡 [${this.constructor.name}] Respuesta: ${response.status}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorData: Record<string, unknown>;
-          
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { message: errorText };
-          }
-          
-          console.error(`❌ Error Response:`, errorData);
-          
-          throw new ApiError(
-            (errorData?.message as string) || `Error ${response.status}: ${response.statusText}`,
-            response.status,
-            errorData
-          );
-        }
-        
-        // Manejar respuesta vacía
-        if (response.status === 204 || response.headers.get('content-length') === '0') {
-          return null as unknown as R;
-        }
-        
-        // Intentar parsear JSON
-        const responseText = await response.text();
-        if (!responseText) {
-          return null as unknown as R;
-        }
-        
-        try {
-          return JSON.parse(responseText) as R;
-        } catch {
-          // Si no es JSON, devolver el texto
-          return responseText as unknown as R;
-        }
-        
+        return await apiClient.request<R>(this.endpoint + path, finalOptions);
       } catch (error: unknown) {
         console.error(`❌ [${this.constructor.name}] Error en intento ${attempt + 1}:`, error);
 
@@ -222,8 +125,6 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
           `Reintentando en ${retryDelay} ms (${attempt + 1}/${maxRetries})`
         );
         await new Promise(resolve => setTimeout(resolve, retryDelay));
-      } finally {
-        cleanup();
       }
     }
     
@@ -260,7 +161,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
   }
 
   // ========================================
-  // MÉTODOS CRUD - SIN AUTENTICACIÓN
+  // MÉTODOS CRUD AUTENTICADOS
   // ========================================
 
   /**
@@ -324,7 +225,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       return normalized;
     } catch (error: unknown) {
       console.error('❌ [BaseApiService] Error al crear:', error);
-      NotificationService.error((error as Error).message || 'Error al crear el registro');
+      NotificationService.error(getApiErrorMessage(error, 'Error al crear el registro'));
       throw error;
     }
   }
@@ -349,7 +250,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       return normalized;
     } catch (error: unknown) {
       console.error('❌ [BaseApiService] Error al actualizar:', error);
-      NotificationService.error((error as Error).message || 'Error al actualizar el registro');
+      NotificationService.error(getApiErrorMessage(error, 'Error al actualizar el registro'));
       throw error;
     }
   }
@@ -369,7 +270,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       
     } catch (error: unknown) {
       console.error('❌ [BaseApiService] Error al eliminar:', error);
-      NotificationService.error((error as Error).message || 'Error al eliminar el registro');
+      NotificationService.error(getApiErrorMessage(error, 'Error al eliminar el registro'));
       throw error;
     }
   }

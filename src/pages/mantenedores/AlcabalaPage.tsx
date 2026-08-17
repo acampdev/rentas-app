@@ -17,9 +17,11 @@ import {
   List as ListIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { AlcabalaComponent as AlcabalaForm, AlcabalaList, Breadcrumb } from '../../components';
+import AlcabalaForm from '../../components/alcabala/Alcabala';
+import AlcabalaList from '../../components/alcabala/AlcabalaList';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
-import { useAlcabala } from '../../hooks';
+import { useAlcabala } from '../../hooks/useAlcabala';
 import { AlcabalaData } from '../../services/alcabalaService';
 
 const TabPanel: React.FC<{ children?: React.ReactNode; index: number; value: number }> = ({ children, value, index }) => (

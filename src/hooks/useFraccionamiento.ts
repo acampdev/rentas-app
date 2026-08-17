@@ -4,8 +4,7 @@ import { useCallback, useState } from 'react';
 import { fraccionamientoService } from '../services/fraccionamientoService';
 import { NotificationService } from '../components/utils/Notification';
 import type {
-  Fraccionamiento,
-  SolicitudFraccionamientoForm,
+  
   CreateFraccionamientoDTO,
   AprobacionFraccionamientoForm,
   FraccionamientoFiltros
@@ -74,6 +73,14 @@ export const useFraccionamiento = (
     }
   });
 
+  const obtenerCronogramaContribuyente = useCallback(
+    (codContribuyente: number | string) => queryClient.fetchQuery({
+      queryKey: ['fraccionamiento-cronograma-contribuyente', codContribuyente],
+      queryFn: () => fraccionamientoService.listarCronogramaContribuyente(codContribuyente)
+    }),
+    [queryClient]
+  );
+
   return {
     fraccionamientos,
     estadisticas,
@@ -103,11 +110,7 @@ export const useFraccionamiento = (
         queryKey: ['fraccionamiento-cronograma', anio, codResolucion],
         queryFn: () => fraccionamientoService.obtenerCronograma(anio, codResolucion)
       }),
-    obtenerCronogramaContribuyente: (codContribuyente: number | string) =>
-      queryClient.fetchQuery({
-        queryKey: ['fraccionamiento-cronograma-contribuyente', codContribuyente],
-        queryFn: () => fraccionamientoService.listarCronogramaContribuyente(codContribuyente)
-      })
+    obtenerCronogramaContribuyente
   };
 };
 

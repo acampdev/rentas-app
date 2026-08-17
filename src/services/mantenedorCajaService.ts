@@ -1,5 +1,6 @@
 // src/services/mantenedorCajaService.ts
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -34,7 +35,7 @@ export interface ListarMantenedorCajaParams {
 /**
  * Servicio para gestion de mantenedor de cajas
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  * Todos los metodos (GET, POST, PUT) funcionan sin token
  */
 class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMantenedorCajaDTO, UpdateMantenedorCajaDTO> {
@@ -69,7 +70,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
   /**
    * Lista cajas con filtros
    * GET /api/caja/listar?descripcion=C&codUsuario=1
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async listar(params?: ListarMantenedorCajaParams): Promise<MantenedorCajaData[]> {
     try {
@@ -98,7 +99,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: 'GET',
         headers
       });
@@ -136,7 +137,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Crea una nueva caja
    * POST /api/caja/insertar
    * Body: {descripcion}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async insertar(datos: CreateMantenedorCajaDTO): Promise<MantenedorCajaData> {
     try {
@@ -153,7 +154,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
@@ -196,7 +197,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Actualiza una caja existente
    * PUT /api/caja/actualizar
    * Body: {codCaja, descripcion}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async actualizar(datos: UpdateMantenedorCajaDTO): Promise<MantenedorCajaData> {
     try {
@@ -213,7 +214,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
@@ -256,7 +257,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Elimina una caja
    * PUT /api/caja/eliminar
    * Body: {codCaja}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async eliminar(datos: DeleteMantenedorCajaDTO): Promise<void> {
     try {
@@ -273,7 +274,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)

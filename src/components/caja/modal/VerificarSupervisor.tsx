@@ -16,6 +16,7 @@ import { Close as CloseIcon, Security as SecurityIcon } from '@mui/icons-materia
 import { useUsuarios } from '../../../hooks/useUsuarios';
 import { NotificationService } from '../../utils/Notification';
 import { buildApiUrl } from '../../../config/api.unified.config';
+import apiClient from '../../../services/apiClient';
 
 interface VerificarSupervisorProps {
   open: boolean;
@@ -48,8 +49,9 @@ const VerificarSupervisor: React.FC<VerificarSupervisorProps> = ({
         try {
           const loginUrl = buildApiUrl('/auth/login');
           console.log('[VerificarSupervisor] Intentando login en:', loginUrl);
-          const loginRes = await fetch(loginUrl, {
+          const loginRes = await apiClient.fetch(loginUrl, {
             method: 'POST',
+            auth: false,
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: username.trim(), password: password.trim() })
           });

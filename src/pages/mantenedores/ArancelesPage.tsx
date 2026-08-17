@@ -17,7 +17,9 @@ import {
   Map as MapIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { ArancelComponent as ArancelForm, ArancelList, Breadcrumb } from '../../components';
+import { AsignacionArancelForm as ArancelForm } from '../../components/aranceles/ArancelForm';
+import { ArancelList } from '../../components/aranceles/ArancelList';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import { useAranceles } from '../../hooks/useAranceles';
 import { ArancelData } from '../../services/arancelService';
@@ -36,7 +38,7 @@ const ArancelesPage: React.FC = () => {
     aranceles,
     loading,
     error,
-    anio,
+    anio: _anio,
     setAnio,
     setBusqueda,
     crearArancel,

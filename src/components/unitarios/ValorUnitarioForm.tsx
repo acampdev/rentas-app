@@ -1,28 +1,21 @@
 // src/components/unitarios/ValorUnitarioForm.tsx
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import {
   Paper,
   Box,
   TextField,
   InputAdornment,
   useTheme,
-  alpha,
   Autocomplete,
   Button,
   CircularProgress,
-  Grid,
   Typography,
   Alert,
   AlertTitle
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Add as AddIcon,
-  Category as CategoryIcon,
-  Layers as LayersIcon,
-  TextFields as TextFieldsIcon,
-  AttachMoney as MoneyIcon,
-  Event as CalendarIcon
+  Add as AddIcon
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,7 +51,7 @@ const ValorUnitarioForm: React.FC<ValorUnitarioFormProps> = ({
   onNuevo,
   isSubmitting = false
 }) => {
-  const theme = useTheme();
+  const _theme = useTheme();
   
   // Hooks de constantes
   const { options: categoriasOptions, loading: loadingCategorias } = useCategoriasValoresUnitariosOptions();

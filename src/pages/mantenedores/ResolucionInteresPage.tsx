@@ -18,7 +18,7 @@ import {
   Percent as PercentIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { Breadcrumb } from '../../components';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import ResolucionInteres from '../../components/resolucionInteres/ResolucionInteres';
 import ConsultaResolucion from '../../components/resolucionInteres/ConsultaResolucion';
@@ -37,7 +37,7 @@ const ResolucionInteresPage: React.FC = () => {
   const [resolucionSeleccionada, setResolucionSeleccionada] = useState<ResolucionInteresData | null>(null);
 
   const {
-    resoluciones,
+    resoluciones: _resoluciones,
     loading,
     error,
     crearResolucion,

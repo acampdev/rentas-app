@@ -14,6 +14,24 @@ export default defineConfig(({ mode }) => {
 
   return {
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.{ts,tsx}',
+        'src/main.tsx',
+        'src/models/**',
+        'src/types/**'
+      ]
+    }
+  },
   esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : undefined,
   
   // Resolver alias para importaciones
@@ -77,19 +95,40 @@ export default defineConfig(({ mode }) => {
     outDir: 'dist',
     sourcemap: false,
     reportCompressedSize: true,
+    // Mantener el umbral estándar como control de regresiones. Los chunks PDF
+    // son diferidos, pero deben seguir apareciendo en el reporte si exceden 500 KB.
+    chunkSizeWarningLimit: 500,
     // Manejar chunks grandes
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Evitar que el helper de precarga de Vite quede incluido dentro de
+          // un motor PDF y fuerce su descarga durante el arranque.
+          if (id.includes('vite/preload-helper')) return 'vite-runtime'
           if (!id.includes('node_modules')) return undefined
-          if (id.includes('vfs_fonts')) return 'pdf-fonts'
-          if (id.includes('pdfmake')) return 'pdfmake'
-          if (id.includes('jspdf') || id.includes('html2canvas')) return 'pdf-export'
-          if (id.includes('recharts')) return 'charts'
-          if (id.includes('@tanstack')) return 'query'
-          if (id.includes('@mui/icons-material')) return 'mui-icons'
-          if (id.includes('@mui') || id.includes('@emotion')) return 'mui'
-          if (id.includes('date-fns') || id.includes('dayjs')) return 'dates'
+          // pnpm incluye nombres de peers en la ruta virtual. Evaluar únicamente
+          // el paquete real posterior al último /node_modules/ evita chunks cíclicos.
+          const normalizedId = id.replace(/\\/g, '/')
+          const packageId = normalizedId.slice(normalizedId.lastIndexOf('/node_modules/') + 14)
+          if (packageId.includes('pdfmake/build/vfs_fonts')) return 'pdf-fonts'
+          if (packageId.startsWith('pdfmake/')) return 'pdfmake'
+          if (packageId.startsWith('jspdf/')) return 'jspdf'
+          if (packageId.startsWith('html2canvas/')) return 'html2canvas'
+          if (/^(canvg|dompurify|fflate|fast-png|svg-pathdata)\//.test(packageId)) return 'pdf-support'
+          if (packageId.startsWith('recharts/')) return 'charts'
+          if (packageId.startsWith('@tanstack/')) return 'query'
+          if (packageId.startsWith('@mui/x-data-grid/')) return 'mui-data-grid'
+          if (packageId.startsWith('@mui/x-date-pickers/')) return 'mui-date-pickers'
+          if (packageId.startsWith('@mui/icons-material/')) return 'mui-icons'
+          if (packageId.startsWith('@mui/material/')) return 'mui-material'
+          if (packageId.startsWith('@emotion/')) return 'emotion'
+          if (packageId.startsWith('@mui/')) return 'mui-system'
+          if (packageId.startsWith('react-router')) return 'router'
+          if (/^(react|react-dom|scheduler|react-is)\//.test(packageId)) return 'react'
+          if (packageId.startsWith('react-hook-form/') || packageId.startsWith('@hookform/')) return 'forms'
+          if (packageId.startsWith('date-fns/') || packageId.startsWith('dayjs/')) return 'dates'
+          if (packageId.startsWith('lucide-react/') || packageId.startsWith('react-icons/')) return 'icon-libs'
+          if (packageId.startsWith('zod/') || packageId.startsWith('yup/')) return 'validation'
           return 'vendor'
         }
       }

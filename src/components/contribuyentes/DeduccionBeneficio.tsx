@@ -22,10 +22,7 @@ import {
 import {
   Search as SearchIcon,
   Person as PersonIcon,
-  Apartment as ApartmentIcon,
-  CheckCircle as CheckCircleIcon,
-  Clear as ClearIcon,
-  Refresh as RefreshIcon
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { NotificationService } from '../utils/Notification';
 import SelectorContribuyente from '../modal/SelectorContribuyente';

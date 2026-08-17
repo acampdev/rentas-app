@@ -105,7 +105,7 @@ const NuevoExpedienteForm: React.FC = () => {
         NotificationService.error('No se encontró el contribuyente');
         setContribuyenteEncontrado(false);
       }
-    } catch (e) {
+    } catch {
       NotificationService.error('Error al buscar contribuyente');
     } finally {
       setBuscandoBusqueda(false);
@@ -144,7 +144,7 @@ const NuevoExpedienteForm: React.FC = () => {
         codUsuario: getAuthenticatedUserCode()
       });
       handleLimpiar();
-    } catch (e) {
+    } catch {
       // El error ya lo maneja el hook
     }
   };

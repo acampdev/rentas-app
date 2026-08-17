@@ -6,7 +6,6 @@ import {
   MantenedorCajaData,
   CreateMantenedorCajaDTO,
   UpdateMantenedorCajaDTO,
-  DeleteMantenedorCajaDTO,
   ListarMantenedorCajaParams
 } from '../services/mantenedorCajaService';
 

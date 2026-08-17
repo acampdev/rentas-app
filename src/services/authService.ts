@@ -1,6 +1,8 @@
 import { NotificationService } from '../components/utils/Notification';
 import { buildApiUrl, getApiHeaders, getAuthToken, getStoredAuthUser } from '../config/api.unified.config';
 import { AuthCredentials, AuthResponse, RegisterData, RegisterResponse, AuthUserStored } from '../models/Auth';
+import { ROLE_BY_CODE } from '../config/accessControl';
+import apiClient, { ApiClientError } from './apiClient';
 
 // Configuración de autenticación
 const AUTH_CONFIG = {
@@ -34,13 +36,6 @@ type AuthApiPayload = Record<string, unknown> & {
     rol?: unknown;
     nombreCompleto?: string;
   };
-};
-
-const ROLE_BY_CODE: Readonly<Record<number, string>> = {
-  1: 'ADMINISTRADOR',
-  2: 'USER',
-  3: 'CAJERO',
-  4: 'SUPERVISOR'
 };
 
 const decodeJwtExpiry = (token: string): Date | null => {
@@ -157,8 +152,9 @@ export class AuthService {
 
   async register(data: RegisterData): Promise<RegisterResponse> {
     try {
-      const response = await fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REGISTER), {
+      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REGISTER), {
         method: 'POST',
+        auth: false,
         credentials: 'include',
         headers: getApiHeaders(false),
         body: JSON.stringify(data)
@@ -185,7 +181,9 @@ export class AuthService {
         }
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al registrar usuario';
+      const message = error instanceof ApiClientError && error.statusCode === 409
+        ? 'El usuario ya existe'
+        : error instanceof Error ? error.message : 'Error al registrar usuario';
       NotificationService.error(message);
       return { success: false, message };
     }
@@ -193,8 +191,9 @@ export class AuthService {
 
   async login(credentials: AuthCredentials): Promise<AuthResponse> {
     try {
-      const response = await fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGIN), {
+      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGIN), {
         method: 'POST',
+        auth: false,
         credentials: 'include',
         headers: getApiHeaders(false),
         body: JSON.stringify(credentials)
@@ -242,7 +241,9 @@ export class AuthService {
 
       return { success: true, token, user };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al iniciar sesión';
+      const message = error instanceof ApiClientError && error.statusCode === 401
+        ? 'Usuario o contraseña incorrectos'
+        : error instanceof Error ? error.message : 'Error al iniciar sesión';
       NotificationService.error(message);
       return { success: false, message };
     }
@@ -254,7 +255,7 @@ export class AuthService {
     if (!currentToken || !storedUser) return false;
 
     try {
-      const response = await fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REFRESH), {
+      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REFRESH), {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true)
@@ -290,7 +291,7 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    const logoutRequest = fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGOUT), {
+    const logoutRequest = apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGOUT), {
       method: 'POST',
       credentials: 'include',
       headers: getApiHeaders(true),

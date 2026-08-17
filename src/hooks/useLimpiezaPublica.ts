@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { limpiezaPublicaService, LimpiezaPublicaData, CreateLimpiezaPublicaDTO } from '../services/limpiezaPublicaService';
+import {  useState } from 'react';
+import { limpiezaPublicaService, CreateLimpiezaPublicaDTO } from '../services/limpiezaPublicaService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

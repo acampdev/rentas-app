@@ -1,5 +1,5 @@
 // src/components/depreciacion/DepreciacionUnificado.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Paper,
   Box,
@@ -10,7 +10,6 @@ import {
   Autocomplete,
   useTheme,
   alpha,
-  Divider,
   Chip,
   Table,
   TableBody,

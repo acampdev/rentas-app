@@ -20,7 +20,7 @@ const PersonaPage: React.FC = () => {
   const tab = location.pathname.includes("consulta") ? 1 : 0;
   const cambiarTab = (_: React.SyntheticEvent, value: number) =>
     navigate(value === 0 ? "/persona/nueva" : "/persona/consulta");
-  const irANuevo = () => {
+  const _irANuevo = () => {
     setSelected(null);
     navigate("/persona/nueva");
   };

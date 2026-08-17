@@ -14,6 +14,44 @@ import sectorService from '../services/SectorService';
 import barrioService from '../services/barrioService';
 import tipoViaService from '../services/viaService';
 
+type CalleFilter = {
+  search: string;
+  codigoVia?: number;
+  codBarrio?: number;
+};
+
+// Estas funciones deben conservar la misma referencia entre renders. Si se
+// crean dentro del hook, useCrudEntity reconstruye loadItems y vuelve a
+// ejecutar su efecto de carga indefinidamente.
+const ordenarCalles = (a: CalleData, b: CalleData) => {
+  const viaComparison = (a.nombreVia || '').localeCompare(b.nombreVia || '');
+  if (viaComparison !== 0) return viaComparison;
+  return (a.nombre || '').localeCompare(b.nombre || '');
+};
+
+const filtrarCalles = (items: CalleData[], filter: CalleFilter) => {
+  let filtered = items;
+
+  if (filter.search) {
+    const searchLower = filter.search.toLowerCase();
+    filtered = filtered.filter(item =>
+      item.nombre?.toLowerCase().includes(searchLower) ||
+      item.nombreVia?.toLowerCase().includes(searchLower) ||
+      item.codigo?.toString().includes(searchLower)
+    );
+  }
+
+  if (filter.codigoVia) {
+    filtered = filtered.filter(item => item.codigoVia === filter.codigoVia);
+  }
+
+  if (filter.codBarrio) {
+    filtered = filtered.filter(item => item.codBarrio === filter.codBarrio);
+  }
+
+  return filtered;
+};
+
 export const useCalles = () => {
   // Estados adicionales
   const [sectores, setSectores] = useState<SectorData[]>([]);
@@ -33,38 +71,8 @@ export const useCalles = () => {
       entityName: 'Calle',
       loadOnMount: true,
       searchDebounce: 300,
-      sortFunction: (a, b) => {
-        // Ordenar por nombre de vía y luego por nombre
-        const viaComparison = (a.nombreVia || '').localeCompare(b.nombreVia || '');
-        if (viaComparison !== 0) return viaComparison;
-        return (a.nombre || '').localeCompare(b.nombre || '');
-      },
-      localFilter: (items, filter) => {
-        let filtered = items;
-        
-        if (filter.search) {
-          const searchLower = filter.search.toLowerCase();
-          filtered = filtered.filter(item => 
-            item.nombre?.toLowerCase().includes(searchLower) ||
-            item.nombreVia?.toLowerCase().includes(searchLower) ||
-            item.codigo?.toString().includes(searchLower)
-          );
-        }
-        
-        if (filter.codigoVia) {
-          filtered = filtered.filter(item => 
-            item.codigoVia === filter.codigoVia
-          );
-        }
-        
-        if (filter.codBarrio) {
-          filtered = filtered.filter(item => 
-            item.codBarrio === filter.codBarrio
-          );
-        }
-        
-        return filtered;
-      }
+      sortFunction: ordenarCalles,
+      localFilter: filtrarCalles
     }
   );
 

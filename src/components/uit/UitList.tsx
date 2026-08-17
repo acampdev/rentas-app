@@ -401,8 +401,8 @@ const UitList: React.FC<UitListProps> = ({
 
   // Obtener año actual y calcular variación usando datos únicos
   const anioActual = new Date().getFullYear();
-  const uitActual = uitsUnicos.find(u => u.anio === anioActual);
-  const uitAnterior = uitsUnicos.find(u => u.anio === anioActual - 1);
+  const _uitActual = uitsUnicos.find(u => u.anio === anioActual);
+  const _uitAnterior = uitsUnicos.find(u => u.anio === anioActual - 1);
 
   return (
     <Paper 
@@ -509,14 +509,14 @@ const UitList: React.FC<UitListProps> = ({
                 },
                 // Ocultar spinners del input de tipo número para evitar recortar espacio
                 '& input[type=number]': {
-                  '-moz-appearance': 'textfield',
+                  MozAppearance: 'textfield',
                 },
                 '& input[type=number]::-webkit-outer-spin-button': {
-                  '-webkit-appearance': 'none',
+                  WebkitAppearance: 'none',
                   margin: 0,
                 },
                 '& input[type=number]::-webkit-inner-spin-button': {
-                  '-webkit-appearance': 'none',
+                  WebkitAppearance: 'none',
                   margin: 0,
                 },
                 '& .MuiInputAdornment-root': {

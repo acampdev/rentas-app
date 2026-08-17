@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import MainLayout from '../../layout/MainLayout';
-import { Vencimiento } from '../../components';
+import Vencimiento from '../../components/escalas/Vencimiento';
 
 const VencimientoPage: React.FC = () => {
   return (

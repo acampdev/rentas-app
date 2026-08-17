@@ -19,7 +19,6 @@ import {
   Print as PrintIcon,
   Close as CloseIcon,
   Description as DescriptionIcon,
-  AspectRatio as AspectRatioIcon,
 } from '@mui/icons-material';
 
 export interface PrintPUProps {

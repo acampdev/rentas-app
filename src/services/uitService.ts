@@ -1,5 +1,4 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interface para los datos de UIT como vienen del API

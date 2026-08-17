@@ -50,7 +50,7 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
     data: pisos = [] as Piso[],
     isLoading: loading,
     error,
-    refetch
+    refetch: _refetch
   } = useQuery({
     queryKey: ['pisos', filtros],
     queryFn: async () => {

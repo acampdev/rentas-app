@@ -45,7 +45,6 @@ import { Tooltip } from '@mui/material';
 import DeudaGlobal, { mapDetallesToGlobalItems } from './deuda/DeudaGlobal';
 import DeudaOrdinariaComponent from './deuda/DeudaOrdinaria';
 import DeudaFraccionada from './deuda/DeudaFraccionada';
-import DeudaCoactiva from './deuda/DeudaCoactiva';
 import { mapTributoNameToCode } from './deuda/deuda.validation';
 
 // Importar servicios
@@ -140,7 +139,7 @@ interface DeudaContribuyenteProps {
 
 
 // Interfaces para Deuda Fraccionamiento
-interface ResolucionFraccionamiento {
+interface _ResolucionFraccionamiento {
   año: number;
   resolucion: string;
   cuotas: CuotaFraccionamiento[];
@@ -818,92 +817,7 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
     return 'transparent';
   };
 
-  // Datos de ejemplo para Deuda Coactiva
-  const expedientesCoactivos: ExpedienteCoactivo[] = [
-    {
-      añoExpediente: 2021,
-      nroExpediente: 'EXP-001-2021',
-      años: [
-        {
-          año: 2019,
-          tributos: [
-            { tributo: 'Parques y Jardines', valores: [30.50, 30.50, 30.50, 30.50, 30.50, 30.50, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'Impuesto Predial', valores: [180.75, 180.75, 180.75, 180.75, 180.75, 180.75, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'Serenazgo', valores: [45.25, 45.25, 45.25, 45.25, 45.25, 45.25, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'Limpieza Publica', valores: [50.00, 50.00, 50.00, 50.00, 50.00, 50.00, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'Formularios D.J', valores: [15.00, 15.00, 15.00, 15.00, 15.00, 15.00, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'TIM Impuesto Predial', valores: [8.50, 8.50, 8.50, 8.50, 8.50, 8.50, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'TIM Parques y Jardines', valores: [5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 0, 0, 0, 0, 0, 0], checked: true },
-            { tributo: 'TIM Serenazgo', valores: [4.25, 4.25, 4.25, 4.25, 4.25, 4.25, 0, 0, 0, 0, 0, 0], checked: true }
-          ]
-        },
-        {
-          año: 2020,
-          tributos: [
-            { tributo: 'Parques y Jardines', valores: [35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50, 35.50], checked: true },
-            { tributo: 'Impuesto Predial', valores: [200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75, 200.75], checked: true },
-            { tributo: 'Serenazgo', valores: [50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25, 50.25], checked: true },
-            { tributo: 'Limpieza Publica', valores: [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00], checked: true },
-            { tributo: 'Formularios D.J', valores: [18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00, 18.00], checked: true },
-            { tributo: 'TIM Impuesto Predial', valores: [10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50, 10.50], checked: true },
-            { tributo: 'TIM Parques y Jardines', valores: [6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25], checked: true },
-            { tributo: 'TIM Serenazgo', valores: [5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25, 5.25], checked: true }
-          ]
-        }
-      ]
-    },
-    {
-      añoExpediente: 2022,
-      nroExpediente: 'EXP-002-2022',
-      años: [
-        {
-          año: 2020,
-          tributos: [
-            { tributo: 'Parques y Jardines', valores: [40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50, 40.50], checked: true },
-            { tributo: 'Impuesto Predial', valores: [220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75, 220.75], checked: true },
-            { tributo: 'Serenazgo', valores: [55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25], checked: true },
-            { tributo: 'Limpieza Publica', valores: [60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00, 60.00], checked: true },
-            { tributo: 'Formularios D.J', valores: [20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00], checked: true },
-            { tributo: 'TIM Impuesto Predial', valores: [12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50, 12.50], checked: true },
-            { tributo: 'TIM Parques y Jardines', valores: [7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25], checked: true },
-            { tributo: 'TIM Serenazgo', valores: [6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25], checked: true }
-          ]
-        }
-      ]
-    },
-    {
-      añoExpediente: 2023,
-      nroExpediente: 'EXP-003-2023',
-      años: [
-        {
-          año: 2021,
-          tributos: [
-            { tributo: 'Parques y Jardines', valores: [45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50, 45.50], checked: true },
-            { tributo: 'Impuesto Predial', valores: [250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75, 250.75], checked: true },
-            { tributo: 'Serenazgo', valores: [60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25, 60.25], checked: true },
-            { tributo: 'Limpieza Publica', valores: [65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00, 65.00], checked: true },
-            { tributo: 'Formularios D.J', valores: [22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00, 22.00], checked: true },
-            { tributo: 'TIM Impuesto Predial', valores: [14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50, 14.50], checked: true },
-            { tributo: 'TIM Parques y Jardines', valores: [8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25], checked: true },
-            { tributo: 'TIM Serenazgo', valores: [7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25, 7.25], checked: true }
-          ]
-        },
-        {
-          año: 2022,
-          tributos: [
-            { tributo: 'Parques y Jardines', valores: [48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50, 48.50], checked: true },
-            { tributo: 'Impuesto Predial', valores: [270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75, 270.75], checked: true },
-            { tributo: 'Serenazgo', valores: [65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25, 65.25], checked: true },
-            { tributo: 'Limpieza Publica', valores: [70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00, 70.00], checked: true },
-            { tributo: 'Formularios D.J', valores: [25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00, 25.00], checked: true },
-            { tributo: 'TIM Impuesto Predial', valores: [16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50, 16.50], checked: true },
-            { tributo: 'TIM Parques y Jardines', valores: [9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25, 9.25], checked: true },
-            { tributo: 'TIM Serenazgo', valores: [8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25, 8.25], checked: true }
-          ]
-        }
-      ]
-    }
-  ];
+  const expedientesCoactivos: ExpedienteCoactivo[] = [];
 
   // Manejar selección de expediente en Deuda Coactiva
   const handleExpedienteClick = (añoExpediente: number) => {
@@ -936,7 +850,7 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
   };
 
   // Manejar check de tributos en Deuda Coactiva
-  const handleTributoCoactivoCheck = (index: number) => {
+  const _handleTributoCoactivoCheck = (index: number) => {
     const nuevosTributos = tributosCoactivos.map((tributo, i) =>
       i === index ? { ...tributo, checked: !tributo.checked } : tributo
     );
@@ -1080,7 +994,7 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
   };
 
   // Calcular color de celda para pintado vertical en Deuda Coactiva
-  const getCellColorCoactivo = (tributoIndex: number, mesIndex: number): string => {
+  const _getCellColorCoactivo = (tributoIndex: number, mesIndex: number): string => {
     // Solo pintar si hay tributos coactivos cargados
     if (!tributosCoactivos || tributosCoactivos.length === 0) return 'transparent';
     
@@ -1470,18 +1384,10 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
                       )}
                       {/* tabs Deuda Coactiva */}
                       {deudaTabValue === 3 && (
-                        <DeudaCoactiva
-                          expedientesCoactivos={expedientesCoactivos}
-                          añosCoactivos={añosCoactivos}
-                          tributosCoactivos={tributosCoactivos}
-                          selectedExpediente={selectedExpediente}
-                          selectedAñoCoactivo={selectedAñoCoactivo}
-                          montoCoactivo={montoCoactivo}
-                          onExpedienteClick={handleExpedienteClick}
-                          onAñoCoactivoClick={handleAñoCoactivoClick}
-                          onTributoCoactivoCheck={handleTributoCoactivoCheck}
-                          getCellColorCoactivo={getCellColorCoactivo}
-                        />
+                        <Alert severity="warning" variant="outlined" sx={{ width: '100%', mt: 2 }}>
+                          <Typography fontWeight={700}>Módulo no disponible</Typography>
+                          La deuda coactiva todavía no está conectada a una API municipal. No se muestran expedientes ni importes simulados.
+                        </Alert>
                       )}
                     </>
                   )}

@@ -1,5 +1,6 @@
 // src/services/cuentaCorrienteService.ts
 import BaseApiService from "./BaseApiService";
+import apiClient from "./apiClient";
 import { buildApiUrl, getApiHeaders } from "../config/api.unified.config";
 
 export interface EstadoCuentaFiltros {
@@ -273,7 +274,7 @@ class CuentaCorrienteService extends BaseApiService<
       });
       const getUrl = `${url}?${queryParams.toString()}`;
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: "GET",
         credentials: "include",
         headers: getApiHeaders(true),
@@ -318,7 +319,7 @@ class CuentaCorrienteService extends BaseApiService<
       });
       const getUrl = `${url}?${queryParams.toString()}`;
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: "GET",
         credentials: "include",
         headers: getApiHeaders(true),

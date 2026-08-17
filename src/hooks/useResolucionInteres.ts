@@ -1,7 +1,6 @@
 // hooks/useResolucionInteres.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
-import { resolucionInteresService, ResolucionInteresData, CreateResolucionInteresDTO, UpdateResolucionInteresDTO } from '../services/resolucionInteresService';
+import { resolucionInteresService, CreateResolucionInteresDTO, UpdateResolucionInteresDTO } from '../services/resolucionInteresService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { vencimientoService, VencimientoData } from '../services/vencimientoService';
+import { vencimientoService } from '../services/vencimientoService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Depreciación
@@ -55,7 +56,7 @@ export interface CreateDepreciacionDTO {
 /**
  * Servicio para gestión de Depreciación
  */
-class DepreciacionService extends BaseApiService<DepreciacionData, CreateDepreciacionDTO, Partial<CreateDepreciacionDTO>> {
+class DepreciacionService extends BaseApiService<DepreciacionData, CreateDepreciacionDTO, Partial<CreateDepreciacionDTO>, DepreciacionRaw> {
   private static instance: DepreciacionService;
 
   private constructor() {
@@ -90,15 +91,14 @@ class DepreciacionService extends BaseApiService<DepreciacionData, CreateDepreci
 
   async consultar(anio: number, codTipoCasa: string): Promise<DepreciacionData[]> {
     const url = buildApiUrl(`${this.endpoint}?anio=${anio}&codTipoCasa=${codTipoCasa}`);
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    const res = await response.json() as any;
-    return this.normalizeData(res.data || res);
+    const res = await apiClient.request<{ data?: DepreciacionRaw[] } | DepreciacionRaw[]>(url);
+    const data = Array.isArray(res) ? res : (res.data ?? []);
+    return this.normalizeData(data);
   }
 
   async crear(datos: any): Promise<DepreciacionData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -110,7 +110,7 @@ class DepreciacionService extends BaseApiService<DepreciacionData, CreateDepreci
 
   async actualizar(datos: any): Promise<DepreciacionData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)

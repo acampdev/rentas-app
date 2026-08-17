@@ -34,6 +34,16 @@ export const usePagos = (onPagoExitoso?: () => void) => {
   const [contribuyenteSeleccionado, setContribuyenteSeleccionado] = useState<ContribuyenteOption | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const handleNuevo = useCallback(() => {
+    setPagoData({
+      codigo: '', rucDni: '', contribuyente: null, direccion: '',
+      fechaRecibo: new Date(), descripcion: '', conceptos: [],
+      formaPago: 'CONTADO', total: 0
+    });
+    setBusquedaContribuyente('');
+    setContribuyenteSeleccionado(null);
+  }, []);
+
   const handleGrabar = useCallback(async () => {
     if (pagoData.conceptos.length === 0 || !contribuyenteSeleccionado) return;
     
@@ -164,7 +174,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
     } finally {
       setLoading(false);
     }
-  }, [pagoData, contribuyenteSeleccionado, onPagoExitoso]);
+  }, [pagoData, contribuyenteSeleccionado, handleNuevo, onPagoExitoso]);
 
   const handleImprimirRecibo = useCallback(() => {
     if (pagoData.conceptos.length === 0) return;
@@ -172,22 +182,6 @@ export const usePagos = (onPagoExitoso?: () => void) => {
 
   const handleLimpiarConceptos = useCallback(() => {
     setPagoData(prev => ({ ...prev, conceptos: [], total: 0 }));
-  }, []);
-
-  const handleNuevo = useCallback(() => {
-    setPagoData({
-      codigo: '',
-      rucDni: '',
-      contribuyente: null,
-      direccion: '',
-      fechaRecibo: new Date(),
-      descripcion: '',
-      conceptos: [],
-      formaPago: 'CONTADO',
-      total: 0
-    });
-    setBusquedaContribuyente('');
-    setContribuyenteSeleccionado(null);
   }, []);
 
   const handleSeleccionarContribuyente = useCallback((contribuyente: ContribuyenteOption) => {

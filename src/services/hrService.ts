@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -98,7 +99,7 @@ class HRService extends BaseApiService<HRData, void, void> {
         queryParams.append('codContribuyente', params.codContribuyente);
       }
 
-      const response = await fetch(`${url}?${queryParams.toString()}`);
+      const response = await apiClient.fetch(`${url}?${queryParams.toString()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
       const res = await response.json() as any;

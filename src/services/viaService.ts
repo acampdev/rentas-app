@@ -129,7 +129,7 @@ class TipoViaService extends BaseApiService<TipoViaData, CreateTipoViaDTO, Updat
   /**
    * Override del método getAll para usar el endpoint correcto
    */
-  public async getAll(params?: QueryParams): Promise<TipoViaData[]> {
+  public async getAll(_params?: QueryParams): Promise<TipoViaData[]> {
     return this.listarTiposVia();
   }
 }

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Box, Typography, Stack, Alert, useTheme } from '@mui/material';
+import { Box, Typography, Stack, Alert } from '@mui/material';
 import { TrendingDown as TrendingDownIcon, Info as InfoIcon } from '@mui/icons-material';
 import { MainLayout } from '../../layout';
-import { DepreciacionUnificado, Breadcrumb } from '../../components';
+import DepreciacionUnificado from '../../components/depreciacion/DepreciacionUnificado';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import { useDepreciacion } from '../../hooks/useDepreciacion';
 
@@ -10,7 +11,7 @@ const DepreciacionPage: React.FC = () => {
   const {
     depreciaciones,
     loading,
-    error,
+    error: _error,
     anio,
     setAnio,
     codTipoCasa,

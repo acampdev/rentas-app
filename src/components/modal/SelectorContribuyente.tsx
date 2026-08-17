@@ -16,32 +16,24 @@ import {
   Paper,
   IconButton,
   Typography,
-  Box,
   Stack,
   InputAdornment,
   CircularProgress,
   Chip,
-  Tooltip,
   Alert,
   alpha,
   useTheme,
   Avatar,
-  Divider,
   TablePagination
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Close as CloseIcon,
   Person as PersonIcon,
-  Business as BusinessIcon,
   Badge as BadgeIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { useContribuyentes, ContribuyenteListItem } from '../../hooks/useContribuyentes';
-import { NotificationService } from '../utils/Notification';
-import { Contribuyente } from '../../models/Contribuyente';
 
 // Props del componente
 interface SelectorContribuyenteProps {

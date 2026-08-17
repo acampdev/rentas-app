@@ -1,6 +1,6 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { hrService, HRData, HRQueryParams } from '../services/hrService';
+import { hrService, HRQueryParams } from '../services/hrService';
 
 /**
  * Hook para gestionar Hoja de Resumen (HR) con React Query
@@ -12,7 +12,7 @@ export const useHR = (paramsIniciales?: HRQueryParams) => {
     data: hrData = [],
     isLoading: loading,
     error,
-    refetch: buscarHR
+    refetch: _buscarHR
   } = useQuery({
     queryKey: ['hr', params],
     queryFn: async () => {

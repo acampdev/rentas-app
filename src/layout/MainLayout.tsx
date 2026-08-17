@@ -2,10 +2,8 @@
 import React, { FC, ReactNode, memo, useEffect } from 'react';
 import {
   Box,
-  CircularProgress,
   useTheme,
-  useMediaQuery,
-  Typography
+  useMediaQuery
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AppSidebar from './AppSidebar';
@@ -23,7 +21,7 @@ interface MainLayoutProps {
 }
 
 // Styled component para la pantalla de carga
-const LoadingOverlay = styled(Box)(({ theme }) => ({
+const _LoadingOverlay = styled(Box)(({ theme }) => ({
   position: 'fixed',
   top: 0,
   left: 0,
@@ -41,11 +39,11 @@ const MainLayout: FC<MainLayoutProps> = memo(({
   children, 
   title = 'Sistema de Gestión Tributaria',
   maxWidth = 'xl',
-  disablePadding = false,
-  containerProps = {}
+  disablePadding: _disablePadding = false,
+  containerProps: _containerProps = {}
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const _isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { loading, isAuthenticated } = useAuthContext();
   const { isExpanded } = useSidebar();
   

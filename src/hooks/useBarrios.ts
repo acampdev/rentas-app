@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState, useMemo } from 'react';
+import {  useState, useMemo } from 'react';
 import { barrioService, BarrioData } from '../services/barrioService';
-import { Barrio, BarrioFormData } from '../models/Barrio';
+import { Barrio } from '../models/Barrio';
 import { NotificationService } from '../components/utils/Notification';
 
 const adaptToModel = (data: BarrioData): Barrio => ({

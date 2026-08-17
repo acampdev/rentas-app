@@ -1,6 +1,5 @@
 // src/services/timService.ts
-import BaseApiService, { ApiResponse } from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import BaseApiService from './BaseApiService';
 
 export interface TimData {
   codTIM: number;
@@ -73,21 +72,10 @@ class TimService extends BaseApiService<TimData, any, UpdateTimDTO, any> {
   }
 
   async crearTim(datos: any): Promise<any> {
-    const url = buildApiUrl(`${this.endpoint}`);
-    const response = await fetch(url, {
+    return await this.makeRequest('', {
       method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify(datos)
     });
-    
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    
-    return await response.json();
   }
 
   async obtenerTim(filtros: TimFilters): Promise<TimData[]> {
@@ -99,21 +87,7 @@ class TimService extends BaseApiService<TimData, any, UpdateTimDTO, any> {
       if (filtros.codResolucionInteres !== undefined) cleanParams.codResolucionInteres = String(filtros.codResolucionInteres);
       
       const queryString = `?${new URLSearchParams(cleanParams).toString()}`;
-      const url = buildApiUrl(`${this.endpoint}${queryString}`);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      const result = await response.json();
+      const result = await this.makeRequest<any>(queryString, { method: 'GET' });
       const rawData = Array.isArray(result) ? result : (result.data || [result]);
       return this.normalizeData(rawData);
     } catch (error) {
@@ -123,56 +97,21 @@ class TimService extends BaseApiService<TimData, any, UpdateTimDTO, any> {
   }
 
   async actualizarTim(datos: UpdateTimDTO): Promise<any> {
-    const url = buildApiUrl(`${this.endpoint}/actualizar`);
-    const response = await fetch(url, {
+    return await this.makeRequest('/actualizar', {
       method: 'PUT',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify(datos)
     });
-    
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    
-    return await response.json();
   }
 
   async eliminarTim(datos: DeleteTimDTO): Promise<any> {
-    const url = buildApiUrl(`${this.endpoint}/eliminar`);
-    const response = await fetch(url, {
+    return await this.makeRequest('/eliminar', {
       method: 'PUT',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify(datos)
     });
-    
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    
-    return await response.json();
   }
 
   async listarCboTim(): Promise<any[]> {
-    const url = buildApiUrl(`${this.endpoint}/listarCboTim`);
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
+    const result = await this.makeRequest<any>('/listarCboTim', { method: 'GET' });
     return Array.isArray(result) ? result : (result.data || []);
   }
 }

@@ -1,5 +1,4 @@
 import BaseApiService from './BaseApiService';
-import { buildApiUrl } from '../config/api.unified.config';
 import { 
   ExpedienteCoactivo, 
   NotificacionCoactiva, 
@@ -46,11 +45,10 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
   // Métodos específicos para notificaciones
   async listarNotificaciones(_params?: Record<string, unknown>): Promise<NotificacionCoactiva[]> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/notificaciones`);
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const responseData = await response.json();
-      const data = responseData.data || responseData;
+      const responseData = await this.makeRequest<
+        { data?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >('/notificaciones', { method: 'GET' });
+      const data = Array.isArray(responseData) ? responseData : responseData?.data;
       
       if (!Array.isArray(data)) return [];
 
@@ -73,11 +71,10 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
   // Métodos específicos para resoluciones
   async listarResoluciones(_params?: Record<string, unknown>): Promise<ResolucionCoactiva[]> {
     try {
-      const url = buildApiUrl(`${this.endpoint}/resoluciones`);
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const responseData = await response.json();
-      const data = responseData.data || responseData;
+      const responseData = await this.makeRequest<
+        { data?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >('/resoluciones', { method: 'GET' });
+      const data = Array.isArray(responseData) ? responseData : responseData?.data;
 
       if (!Array.isArray(data)) return [];
 

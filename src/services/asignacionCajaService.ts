@@ -1,5 +1,6 @@
 // src/services/asignacionCajaService.ts
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -47,7 +48,7 @@ export interface ListarAsignacionCajaParams {
 /**
  * Servicio para gestion de asignacion de caja
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  * Todos los metodos (GET, POST, PUT, DELETE) funcionan sin token
  */
 class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsignacionCajaDTO, UpdateAsignacionCajaDTO> {
@@ -88,7 +89,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
   /**
    * Lista asignaciones de caja con filtros
    * GET /api/asignacionCaja/listar?terminoBusqueda=h&fecha=2025-11-04&codUsuario=1
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async listar(params?: ListarAsignacionCajaParams): Promise<AsignacionCajaData[]> {
     try {
@@ -123,7 +124,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: 'GET',
         headers
       });
@@ -161,7 +162,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Crea una nueva asignacion de caja
    * POST /api/asignacionCaja/insertar
    * Body: {codUsuario, codCaja, codTurno, fecha, usuario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async insertar(datos: CreateAsignacionCajaDTO): Promise<AsignacionCajaData> {
     try {
@@ -178,7 +179,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
@@ -227,7 +228,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Actualiza una asignacion de caja existente
    * PUT /api/asignacionCaja/actualizar
    * Body: {codAsignacionCaja, codUsuario, codCaja, codTurno, usuario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async actualizar(datos: UpdateAsignacionCajaDTO): Promise<AsignacionCajaData> {
     try {
@@ -244,7 +245,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
@@ -293,7 +294,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Elimina una asignacion de caja
    * PUT /api/asignacionCaja/eliminar
    * Body: {codAsignacionCaja, usuario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async eliminar(datos: DeleteAsignacionCajaDTO): Promise<void> {
     try {
@@ -310,7 +311,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)

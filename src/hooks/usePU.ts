@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { puService, PUData, PUQueryParams } from '../services/puService';
+import { puService, PUQueryParams } from '../services/puService';
 
 /**
  * Hook para gestionar Predio Urbano (PU) con React Query
@@ -12,7 +12,7 @@ export const usePU = (paramsIniciales?: PUQueryParams) => {
     data: puData = [],
     isLoading: loading,
     error,
-    refetch: buscarPU
+    refetch: _buscarPU
   } = useQuery({
     queryKey: ['pu', params],
     queryFn: async () => {

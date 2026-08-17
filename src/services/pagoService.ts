@@ -1,5 +1,6 @@
 // src/services/pagoService.ts
 import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
+import apiClient from './apiClient';
 
 export interface SaldoDeudaItem {
   codTributo: number;
@@ -60,7 +61,7 @@ class PagoService {
       console.log('[PagoService] Registrando Pago Ordinario:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoOrdinario`);
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true),
@@ -99,7 +100,7 @@ class PagoService {
       console.log('[PagoService] Registrando Pago Cuota Fraccionamiento:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoCuotaFraccionamiento`);
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true),

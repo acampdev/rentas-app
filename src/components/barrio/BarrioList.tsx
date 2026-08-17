@@ -203,7 +203,7 @@ const BarrioList: React.FC<BarrioListProps> = ({
     });
 
     return filteredData;
-  }, [barrios, order, orderBy, localSearchTerm, onSearch, sectoresMap, getNombreSector]);
+  }, [barrios, order, orderBy, localSearchTerm, onSearch, getNombreSector]);
 
   // Calcular barrios paginados
   const paginatedBarrios = sortedAndFilteredBarrios.slice(

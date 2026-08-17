@@ -67,7 +67,7 @@ const ContribuyenteFormMUI: React.FC<ContribuyenteFormMUIProps> = ({
     handleSelectConyugeDireccion,
     getDireccionTextoCompleto,
     handleNuevo,
-    handleEditar,
+    handleEditar: _handleEditar,
     handleSubmit
   } = useContribuyenteForm({ onSubmit, onEdit, onNew, initialData });
 

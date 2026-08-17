@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { alcabalaService, AlcabalaData, CreateAlcabalaDTO, UpdateAlcabalaDTO } from '../services/alcabalaService';
+import {  useState } from 'react';
+import { alcabalaService, CreateAlcabalaDTO, UpdateAlcabalaDTO } from '../services/alcabalaService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**
@@ -15,7 +15,7 @@ export const useAlcabala = () => {
     data: alcabalas = [],
     isLoading: loading,
     error,
-    refetch: cargarAlcabalas
+    refetch: _cargarAlcabalas
   } = useQuery({
     queryKey: ['alcabalas', anioFiltro],
     queryFn: async () => {

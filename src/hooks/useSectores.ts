@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState, useMemo } from 'react';
+import {  useState, useMemo } from 'react';
 import { sectorService, SectorData, CreateSectorDTO, UpdateSectorDTO } from '../services/SectorService';
 import { Sector } from '../models/Sector';
 import { NotificationService } from '../components/utils/Notification';

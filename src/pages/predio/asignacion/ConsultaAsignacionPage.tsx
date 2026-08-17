@@ -4,7 +4,7 @@ import { Box, Container, Breadcrumbs, Link, Typography } from '@mui/material';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import MainLayout from '../../../layout/MainLayout';
-import { ConsultaAsignacion } from '../../../components';
+import ConsultaAsignacion from '../../../components/predio/asignacion/ConsultaAsignacion';
 
 const ConsultaAsignacionPage: React.FC = () => {
   // Breadcrumbs

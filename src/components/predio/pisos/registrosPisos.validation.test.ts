@@ -21,4 +21,24 @@ describe('RegistrosPisos validation', () => {
     expect(determinarNumeroPiso('Sótano')).toBe(-1);
     expect(determinarNumeroPiso('4')).toBe(4);
   });
+
+  it('accepts a complete floor form', () => {
+    expect(validatePisoForm({
+      descripcion: '2',
+      fechaConstruccion: new Date(2026, 1, 20),
+      estadoConservacion: '9401',
+      areaConstruida: '160',
+      materialPredominante: '0701',
+    }, true)).toEqual({});
+  });
+
+  it('rejects negative or non-numeric floors', () => {
+    expect(validatePisoForm({
+      descripcion: '-1',
+      fechaConstruccion: new Date(),
+      estadoConservacion: '9401',
+      areaConstruida: '20',
+      materialPredominante: '0701',
+    }, true).descripcion).toContain('mayor o igual a 0');
+  });
 });

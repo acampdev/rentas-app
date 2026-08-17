@@ -1,6 +1,6 @@
 // src/layout/AppSidebar.tsx - Versión completa sin Paper
 
-import React, { FC, memo, useEffect, useCallback } from 'react';
+import React, { FC, memo, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Box,
@@ -30,6 +30,8 @@ import {
 } from '@mui/icons-material';
 import SidebarWidget from './SidebarWidget';
 import { useSidebar } from '../context/SidebarContext';
+import { useAuthContext } from '../context/AuthContext';
+import { canAccessPath, getUserRoles } from '../config/accessControl';
 
 // Interfaces
 interface SubMenuItem {
@@ -342,30 +344,75 @@ const sistemaMenuItems: MenuItem[] = [
   },
 ];
 
+const filterSubMenuItemsByRoles = (
+  items: readonly SubMenuItem[],
+  userRoles: readonly string[]
+): SubMenuItem[] => items.flatMap(item => {
+  const visibleChildren = item.subMenuItems
+    ? filterSubMenuItemsByRoles(item.subMenuItems, userRoles)
+    : [];
+  const canAccessOwnPath = item.path ? canAccessPath(item.path, userRoles) : false;
+
+  if (!canAccessOwnPath && visibleChildren.length === 0) return [];
+
+  return [{
+    ...item,
+    path: canAccessOwnPath ? item.path : undefined,
+    subMenuItems: visibleChildren.length ? visibleChildren : undefined
+  }];
+});
+
+const filterMenuItemsByRoles = (
+  items: readonly MenuItem[],
+  userRoles: readonly string[]
+): MenuItem[] => items.flatMap(item => {
+  const visibleChildren = item.subMenuItems
+    ? filterSubMenuItemsByRoles(item.subMenuItems, userRoles)
+    : [];
+  const canAccessOwnPath = item.path ? canAccessPath(item.path, userRoles) : false;
+
+  if (!canAccessOwnPath && visibleChildren.length === 0) return [];
+
+  return [{
+    ...item,
+    path: canAccessOwnPath ? item.path : undefined,
+    subMenuItems: visibleChildren.length ? visibleChildren : undefined
+  }];
+});
+
 /**
  * Componente principal de la barra lateral de la aplicación.
  */
 const AppSidebar: FC<AppSidebarProps> = memo(() => {
   const theme = useTheme();
   const location = useLocation();
+  const { user } = useAuthContext();
   const { 
     isExpanded, 
     activeItem, 
     openSubmenus,
-    setActiveItem, 
-    toggleSubmenu,
     toggleSidebar: contextToggleSidebar,
     setOpenSubmenus,
   } = useSidebar();
+
+  const userRoles = useMemo(() => getUserRoles(user), [user]);
+  const visibleMenuItems = useMemo(
+    () => filterMenuItemsByRoles(menuItems, userRoles),
+    [userRoles]
+  );
+  const visibleSistemaMenuItems = useMemo(
+    () => filterMenuItemsByRoles(sistemaMenuItems, userRoles),
+    [userRoles]
+  );
 
   const drawerWidth = isExpanded ? 260 : 72;
 
   // Debug para verificar que el componente se está renderizando
   useEffect(() => {
     console.log('AppSidebar montado - isExpanded:', isExpanded, 'width:', drawerWidth);
-    console.log('MenuItems:', menuItems);
+    console.log('MenuItems visibles:', visibleMenuItems);
     console.log('OpenSubmenus:', openSubmenus);
-  }, [isExpanded, drawerWidth, openSubmenus]);
+  }, [isExpanded, drawerWidth, openSubmenus, visibleMenuItems]);
 
   // Determina si un elemento del menú está activo
   const isActiveRoute = useCallback((path?: string): boolean => {
@@ -384,37 +431,6 @@ const AppSidebar: FC<AppSidebarProps> = memo(() => {
       return !!subItem.subMenuItems?.some(nestedItem => isActiveRoute(nestedItem.path));
     });
   }, [activeItem, isActiveRoute]);
-
-  // Función para cerrar submenús de nivel inferior
-  const closeChildSubmenus = useCallback((menuId: string) => {
-    const findChildMenus = (id: string, items: MenuItem[] | SubMenuItem[]): string[] => {
-      const childMenus: string[] = [];
-      
-      for (const item of items) {
-        if (item.id === id && item.subMenuItems) {
-          item.subMenuItems.forEach(subItem => {
-            childMenus.push(subItem.id);
-            if (subItem.subMenuItems) {
-              subItem.subMenuItems.forEach(nestedItem => {
-                childMenus.push(nestedItem.id);
-              });
-            }
-          });
-          break;
-        } else if (item.subMenuItems) {
-          childMenus.push(...findChildMenus(id, item.subMenuItems));
-        }
-      }
-      
-      return childMenus;
-    };
-
-    const childMenus = findChildMenus(menuId, [...menuItems, ...sistemaMenuItems]);
-    
-    if (childMenus.length > 0) {
-      setOpenSubmenus(prev => prev.filter(id => !childMenus.includes(id)));
-    }
-  }, [setOpenSubmenus]);
 
   // Manejador personalizado para el toggle de submenús
   const handleSubmenuToggle = useCallback((menuId: string) => {
@@ -448,8 +464,8 @@ const AppSidebar: FC<AppSidebarProps> = memo(() => {
         }
       };
       
-      searchInMenu(menuItems);
-      searchInMenu(sistemaMenuItems);
+      searchInMenu(visibleMenuItems);
+      searchInMenu(visibleSistemaMenuItems);
       
       return parentIds;
     };
@@ -463,7 +479,7 @@ const AppSidebar: FC<AppSidebarProps> = memo(() => {
       // Si no hay coincidencias, cerrar todos los submenús
       setOpenSubmenus([]);
     }
-  }, [location.pathname, setOpenSubmenus]);
+  }, [location.pathname, setOpenSubmenus, visibleMenuItems, visibleSistemaMenuItems]);
 
   // Manejar el toggle del sidebar
   const handleToggleSidebar = () => {
@@ -575,7 +591,7 @@ const AppSidebar: FC<AppSidebarProps> = memo(() => {
 
         {/* Elementos del menú principal */}
         <List component="nav" sx={{ px: 1 }}>
-          {menuItems.map((item) => (
+          {visibleMenuItems.map((item) => (
             <SidebarWidget
               key={item.id}
               id={item.id}
@@ -590,31 +606,35 @@ const AppSidebar: FC<AppSidebarProps> = memo(() => {
         </List>
 
         {/* Separador SISTEMA */}
-        {isExpanded ? (
-          <MenuSection>SISTEMA</MenuSection>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 1 }}>
-            <Typography variant="caption" sx={{ color: alpha('#ffffff', 0.5) }}>
-              •••
-            </Typography>
-          </Box>
-        )}
+        {visibleSistemaMenuItems.length > 0 && (
+          <>
+            {isExpanded ? (
+              <MenuSection>SISTEMA</MenuSection>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 1 }}>
+                <Typography variant="caption" sx={{ color: alpha('#ffffff', 0.5) }}>
+                  •••
+                </Typography>
+              </Box>
+            )}
 
-        {/* Elementos del menú SISTEMA */}
-        <List component="nav" sx={{ px: 1 }}>
-          {sistemaMenuItems.map((item) => (
-            <SidebarWidget
-              key={item.id}
-              id={item.id}
-              icon={item.icon}
-              label={isExpanded ? item.label : ''}
-              path={item.path}
-              isActive={isActiveMenuItem(item)}
-              subMenuItems={item.subMenuItems || []}
-              onCustomToggle={handleSubmenuToggle}
-            />
-          ))}
-        </List>
+            {/* Elementos del menú SISTEMA */}
+            <List component="nav" sx={{ px: 1 }}>
+              {visibleSistemaMenuItems.map((item) => (
+                <SidebarWidget
+                  key={item.id}
+                  id={item.id}
+                  icon={item.icon}
+                  label={isExpanded ? item.label : ''}
+                  path={item.path}
+                  isActive={isActiveMenuItem(item)}
+                  subMenuItems={item.subMenuItems || []}
+                  onCustomToggle={handleSubmenuToggle}
+                />
+              ))}
+            </List>
+          </>
+        )}
       </ScrollableContent>
     </SidebarContainer>
   );

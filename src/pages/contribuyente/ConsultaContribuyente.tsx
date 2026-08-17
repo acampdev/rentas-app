@@ -4,24 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material';
 import {
   Box,
-  Typography,
-  Stack,
-  Button
+  Typography
 } from '@mui/material';
-import {
-  PersonAdd as PersonAddIcon
-} from '@mui/icons-material';
 import { MainLayout } from '../../layout';
-import { Breadcrumb } from '../../components';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import ContribuyenteConsulta from '../../components/contribuyentes/ContribuyenteConsulta';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
-import { useContribuyentes } from '../../hooks';
+import { useContribuyentes } from '../../hooks/useContribuyentes';
 
 /**
  * Página para consultar y listar contribuyentes con diseño compacto
  */
 const ConsultaContribuyente: React.FC = () => {
-  const theme = useTheme();
+  const _theme = useTheme();
   const navigate = useNavigate();
   
   // Hook personalizado para manejar contribuyentes

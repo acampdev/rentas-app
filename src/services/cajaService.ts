@@ -1,5 +1,6 @@
 // src/services/cajaService.ts
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -34,7 +35,7 @@ export interface ListarCajaParams {
 /**
  * Servicio para gestion de cajas
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  * Todos los metodos (GET, POST, PUT, DELETE) funcionan sin token
  */
 class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO> {
@@ -69,7 +70,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
   /**
    * Lista cajas con filtros
    * GET /api/caja/listar?descripcion=C&codUsuario=1
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async listar(params?: ListarCajaParams): Promise<CajaData[]> {
     try {
@@ -98,7 +99,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: 'GET',
         headers
       });
@@ -136,7 +137,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Crea una nueva caja
    * POST /api/caja/insertar
    * Body: {descripcion}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async insertar(datos: CreateCajaDTO): Promise<CajaData> {
     try {
@@ -153,7 +154,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
@@ -186,7 +187,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Actualiza una caja existente
    * PUT /api/caja/actualizar
    * Body: {codCaja, descripcion}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async actualizar(datos: UpdateCajaDTO): Promise<CajaData> {
     try {
@@ -203,7 +204,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
@@ -236,7 +237,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Elimina una caja
    * DELETE /api/caja/eliminar
    * Body: {codCaja}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async eliminar(datos: DeleteCajaDTO): Promise<void> {
     try {
@@ -253,7 +254,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)

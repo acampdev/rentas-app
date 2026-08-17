@@ -1,5 +1,6 @@
 // src/services/direccionService.ts
 import BaseApiService, { QueryParams } from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -107,12 +108,12 @@ export interface DireccionRaw {
 
 interface DireccionApiResponse {
   success: boolean;
-  data: DireccionRaw | DireccionRaw[];
+  data: DireccionRaw | DireccionRaw[] | null;
 }
 
 /**
  * Servicio para gestión de direcciones
- * NO requiere autenticación
+ * Requiere autenticación Bearer.
  */
 class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO, UpdateDireccionDTO, DireccionRaw> {
   private static instance: DireccionService;
@@ -176,10 +177,10 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
   }
   
   /**
-   * Sobrescribe el método getAll para manejar correctamente las peticiones sin autenticación
+   * Sobrescribe el método getAll para adaptar los parámetros del backend.
    */
   /**
-   * Lista direcciones usando query params - NO requiere autenticación
+   * Lista direcciones usando query params con autenticación Bearer.
    * URL: GET /api/direccion?parametrosBusqueda=b&codUsuario=3
    */
   async getAll(params?: BusquedaDireccionParams): Promise<DireccionData[]> {
@@ -200,23 +201,13 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       console.log('📡 [DireccionService] GET:', url);
       console.log('📋 [DireccionService] Ejemplo: /api/direccion?parametrosBusqueda=b&codUsuario=3');
 
-      const response = await fetch(url, {
+      const responseData = await apiClient.request<DireccionApiResponse | DireccionRaw[]>(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json'
-          // NO requiere autenticación
+          // apiClient conserva el Bearer aunque se personalice Accept.
         }
       });
-
-      console.log('📡 [DireccionService] Response Status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [DireccionService] Error Response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-
-      const responseData = await response.json() as DireccionApiResponse | DireccionRaw[];
       console.log('✅ [DireccionService] Datos recibidos:', responseData);
 
       // Manejar la estructura de respuesta con wrapper (success/data) - PRIMERO
@@ -233,13 +224,11 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
         return this.normalizeRawData(responseData);
       }
 
-      console.log('⚠️ [DireccionService] Estructura de respuesta no reconocida, retornando array vacío');
-      return [];
+      throw new Error('El API de direcciones devolvió una estructura de respuesta no reconocida.');
       
     } catch (error: unknown) {
       console.error('❌ [DireccionService] Error completo:', error);
-      // NO lanzar el error, devolver array vacío para que el componente use datos de ejemplo
-      return [];
+      throw error;
     }
   }
 
@@ -297,7 +286,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       return direcciones;
     } catch (error) {
       console.error('Error al obtener direcciones:', error);
-      return [];
+      throw error;
     }
   }
   
@@ -320,19 +309,13 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       const url = `${buildApiUrl(this.endpoint)}?${queryParams.toString()}`;
       console.log('📡 [DireccionService] GET buscar:', url);
 
-      const response = await fetch(url, {
+      const responseData = await apiClient.request<DireccionApiResponse>(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json'
         }
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      const responseData = await response.json();
-      
+
       if (responseData.success && responseData.data) {
         const data = Array.isArray(responseData.data) ? responseData.data : [responseData.data];
         return this.normalizeData(data);
@@ -342,7 +325,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       
     } catch (error) {
       console.error('Error al buscar direcciones:', error);
-      return [];
+      throw error;
     }
   }
   
@@ -364,7 +347,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       return await this.buscar(params);
     } catch (error) {
       console.error('Error al buscar por nombre de vía:', error);
-      return [];
+      throw error;
     }
   }
   
@@ -414,7 +397,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       console.log('📡 [DireccionService] Enviando POST a:', buildApiUrl(this.endpoint));
       console.log('📡 [DireccionService] Datos a enviar:', requestData);
 
-      const response = await fetch(buildApiUrl(this.endpoint), {
+      const response = await apiClient.fetch(buildApiUrl(this.endpoint), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -637,7 +620,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       console.log('📡 [DireccionService] Tipo:', tieneBarrio ? 'CON BARRIO' : 'SIN BARRIO');
       console.log('📡 [DireccionService] Datos a enviar:', requestData);
 
-      const response = await fetch(buildApiUrl(this.endpoint), {
+      const response = await apiClient.fetch(buildApiUrl(this.endpoint), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import MainLayout from '../../../layout/MainLayout';
-import { Interes } from '../../../components';
+import Interes from '../../../components/escalas/Interes';
 
 const InteresPage: React.FC = () => {
   return (

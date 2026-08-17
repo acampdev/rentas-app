@@ -12,7 +12,6 @@ import {
   TableRow,
   TableSortLabel,
   IconButton,
-  Chip,
   TextField,
   InputAdornment,
   Stack,
@@ -33,7 +32,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   LocationOn as LocationIcon,
-  Clear as ClearIcon,
   Add as AddIcon
 } from '@mui/icons-material';
 import { DireccionData } from '../../services/direccionService';
@@ -170,7 +168,7 @@ const DireccionListMUI: React.FC<DireccionListProps> = ({
   };
 
   // Nueva función para búsqueda con API query params
-  const handleSearchWithParams = (searchValue: string) => {
+  const _handleSearchWithParams = (searchValue: string) => {
     if (onSearch) {
       // Enviar parámetros para la nueva API
       onSearch(searchValue);

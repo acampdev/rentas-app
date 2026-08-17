@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { parquesJardinesService, ParquesJardinesData, CrearParquesJardinesDTO } from '../services/parquesJardinesService';
+import {  useState } from 'react';
+import { parquesJardinesService, CrearParquesJardinesDTO } from '../services/parquesJardinesService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

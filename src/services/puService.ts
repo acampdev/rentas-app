@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -181,7 +182,7 @@ class PUService extends BaseApiService<PUData, void, void> {
       queryParams.append('codContribuyente', params.codContribuyente);
       queryParams.append('codPredio', params.codPredio);
 
-      const response = await fetch(`${url}?${queryParams.toString()}`);
+      const response = await apiClient.fetch(`${url}?${queryParams.toString()}`);
       if (!response.ok) {
         console.warn(`[PUService] Error HTTP ${response.status} al consultar PU`);
         return [];

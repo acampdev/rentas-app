@@ -48,10 +48,10 @@ const CalleForm: React.FC<CalleFormProps> = ({
   onUpdateSector,
   initialData,
   isSubmitting: externalLoading = false,
-  barrios,
-  sectores: externalSectores
+  barrios: _barrios,
+  sectores: _externalSectores
 }) => {
-  const handleNuevo = () => {
+  const _handleNuevo = () => {
     if (onNew) onNew();
     if (onNuevo) onNuevo();
   };

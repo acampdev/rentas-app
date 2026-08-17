@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { serenazgoService, SerenazgoData, CrearSerenazgoDTO } from '../services/serenazgoService';
+import {  useState } from 'react';
+import { serenazgoService, CrearSerenazgoDTO } from '../services/serenazgoService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

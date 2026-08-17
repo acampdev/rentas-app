@@ -28,12 +28,11 @@ import {
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { useFraccionamiento } from '../../hooks/useFraccionamiento';
 import { fraccionamientoService } from '../../services/fraccionamientoService';
 import type { CuotaFraccionamiento } from '../../types/fraccionamiento.types';
 
 const Cronograma: React.FC = () => {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const stateFraccionamiento = location.state as any;
@@ -89,7 +88,7 @@ const Cronograma: React.FC = () => {
     if (anio && codResolucion) {
       handleBuscar();
     }
-  }, [handleBuscar]);
+  }, [anio, codResolucion, handleBuscar]);
 
   // Calcular totales del cronograma
   const totales = useMemo(() => {

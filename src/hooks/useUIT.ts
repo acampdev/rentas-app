@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { uitService, UITData, CreateUITDTO, UpdateUITDTO } from '../services/uitService';
+import {  useState } from 'react';
+import { uitService, CreateUITDTO, UpdateUITDTO } from '../services/uitService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

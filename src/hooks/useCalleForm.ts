@@ -6,6 +6,7 @@ import { CalleFormData } from '../models/Calle';
 import { useSectores } from './useSectores';
 import { useBarrios } from './useBarrios';
 import { buildApiUrl } from '../config/api.unified.config';
+import apiClient from '../services/apiClient';
 
 // Esquema de validación
 const calleValidationSchema = yup.object().shape({
@@ -90,7 +91,7 @@ export const useCalleForm = (initialData?: Partial<CalleFormData>, onSubmit?: (d
         formData.append('codConstante', '38');
         const baseUrl = buildApiUrl('/api/constante/listarConstantePadre');
         const url = `${baseUrl}?${formData.toString()}`;
-        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
         const data = await response.json();
         if (data.success && data.data && Array.isArray(data.data)) {

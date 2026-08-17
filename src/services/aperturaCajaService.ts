@@ -1,12 +1,12 @@
 // src/services/aperturaCajaService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import { AperturaCaja, AperturaCajaDTO, CierreCajaDTO } from '../models';
+import apiClient, { ApiClientError } from './apiClient';
 
 /**
  * Servicio para gestion de apertura y cierre de caja
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
- * Todos los metodos (POST, PUT) funcionan sin token
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  */
 const normalizeEstado = (estado?: string): string => {
   if (!estado) return 'ABIERTA';
@@ -34,14 +34,14 @@ class AperturaCajaService {
   private constructor() {
     console.log('[AperturaCajaService] Inicializado');
     console.log(`  - Endpoint: "${this.endpoint}"`);
-    console.log('  - Autenticacion: NO REQUERIDA');
+    console.log('  - Autenticación: Bearer');
   }
 
   /**
    * Realiza la apertura de una caja
    * POST /api/aperturaCaja/apertura
    * Body: {observacion, montoApertura, codUsuario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async apertura(datos: AperturaCajaDTO): Promise<AperturaCaja> {
     try {
@@ -63,7 +63,7 @@ class AperturaCajaService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
@@ -115,7 +115,7 @@ class AperturaCajaService {
    * Realiza el cierre de una caja
    * PUT /api/aperturaCaja/cierre
    * Body: {codAperturaCaja, codAsignacionCaja, observacion, montoCierre, codUsuario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async cierre(datos: CierreCajaDTO): Promise<AperturaCaja> {
     try {
@@ -151,7 +151,7 @@ class AperturaCajaService {
         codUsuario: datos.codUsuario
       };
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(requestBody)
@@ -209,26 +209,13 @@ class AperturaCajaService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const responseData = await apiClient.request<any>(url, {
         method: 'GET',
         headers
       });
-
-      console.log(`[AperturaCajaService] Respuesta GET: ${response.status}`);
-
-      if (response.status === 404) {
-        return null;
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AperturaCajaService] Error en GET:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AperturaCajaService] Datos de apertura obtenidos:', responseData);
 
+      if (!responseData) return null;
       let data = responseData.data || responseData;
       if (Array.isArray(data)) {
         if (data.length === 0) return null;
@@ -266,7 +253,8 @@ class AperturaCajaService {
 
     } catch (error: unknown) {
       console.error('[AperturaCajaService] Error obteniendo apertura de usuario:', error);
-      return null;
+      if (error instanceof ApiClientError && error.statusCode === 404) return null;
+      throw error;
     }
   }
 
@@ -288,26 +276,13 @@ class AperturaCajaService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const responseData = await apiClient.request<any>(url, {
         method: 'GET',
         headers
       });
-
-      console.log(`[AperturaCajaService] Respuesta GET Listar: ${response.status}`);
-
-      if (response.status === 404) {
-        return [];
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AperturaCajaService] Error en GET Listar:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AperturaCajaService] Datos de lista obtenidos:', responseData);
 
+      if (!responseData) return [];
       const rawList = responseData.data || responseData;
       const list = Array.isArray(rawList) ? rawList : [rawList].filter(Boolean);
 
@@ -329,7 +304,8 @@ class AperturaCajaService {
 
     } catch (error: unknown) {
       console.error('[AperturaCajaService] Error listando aperturas:', error);
-      return [];
+      if (error instanceof ApiClientError && error.statusCode === 404) return [];
+      throw error;
     }
   }
 
@@ -337,34 +313,16 @@ class AperturaCajaService {
    * Valida si una caja puede ser abierta
    */
   async validarApertura(codAsignacionCaja: number, fecha: string): Promise<boolean> {
-    try {
-      console.log('[AperturaCajaService] Validando apertura para:', { codAsignacionCaja, fecha });
-
-      // Aqui se pueden agregar validaciones adicionales
-      // Por ejemplo, verificar si ya hay una apertura activa para esta asignacion
-
-      return true;
-    } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error validando apertura:', error);
-      return false;
-    }
+    console.log('[AperturaCajaService] Validando apertura para:', { codAsignacionCaja, fecha });
+    return true;
   }
 
   /**
    * Valida si una caja puede ser cerrada
    */
   async validarCierre(codAperturaCaja: number): Promise<boolean> {
-    try {
-      console.log('[AperturaCajaService] Validando cierre para:', codAperturaCaja);
-
-      // Aqui se pueden agregar validaciones adicionales
-      // Por ejemplo, verificar si hay transacciones pendientes
-
-      return true;
-    } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error validando cierre:', error);
-      return false;
-    }
+    console.log('[AperturaCajaService] Validando cierre para:', codAperturaCaja);
+    return true;
   }
 }
 

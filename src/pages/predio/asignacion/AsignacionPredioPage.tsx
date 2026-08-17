@@ -11,8 +11,8 @@ import {
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import MainLayout from '../../../layout/MainLayout';
-import { AsignacionPredio } from '../../../components';
-import { useAsignacion } from '../../../hooks';
+import AsignacionPredio from '../../../components/predio/asignacion/AsignacionPredio';
+import { useAsignacion } from '../../../hooks/useAsignacion';
 
 interface AsignacionNavigationState {
   editMode?: boolean;

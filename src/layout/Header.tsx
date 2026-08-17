@@ -157,6 +157,7 @@ const Header: FC<HeaderProps> = memo(({ title = 'Dashboard' }) => {
           {/* Avatar del usuario */}
           <IconButton
             size="small"
+            aria-label="Abrir menú de usuario"
             onClick={handleUserMenuOpen}
             sx={{
               p: 0.5,

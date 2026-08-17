@@ -1,6 +1,7 @@
 // src/services/calleApiService.ts - CORREGIDO CON ENDPOINTS CORRECTOS
 
 import BaseApiService, { QueryParams } from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -154,7 +155,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       const url = buildApiUrl('/api/via/listarVia');
       const queryParams = new URLSearchParams(searchParams as Record<string, string> || {});
       
-      const response = await fetch(`${url}?${queryParams}`, {
+      const response = await apiClient.fetch(`${url}?${queryParams}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -204,7 +205,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       // Usar endpoint insertarVias
       const url = buildApiUrl('/api/via/insertarVias');
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +273,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       // Usar endpoint actualizarVias
       const url = buildApiUrl('/api/via/actualizarVias');
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -325,7 +326,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
   async buscarPorNombreVia(nombre: string): Promise<CalleData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/buscar`);
-      const response = await fetch(`${url}?nombre=${encodeURIComponent(nombre)}`);
+      const response = await apiClient.fetch(`${url}?nombre=${encodeURIComponent(nombre)}`);
       if (!response.ok) return [];
       const res = await response.json() as CalleApiResponse | RawCalle[];
       const itemsRaw = Array.isArray(res) ? res : (res.data || []);
@@ -365,12 +366,12 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       
       console.log('📡 URL para actualizar sector:', url);
       
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-          // NO Authorization - la API no requiere autenticación
+          // apiClient agrega Authorization de forma centralizada.
         },
         body: JSON.stringify(data)
       });

@@ -3,14 +3,10 @@ import React from 'react';
 import {
   Box,
   Container,
-  Paper,
   Breadcrumbs,
   Link,
-  Typography,
   Chip,
-  Stack,
-  useTheme,
-  alpha
+  useTheme
 } from '@mui/material';
 import {
   NavigateNext as NavigateNextIcon,

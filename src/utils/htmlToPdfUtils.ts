@@ -1,7 +1,4 @@
 // src/utils/htmlToPdfUtils.ts
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
 export interface HtmlToPdfOptions {
   filename?: string;
   orientation?: 'portrait' | 'landscape';
@@ -26,6 +23,11 @@ export const generatePdfFromHtml = async (
   } = options;
 
   try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ]);
+
     // Obtener el elemento
     const element = document.getElementById(elementId);
     if (!element) {
@@ -113,6 +115,11 @@ export const generatePdfFromMultipleElements = async (
   } = options;
 
   try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ]);
+
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',

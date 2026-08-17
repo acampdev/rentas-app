@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { depreciacionService, DepreciacionData, CreateDepreciacionDTO } from '../services/depreciacionService';
+import {  useState } from 'react';
+import { depreciacionService } from '../services/depreciacionService';
 import { NotificationService } from '../components/utils/Notification';
 
 /**

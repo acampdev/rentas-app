@@ -6,8 +6,6 @@ import {
   Typography,
   TextField,
   Button,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -28,7 +26,6 @@ import {
 import SelectorContribuyente from '../modal/SelectorContribuyente';
 import PrintPU from './modal/PrintPU';
 import { usePU } from '../../hooks/usePU';
-import { Contribuyente } from '../../models/Contribuyente';
 
 const PU: React.FC = () => {
   const theme = useTheme();

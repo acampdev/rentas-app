@@ -1,16 +1,28 @@
 import BaseApiService from './BaseApiService';
-import { buildApiUrl } from '../config/api.unified.config';
 import { Role, AuditoriaOperacion, ConfiguracionSistema } from '../models/Sistema';
 
 /**
  * Servicio para gestión administrativa del sistema (Roles, Auditoría, Configuración)
  */
-class SistemaService extends BaseApiService<any, any, any> {
+type AuditoriaParams = Record<string, string | number | boolean | undefined>;
+
+const buildQuery = (params?: AuditoriaParams): string => {
+  if (!params) return '';
+
+  const entries = Object.entries(params)
+    .filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined)
+    .map(([key, value]) => [key, String(value)] as [string, string]);
+
+  const query = new URLSearchParams(entries).toString();
+  return query ? `?${query}` : '';
+};
+
+class SistemaService extends BaseApiService<unknown> {
   private static instance: SistemaService;
 
   private constructor() {
     super('/api/sistema', {
-      normalizeItem: (item: any) => item,
+      normalizeItem: item => item,
       validateItem: () => true
     }, 'sistema');
   }
@@ -24,55 +36,38 @@ class SistemaService extends BaseApiService<any, any, any> {
 
   // Roles
   async listarRoles(): Promise<Role[]> {
-    try {
-      const url = buildApiUrl(`${this.endpoint}/roles`);
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      return data.data || data;
-    } catch (error) {
-      return [];
-    }
+    const data = await this.makeRequest<{ data?: Role[] } | Role[]>('/roles', { method: 'GET' });
+    return Array.isArray(data) ? data : data.data ?? [];
   }
 
   // Auditoría
-  async listarAuditoria(params?: any): Promise<AuditoriaOperacion[]> {
-    try {
-      const url = buildApiUrl(`${this.endpoint}/auditoria`);
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      return data.data || data;
-    } catch (error) {
-      return [];
-    }
+  async listarAuditoria(params?: AuditoriaParams): Promise<AuditoriaOperacion[]> {
+    const query = buildQuery(params);
+    const data = await this.makeRequest<{ data?: AuditoriaOperacion[] } | AuditoriaOperacion[]>(
+      `/auditoria${query}`,
+      { method: 'GET' }
+    );
+    return Array.isArray(data) ? data : data.data ?? [];
   }
 
   // Configuración
   async obtenerConfiguracion(): Promise<ConfiguracionSistema | null> {
-    try {
-      const url = buildApiUrl(`${this.endpoint}/configuracion`);
-      const response = await fetch(url);
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.data || data;
-    } catch (error) {
-      return null;
+    const data = await this.makeRequest<{ data?: ConfiguracionSistema } | ConfiguracionSistema>(
+      '/configuracion',
+      { method: 'GET' }
+    );
+    if ('data' in data) {
+      return data.data ?? null;
     }
+    return data as ConfiguracionSistema;
   }
 
   async actualizarConfiguracion(datos: Partial<ConfiguracionSistema>): Promise<boolean> {
-    try {
-      const url = buildApiUrl(`${this.endpoint}/configuracion`);
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      });
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
+    await this.makeRequest('/configuracion', {
+      method: 'PUT',
+      body: JSON.stringify(datos)
+    });
+    return true;
   }
 }
 

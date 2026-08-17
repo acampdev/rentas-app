@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import MainLayout from '../../layout/MainLayout';
-import { DeduccionBeneficio } from '../../components';
+import DeduccionBeneficio from '../../components/contribuyentes/DeduccionBeneficio';
 
 const DeduccionBeneficioPage: React.FC = () => {
   return (

@@ -67,4 +67,23 @@ describe('ContribuyenteService selector contract', () => {
       esPensionista: false
     });
   });
+
+  it('sends the stored Bearer token in direct API operations', async () => {
+    vi.stubGlobal('window', {
+      sessionStorage: {
+        getItem: vi.fn((key: string) => key === 'auth_token' ? 'token-prueba' : null)
+      }
+    });
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({
+      success: true,
+      data: [apiItem]
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await contribuyenteService.buscarContribuyentes({ numeroDocumento: '40953876' });
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(options.headers).get('Authorization')).toBe('Bearer token-prueba');
+    expect(options.credentials).toBe('include');
+  });
 });

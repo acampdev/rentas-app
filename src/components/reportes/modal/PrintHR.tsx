@@ -12,7 +12,6 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Divider,
-  Paper,
 } from '@mui/material';
 import {
   Print as PrintIcon,

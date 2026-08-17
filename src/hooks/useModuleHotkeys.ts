@@ -1,5 +1,5 @@
 // src/hooks/useModuleHotkeys.ts
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCommands, Command } from '../context/CommandContext';
 import { useHotkeys, HotkeyConfig } from './useHotkeys';
 
@@ -22,14 +22,17 @@ export const useModuleHotkeys = (
   configs: ModuleHotkeyConfig[]
 ) => {
   const { registerCommand, unregisterCommand, setActiveModule } = useCommands();
+  const configsRef = useRef(configs);
+  configsRef.current = configs;
 
   // Registrar comandos en el Command Manager
   useEffect(() => {
     setActiveModule(moduleName);
 
-    const commands: Command[] = configs.map(config => ({
+    const commands: Command[] = configsRef.current.map(config => ({
       ...config,
       module: moduleName,
+      action: () => configsRef.current.find(current => current.id === config.id)?.action(),
     }));
 
     // Registrar todos los comandos
@@ -48,7 +51,7 @@ export const useModuleHotkeys = (
     configs.map(config => config.hotkey),
     (event: KeyboardEvent) => {
       // Encontrar qué comando se ejecutó
-      for (const config of configs) {
+      for (const config of configsRef.current) {
         const hotkey = config.hotkey;
 
         const keyMatch =
@@ -69,6 +72,6 @@ export const useModuleHotkeys = (
         }
       }
     },
-    [configs]
+    []
   );
 };

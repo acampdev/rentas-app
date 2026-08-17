@@ -9,7 +9,7 @@ import {
   LinearProgress
 } from '@mui/material';
 import { MainLayout } from '../../layout';
-import { Breadcrumb } from '../../components';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import ContribuyenteFormMUI from '../../components/contribuyentes/ContribuyenteForm';
 import { useContribuyentes } from '../../hooks/useContribuyentes';
@@ -28,7 +28,7 @@ const NuevoContribuyente: React.FC = () => {
   // Hook para obtener datos del contribuyente en modo edición
   const { obtenerContribuyenteDetalle } = useContribuyentes();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, _setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [initialData, setInitialData] = useState<any>(null);

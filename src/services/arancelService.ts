@@ -1,6 +1,6 @@
 // src/services/arancelService.ts
 import BaseApiService from './BaseApiService';
-import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
+import { getAuthenticatedUserCode } from '../config/api.unified.config';
 import { NotificationService } from '../components/utils/Notification';
 
 /**
@@ -29,7 +29,7 @@ export interface CreateArancelDTO {
   codUsuario?: number;
 }
 
-// DTO específico para la API POST sin autenticación usando JSON
+// DTO histórico para la API POST usando JSON. El cliente central agrega autenticación.
 export interface CrearArancelApiDTO {
   codArancel?: null; // Se asigna por SQL
   anio: number;
@@ -38,7 +38,7 @@ export interface CrearArancelApiDTO {
   codUsuario: number;
 }
 
-// DTO específico para la API PUT sin autenticación usando JSON
+// DTO histórico para la API PUT usando JSON. El cliente central agrega autenticación.
 export interface ActualizarArancelApiDTO {
   codArancel: number; // ID del arancel a actualizar
   anio: number;
@@ -151,7 +151,7 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
       
       console.log('📡 [ArancelService] GET Query:', queryString);
       
-      // Realizar petición GET sin autenticación usando makeRequest de BaseApiService
+      // Realizar petición GET mediante BaseApiService y el cliente central autenticado.
       const data = await this.makeRequest<ArancelRaw[] | ArancelResponse>(queryString, {
         method: 'GET'
       });
@@ -359,19 +359,12 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
       formData.append('costoArancel', (datos.costoArancel || 0).toString());
       formData.append('codUsuario', getAuthenticatedUserCode().toString());
       
-      // FormData necesita que no se envíe Content-Type para que el navegador lo asigne
-      // con el boundary correcto. makeRequest por defecto envía application/json.
-      const response = await fetch(buildApiUrl(this.endpoint), {
+      // El cliente central elimina Content-Type para que el navegador agregue
+      // automáticamente el boundary de FormData y conserva el Bearer token.
+      const responseData = await this.makeRequest<ArancelResponse>('', {
         method: 'POST',
         body: formData
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-      
-      const responseData: ArancelResponse = await response.json();
       
       if (responseData.success && responseData.data) {
         NotificationService.success('Arancel creado exitosamente');
@@ -390,11 +383,11 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
   }
   
   /**
-   * Crea un nuevo arancel usando POST sin autenticación con JSON
+   * Crea un nuevo arancel usando POST autenticado con JSON.
    */
   async crearArancelSinAuth(datos: CrearArancelApiDTO): Promise<ArancelData> {
     try {
-      console.log('➕ [ArancelService] Creando arancel sin autenticación:', datos);
+      console.log('➕ [ArancelService] Creando arancel con JSON:', datos);
       
       // Validar que los datos requeridos estén presentes
       if (!datos.anio || !datos.codDireccion || datos.costo === undefined || !datos.codUsuario) {
@@ -463,19 +456,10 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
       if (datos.costoArancel !== undefined) formData.append('costoArancel', datos.costoArancel.toString());
       formData.append('codUsuario', getAuthenticatedUserCode().toString());
       
-      const url = buildApiUrl(`${this.endpoint}/${codArancel}`);
-      
-      const response = await fetch(url, {
+      const responseData = await this.makeRequest<ArancelResponse>(`/${codArancel}`, {
         method: 'PUT',
         body: formData
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-      
-      const responseData: ArancelResponse = await response.json();
       
       if (responseData.success && responseData.data) {
         NotificationService.success('Arancel actualizado exitosamente');
@@ -494,11 +478,11 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
   }
 
   /**
-   * Actualiza un arancel usando PUT sin autenticación con JSON
+   * Actualiza un arancel usando PUT autenticado con JSON.
    */
   async actualizarArancelSinAuth(datos: ActualizarArancelApiDTO): Promise<ArancelData> {
     try {
-      console.log('📝 [ArancelService] Actualizando arancel sin autenticación:', datos);
+      console.log('📝 [ArancelService] Actualizando arancel con JSON:', datos);
       
       if (!datos.codArancel || !datos.anio || !datos.codDireccion || datos.costo === undefined || !datos.codUsuario) {
         console.error('❌ [ArancelService] Validación fallida en actualizarArancelSinAuth:', {

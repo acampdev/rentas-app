@@ -20,7 +20,7 @@ import {
 import { Arancel } from '../models/Arancel';
 
 // Schema de validación con Zod
-const predioSchema = z.object({
+export const predioSchema = z.object({
   codPersona: z.number().optional(),
   anio: z.coerce.number().min(1900).max(new Date().getFullYear() + 10).optional(),
   fechaAdquisicion: z.date().nullable().optional(),

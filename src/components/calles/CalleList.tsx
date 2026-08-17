@@ -52,7 +52,7 @@ const CalleListMUI: React.FC<CalleListProps> = ({
   onSelectCalle,
   onSelect,
   loading = false,
-  onSearch,
+  onSearch: _onSearch,
   searchTerm = '',
   obtenerNombreSector,
   obtenerNombreBarrio,
@@ -60,7 +60,7 @@ const CalleListMUI: React.FC<CalleListProps> = ({
 }) => {
   const theme = useTheme();
   
-  const handleSelect = (calle: Calle) => {
+  const _handleSelect = (calle: Calle) => {
     if (onSelectCalle) onSelectCalle(calle);
     if (onSelect) onSelect(calle);
   };

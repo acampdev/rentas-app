@@ -147,9 +147,9 @@ export function useCrudEntity<
   }, []);
 
   // Función auxiliar para obtener el ID de un item
-  const getItemId = (item: T): string | number => {
+  const getItemId = useCallback((item: T): string | number => {
     return (item.id || item.codigo || 0) as string | number;
-  };
+  }, []);
 
   // Cargar items
   const loadItems = useCallback(async (params?: Record<string, unknown>) => {
@@ -269,7 +269,7 @@ export function useCrudEntity<
       
       return null;
     }
-  }, [service, entityName, onSuccess, onError]);
+  }, [service, entityName, onSuccess, onError, getItemId]);
 
   // Eliminar item
   const deleteItem = useCallback(async (id: string | number): Promise<boolean> => {
@@ -308,7 +308,7 @@ export function useCrudEntity<
       
       return false;
     }
-  }, [service, entityName, onSuccess, onError]);
+  }, [service, entityName, onSuccess, onError, getItemId]);
 
   // Seleccionar item
   const selectItem = useCallback((item: T | null) => {
@@ -430,14 +430,7 @@ export function useCrudEntity<
     });
   }, []);
 
-  // Cargar datos al montar si está configurado
-  useEffect(() => {
-    if (loadOnMount) {
-      loadItems();
-    }
-  }, []); // Solo al montar
-
-  // Recargar cuando cambian página o filtros
+  // Cargar y recargar cuando cambian los parámetros efectivos de la consulta.
   useEffect(() => {
     if (!loadOnMount) return;
     
@@ -446,7 +439,7 @@ export function useCrudEntity<
     }, 100); // Pequeño debounce para evitar múltiples llamadas
 
     return () => clearTimeout(timeoutId);
-  }, [state.page, state.pageSize]);
+  }, [loadItems, loadOnMount]);
 
   // Limpiar al desmontar
   useEffect(() => {

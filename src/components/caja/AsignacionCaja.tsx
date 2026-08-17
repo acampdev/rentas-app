@@ -23,7 +23,6 @@ import {
   CircularProgress,
   useTheme,
   alpha,
-  Divider,
   Alert,
   Autocomplete
 } from '@mui/material';

@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Arbitrio de Limpieza Publica
@@ -71,7 +72,7 @@ class LimpiezaPublicaService extends BaseApiService<LimpiezaPublicaData, CreateL
     const suffix = tipo === 'otros' ? '/listarArbitrioLimpiezaPublicaOtros' : '';
     const url = `${baseUrl}${suffix}${anio ? `?anio=${anio}` : ''}`;
     
-    const response = await fetch(url);
+    const response = await apiClient.fetch(url);
     if (!response.ok) return [];
     const res = await response.json() as any;
     return this.normalizeData(res.data || res);
@@ -81,7 +82,7 @@ class LimpiezaPublicaService extends BaseApiService<LimpiezaPublicaData, CreateL
     const baseUrl = buildApiUrl(this.endpoint);
     const suffix = tipo === 'otros' ? '/insertarArbitrioLimpiezaPublicaOtros' : '';
     
-    const response = await fetch(`${baseUrl}${suffix}`, {
+    const response = await apiClient.fetch(`${baseUrl}${suffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -95,7 +96,7 @@ class LimpiezaPublicaService extends BaseApiService<LimpiezaPublicaData, CreateL
     const baseUrl = buildApiUrl(this.endpoint);
     const suffix = tipo === 'otros' ? '/actualizarArbitrioLimpiezaPublicaOtros' : '';
     
-    const response = await fetch(`${baseUrl}${suffix}`, {
+    const response = await apiClient.fetch(`${baseUrl}${suffix}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)

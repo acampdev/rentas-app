@@ -75,7 +75,7 @@ const DeudaFraccionada: React.FC<DeudaFraccionadaProps> = ({
   setCuotasFraccionamiento,
   selectedAño,
   setSelectedAño,
-  selectedResolucion,
+  selectedResolucion: _selectedResolucion,
   setSelectedResolucion,
   selectedResolucionCode,
   setSelectedResolucionCode,
@@ -173,7 +173,11 @@ const DeudaFraccionada: React.FC<DeudaFraccionadaProps> = ({
     };
     
     loadCronograma();
-  }, [codContribuyente]);
+  }, [
+    codContribuyente, obtenerCronogramaContribuyente, setCuotasFraccionamiento,
+    setMontoAPagar, setMontoFraccionado, setSelectedAño, setSelectedResolucion,
+    setSelectedResolucionCode
+  ]);
 
   // Manejar click en resolución (año y código de resolución)
   const handleAñoClick = (res: ResolucionFraccionamiento) => {

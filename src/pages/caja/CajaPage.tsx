@@ -11,15 +11,12 @@ import {
   Button,
   Paper,
   Card,
-  CardContent,
   Alert,
-  Divider,
   Chip
 } from '@mui/material';
 import {
   CreditCard as CreditCardIcon,
   Receipt as ReceiptIcon,
-  TrendingUp as TrendingUpIcon,
   Schedule as ScheduleIcon,
   History as HistoryIcon
 } from '@mui/icons-material';
@@ -53,7 +50,7 @@ const HeaderBox = styled(Box)(({ theme }) => ({
   boxShadow: `0 4px 20px ${theme.palette.primary.main}30`,
 }));
 
-const StatsCard = styled(Card)(({ theme }) => ({
+const _StatsCard = styled(Card)(({ theme }) => ({
   height: '100%',
   borderRadius: theme.spacing(2),
   boxShadow: '0 2px 12px rgba(0,0,0,0.08)',

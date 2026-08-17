@@ -114,7 +114,7 @@ export const conyugeRepresentanteSchema = z.object({
   direccion: direccionSchema,
   
   nFinca: z.string().optional(),
-}).superRefine((data, ctx) => {
+}).superRefine((_data, _ctx) => {
   // Solo validar sexo y estado civil si no es representante legal
   // (Esta validación se puede ajustar según la lógica de negocio)
 });

@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Arbitrio de Parques y Jardines
@@ -68,7 +69,7 @@ class ParquesJardinesService extends BaseApiService<ParquesJardinesData, CrearPa
 
   async listar(anio?: number): Promise<ParquesJardinesData[]> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(`${url}${anio ? `?anio=${anio}` : ''}`);
+    const response = await apiClient.fetch(`${url}${anio ? `?anio=${anio}` : ''}`);
     if (!response.ok) return [];
     const res = await response.json() as any;
     return this.normalizeData(res.data || res);
@@ -76,7 +77,7 @@ class ParquesJardinesService extends BaseApiService<ParquesJardinesData, CrearPa
 
   async crear(datos: CrearParquesJardinesDTO): Promise<ParquesJardinesData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -88,7 +89,7 @@ class ParquesJardinesService extends BaseApiService<ParquesJardinesData, CrearPa
 
   async actualizar(datos: CrearParquesJardinesDTO): Promise<ParquesJardinesData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)

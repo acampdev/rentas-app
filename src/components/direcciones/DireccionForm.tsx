@@ -17,17 +17,17 @@ import {
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Edit as EditIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
-  ErrorOutline as ErrorIcon
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DireccionData, CreateDireccionDTO } from '../../services/direccionService';
 import { useTiposLadosDireccion, useRutasOptions, useZonasOptions, useUbicacionAreaVerdeOptions } from '../../hooks/useConstantesOptions';
-import { useCalles, useSectores, useBarrios } from '../../hooks';
+import { useCalles } from '../../hooks/useCalles';
+import { useSectores } from '../../hooks/useSectores';
+import { useBarrios } from '../../hooks/useBarrios';
 import { getAuthenticatedUserCode } from '../../config/api.unified.config';
 
 // Schema de validación corregido y relajado
@@ -61,7 +61,7 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
   direccionSeleccionada,
   onSubmit,
   onNuevo,
-  onEditar,
+  onEditar: _onEditar,
   onDelete,
   loading = false,
   isEditMode = false
@@ -154,7 +154,7 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
       manzana: '', lado: '8103', loteInicial: 0, loteFinal: 0,
       ruta: null, zona: null, ubicacionAreaVerde: null
     };
-  }, [direccionSeleccionada?.id, isEditMode]);
+  }, [direccionSeleccionada, isEditMode]);
 
   // Formulario con inicialización directa
   const { register, control, handleSubmit, watch, reset, setValue, getValues, formState: { isSubmitting, errors: formErrors } } = useForm<DireccionFormData>({
@@ -178,7 +178,7 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
         ruta: null, zona: null, ubicacionAreaVerde: null
       });
     }
-  }, [direccionSeleccionada?.id, isEditMode, reset]);
+  }, [direccionSeleccionada, initialFormValues, isEditMode, reset]);
 
   // 2. Autocompletar / normalizar valores desde la descripción cuando cargan las opciones
   useEffect(() => {
@@ -391,7 +391,7 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
                 size="small"
                 value={loteInicialFocused && field.value === 0 ? '' : field.value}
                 onFocus={() => setLoteInicialFocused(true)}
-                onBlur={(e) => {
+                onBlur={(_e) => {
                   setLoteInicialFocused(false);
                   field.onBlur();
                 }}
@@ -428,7 +428,7 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
                 size="small"
                 value={loteFinalFocused && field.value === 0 ? '' : field.value}
                 onFocus={() => setLoteFinalFocused(true)}
-                onBlur={(e) => {
+                onBlur={(_e) => {
                   setLoteFinalFocused(false);
                   field.onBlur();
                 }}

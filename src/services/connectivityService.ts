@@ -7,8 +7,7 @@
 import { 
   buildApiUrl, 
   getApiHeaders, 
-  API_CONFIG,
-  getHealthCheckEndpoints 
+  API_CONFIG 
 } from '../config/api.unified.config';
 
 /**

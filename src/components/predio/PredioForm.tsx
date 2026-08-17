@@ -182,12 +182,12 @@ const PredioForm: React.FC<PredioFormProps> = ({
                       size="small"
                       error={!!errors.areaTerreno}
                       helperText={errors.areaTerreno?.message}
-                      onFocus={(e) => {
+                      onFocus={(_e) => {
                         if (Number(field.value) === 0) {
                           field.onChange('');
                         }
                       }}
-                      onBlur={(e) => {
+                      onBlur={(_e) => {
                         if (String(field.value) === '' || field.value === undefined || field.value === null) {
                           field.onChange(0);
                         }

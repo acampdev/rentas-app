@@ -1,5 +1,5 @@
 // src/layout/SidebarWidget.tsx - Versión actualizada para tema verde oscuro
-import React, { FC, ReactNode, memo, useCallback, useState } from 'react';
+import React, { FC, ReactNode, memo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ListItem,

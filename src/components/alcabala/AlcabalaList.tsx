@@ -24,12 +24,9 @@ import {
   CircularProgress
 } from '@mui/material';
 import {
-  Receipt as ReceiptIcon,
-  CalendarToday as CalendarIcon,
-  TrendingUp as TrendingUpIcon,
+  
   Edit as EditIcon,
   Search as SearchIcon,
-  Add as AddIcon,
   Refresh as RefreshIcon,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
@@ -57,7 +54,7 @@ const AlcabalaList: React.FC<AlcabalaListProps> = ({
   paginacion,
   onCambiarPagina,
   onBuscar,
-  onNuevo,
+  onNuevo: _onNuevo,
   loading = false,
   onEditar
 }) => {

@@ -32,8 +32,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Calculate as CalculateIcon,
-  Dashboard as DashboardIcon
+  Calculate as CalculateIcon
 } from '@mui/icons-material';
 import { useListaUsosOptions } from '../../hooks/useConstantesOptions';
 import { useLimpiezaPublica } from '../../hooks/useLimpiezaPublica';

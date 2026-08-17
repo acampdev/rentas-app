@@ -17,7 +17,9 @@ import {
   LocationCity as CityIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { BarrioComponent as BarrioForm, BarrioList, Breadcrumb } from '../../components';
+import BarrioForm from '../../components/barrio/BarrioForm';
+import BarrioList from '../../components/barrio/BarrioList';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import { useBarrios } from '../../hooks/useBarrios';
 import { useSectores } from '../../hooks/useSectores';

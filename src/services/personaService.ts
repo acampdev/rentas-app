@@ -1,7 +1,12 @@
 // src/services/personaService.ts
 import BaseApiService from './BaseApiService';
-import { getEndpoint, buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
+import {
+  getEndpoint,
+  buildApiUrl,
+  getAuthenticatedUserCode
+} from '../config/api.unified.config';
 import { ContribuyenteData } from './contribuyenteService';
+import apiClient from './apiClient';
 
 /**
  * Interfaces para Persona
@@ -215,9 +220,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       
       console.log('📡 [PersonaService] GET URL:', fullUrl);
       
-      const response = await fetch(fullUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
+      const response = await apiClient.fetch(fullUrl, {
+        method: 'GET'
       });
       
       if (!response.ok) throw new Error(`Error ${response.status}`);
@@ -334,12 +338,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       console.log('📡 [PersonaService] POST URL:', API_URL);
       console.log('📦 [PersonaService] Payload:', bodyPayload);
       
-      const response = await fetch(API_URL, {
+      const response = await apiClient.fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify(bodyPayload)
       });
       
@@ -465,12 +465,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       console.log('📡 [PersonaService] PUT URL:', API_URL);
       console.log('📦 [PersonaService] Payload:', bodyPayload);
       
-      const response = await fetch(API_URL, {
+      const response = await apiClient.fetch(API_URL, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify(bodyPayload)
       });
       

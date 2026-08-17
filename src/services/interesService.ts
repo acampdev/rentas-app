@@ -1,5 +1,6 @@
 // src/services/interesService.ts
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 import { InteresData, CreateInteresDTO, UpdateInteresDTO } from '../models/Interes';
 
@@ -44,7 +45,7 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
     try {
       console.log(`🔍 [InteresService] Obteniendo intereses para año: ${anio}`);
       const url = buildApiUrl(`${this.endpoint}?anio=${anio}`);
-      const response = await fetch(url);
+      const response = await apiClient.fetch(url);
       
       if (!response.ok) {
         console.warn(`⚠️ [InteresService] HTTP error: ${response.status}`);

@@ -16,7 +16,6 @@ import {
   Domain as DomainIcon
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
-import { PredioFormData } from '../../models/Predio';
 import PredioForm from '../../components/predio/PredioForm';
 import MainLayout from '../../layout/MainLayout';
 import { usePredios } from '../../hooks/usePredioAPI';
@@ -24,6 +23,15 @@ import { predioService } from '../../services/predioService';
 import direccionService from '../../services/direccionService';
 import { NotificationService } from '../../components/utils/Notification';
 import { getAuthenticatedUserCode } from '../../config/api.unified.config';
+
+const MAP_CONDICION_PROPIEDAD: Record<string, string> = {
+  'PROPIETARIO UNICO': '2701', 'PROPIETARIO': '2702', 'POSEEDOR': '2703',
+  'ARRENDATARIO': '2704', 'USUFRUCTUARIO': '2705', 'OTRO': '2706'
+};
+const MAP_CONDUCTOR: Record<string, string> = { 'PRIVADO': '1401', 'ESTATAL': '1402' };
+const MAP_ESTADO_PREDIO: Record<string, string> = {
+  'TERMINADO': '2501', 'EN CONSTRUCCION': '2502', 'EN RUINAS': '2503', 'PARALIZADO': '2504'
+};
 
 /**
  * Página para registrar o editar un predio
@@ -47,27 +55,6 @@ const NuevoPredio: FC = memo(() => {
   const { crearPredio, loading } = usePredios({ enabled: false });
 
   // Mapeos de texto a código para los Autocomplete
-  const mapCondicionPropiedad: Record<string, string> = {
-    'PROPIETARIO UNICO': '2701',
-    'PROPIETARIO': '2702',
-    'POSEEDOR': '2703',
-    'ARRENDATARIO': '2704',
-    'USUFRUCTUARIO': '2705',
-    'OTRO': '2706'
-  };
-
-  const mapConductor: Record<string, string> = {
-    'PRIVADO': '1401',
-    'ESTATAL': '1402'
-  };
-
-  const mapEstadoPredio: Record<string, string> = {
-    'TERMINADO': '2501',
-    'EN CONSTRUCCION': '2502',
-    'EN RUINAS': '2503',
-    'PARALIZADO': '2504'
-  };
-
   // mapTipoPredio reservado para uso futuro si la API devuelve tipos de predio como texto
   // const mapTipoPredio: Record<string, string> = {
   //   'PREDIO INDEPENDIENTE': '2601',
@@ -141,15 +128,15 @@ const NuevoPredio: FC = memo(() => {
             // Mapear valores de texto a códigos para los Autocomplete
             const condicionPropiedadKey = predio.condicionPropiedad?.toUpperCase() || '';
             const condicionPropiedadCode = predio.codCondicionPropiedad?.toString() ||
-              (condicionPropiedadKey ? mapCondicionPropiedad[condicionPropiedadKey] : '') || '';
+              (condicionPropiedadKey ? MAP_CONDICION_PROPIEDAD[condicionPropiedadKey] : '') || '';
 
             const conductorKey = predio.conductor?.toUpperCase() || '';
             const conductorCode = predio.codListaConductor?.toString() ||
-              (conductorKey ? mapConductor[conductorKey] : '') || '';
+              (conductorKey ? MAP_CONDUCTOR[conductorKey] : '') || '';
 
             const estadoPredioKey = predio.estadoPredio?.toUpperCase() || '';
             const estadoPredioCode = predio.estPredio?.toString() ||
-              (estadoPredioKey ? mapEstadoPredio[estadoPredioKey] : '') || '';
+              (estadoPredioKey ? MAP_ESTADO_PREDIO[estadoPredioKey] : '') || '';
 
             const tipoPredioCode = predio.codTipoPredio?.toString() || '';
 

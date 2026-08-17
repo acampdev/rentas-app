@@ -1,5 +1,6 @@
 // src/services/turnoService.ts
 import BaseApiService from './BaseApiService';
+import apiClient from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -33,7 +34,7 @@ export interface ListarTurnoParams {
 /**
  * Servicio para gestion de turnos
  *
- * IMPORTANTE: Este servicio NO requiere autenticacion
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  * Todos los metodos (GET, POST, PUT, DELETE) funcionan sin token
  */
 class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurnoDTO> {
@@ -66,7 +67,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
   /**
    * Lista todos los turnos
    * GET /api/turno
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async listar(params?: ListarTurnoParams): Promise<TurnoData[]> {
     try {
@@ -83,7 +84,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
       const getUrl = queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
       console.log('[TurnoService] GET URL:', getUrl);
 
-      const response = await fetch(getUrl, {
+      const response = await apiClient.fetch(getUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -124,7 +125,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    * Crea un nuevo turno
    * POST /api/turno/insertar
    * Body: {nombreTurno, horario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async insertar(datos: CreateTurnoDTO): Promise<TurnoData> {
     try {
@@ -132,7 +133,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -168,7 +169,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    * Actualiza un turno existente
    * PUT /api/turno/actualizar
    * Body: {codTurno, nombreTurno, horario}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async actualizar(datos: UpdateTurnoDTO): Promise<TurnoData> {
     try {
@@ -176,7 +177,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -212,7 +213,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    * Elimina un turno
    * DELETE /api/turno/eliminar
    * Body: {codTurno}
-   * NO requiere autenticacion
+   * Requiere autenticación Bearer.
    */
   async eliminar(datos: DeleteTurnoDTO): Promise<void> {
     try {
@@ -220,7 +221,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',

@@ -17,9 +17,9 @@ import {
   List as ListIcon
 } from '@mui/icons-material';
 import { MainLayout } from '../../layout';
-import { Breadcrumb } from '../../components';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
-import { useDirecciones } from '../../hooks';
+import { useDirecciones } from '../../hooks/useDirecciones';
 import DireccionFormMUI from '../../components/direcciones/DireccionForm';
 import DireccionListMUI from '../../components/direcciones/DireccionList';
 import { DireccionData } from '../../services/direccionService';

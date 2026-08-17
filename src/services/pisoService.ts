@@ -1,6 +1,6 @@
 // src/services/pisoService.ts
 import BaseApiService from './BaseApiService';
-import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
+import {  getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
  * Interfaces para Piso

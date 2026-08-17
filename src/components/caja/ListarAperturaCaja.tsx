@@ -134,7 +134,7 @@ const ListarAperturaCaja: React.FC<ListarAperturaCajaProps> = ({ open, onClose, 
         minute: '2-digit',
         second: '2-digit'
       });
-    } catch (e) {
+    } catch {
       return fechaStr;
     }
   };

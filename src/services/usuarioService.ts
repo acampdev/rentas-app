@@ -256,7 +256,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
 
   /**
    * Verifica credenciales de supervisor/cajero
-   * GET /api/usuario/verificarSupervisorCajero?username=davila&password=123456
+   * POST /api/usuario/verificarSupervisorCajero?username=davila&password=123456
    */
   async verificarSupervisorCajero(username: string, password: string): Promise<boolean> {
     try {
@@ -264,7 +264,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
 
       const response = await this.makeRequest<string | UsuarioApiResponse<unknown>>(
         `/verificarSupervisorCajero?${queryParams.toString()}`,
-        { method: 'GET' }
+        { method: 'POST' }
       );
 
       // El backend retorna "data": "Usuario correcto."

@@ -50,7 +50,7 @@ const ReportesContribuyentes: React.FC = () => {
     if (contribuyentes.length === 0) {
       cargarContribuyentes();
     }
-  }, []);
+  }, [cargarContribuyentes, contribuyentes.length]);
 
   const handleGenerarPDF = useCallback(() => {
     // Filtrar contribuyentes

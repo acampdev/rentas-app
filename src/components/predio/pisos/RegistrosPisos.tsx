@@ -98,7 +98,7 @@ const RegistrosPisos: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { crearPiso, guardarPiso, loading } = usePisos();
-  const { predios: prediosDisponibles, buscarPrediosConFiltros, loading: loadingPredios } = usePredios({ enabled: false });
+  const { predios: prediosDisponibles, buscarPrediosConFiltros, loading: _loadingPredios } = usePredios({ enabled: false });
 
   // Obtener datos de edición desde navigation state
   const navigationState = location.state as any;
@@ -332,7 +332,7 @@ const RegistrosPisos: React.FC = () => {
         );
 
         // 3. Obtener letras (Código 11)
-        let letCodToLet: Record<string, string> = {};
+        const letCodToLet: Record<string, string> = {};
         try {
           const letras = await constanteService.obtenerTiposLetrasValoresUnitarios();
           if (letras && letras.length > 0) {
@@ -346,8 +346,7 @@ const RegistrosPisos: React.FC = () => {
           }
         } catch (letraError) {
           console.error('❌ [RegistrosPisos] Error al obtener letras del API:', letraError);
-          // Si falla, usar el fallback del estado actual
-          letCodToLet = { ...mapeosDiccionarios.letraCodigoToLetra };
+          // El actualizador funcional conserva el mapeo previo cuando el API falla.
         }
 
         // Actualizar el estado con el mapeo combinado dinámico
@@ -520,6 +519,9 @@ const RegistrosPisos: React.FC = () => {
         console.log('✅ [RegistrosPisos] Categorías reales pre-cargadas para edición:', nuevasCategorias);
       }
     }
+  // La función de búsqueda se declara más adelante por el orden histórico del formulario;
+  // categoriasCargadas impide que la precarga se repita.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, editData, valoresUnitarios, mapeosDiccionarios, categoriasCargadas, formData.anio]);
 
   // Opciones para selectores

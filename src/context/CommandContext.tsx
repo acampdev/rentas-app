@@ -123,15 +123,18 @@ export const useCommands = (): CommandContextType => {
 // Hook para registrar comandos de un módulo
 export const useModuleCommands = (moduleName: string, commands: Omit<Command, 'module'>[]) => {
   const { registerCommand, unregisterCommand, setActiveModule } = useCommands();
+  const commandsRef = React.useRef(commands);
+  commandsRef.current = commands;
 
   React.useEffect(() => {
     // Registrar módulo activo
     setActiveModule(moduleName);
 
     // Registrar todos los comandos del módulo
-    const fullCommands = commands.map(cmd => ({
+    const fullCommands = commandsRef.current.map(cmd => ({
       ...cmd,
       module: moduleName,
+      action: () => commandsRef.current.find(current => current.id === cmd.id)?.action(),
     }));
 
     fullCommands.forEach(cmd => registerCommand(cmd));

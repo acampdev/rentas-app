@@ -42,8 +42,8 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
   onRedirectToList,
   initialData,
   onSubmit,
-  onDelete,
-  onNuevo,
+  onDelete: _onDelete,
+  onNuevo: _onNuevo,
   isSubmitting
 }) => {
   const theme = useTheme();

@@ -17,7 +17,9 @@ import {
   Public as PublicIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { SectorComponent as SectorForm, SectorList, Breadcrumb } from '../../components';
+import SectorForm from '../../components/sector/SectorForm';
+import SectorList from '../../components/sector/SectorList';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import { useSectores } from '../../hooks/useSectores';
 import { Sector } from '../../models/Sector';

@@ -1,5 +1,5 @@
 // src/components/arbitrios/Serenazgo.tsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -14,9 +14,7 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
-  Chip,
   alpha,
-  Grid,
   Divider,
   Tooltip,
   useTheme
@@ -31,7 +29,6 @@ import {
 import { useGrupoUsoOptions } from '../../hooks/useConstantesOptions';
 import { useSerenazgo } from '../../hooks/useSerenazgo';
 import { useSectores } from '../../hooks/useSectores';
-import { SerenazgoData } from '../../services/serenazgoService';
 
 /**
  * Componente para la gestión de arbitrios de Serenazgo
@@ -177,7 +174,7 @@ const Serenazgo: React.FC = () => {
     });
 
     return { matrixData: matrix, availableGroups: finalGroups };
-  }, [serenazgo, usosOptions, anioBusqueda, cuadrantes]);
+  }, [serenazgo, usosOptions, anioBusqueda, cuadrantes, matchCuadranteNombre]);
 
   /**
    * Carga una celda de la matriz en el formulario para editar

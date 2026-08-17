@@ -19,11 +19,10 @@ export const useKeyPress = (
   options: KeyPressOptions = {}
 ): boolean => {
   const [keyPressed, setKeyPressed] = useState(false);
+  const { ctrlKey = false, altKey = false, shiftKey = false, metaKey = false } = options;
 
   useEffect(() => {
     const downHandler = (event: KeyboardEvent) => {
-      const { ctrlKey = false, altKey = false, shiftKey = false, metaKey = false } = options;
-
       // Verificar si la tecla coincide
       const keyMatch = event.key.toLowerCase() === targetKey.toLowerCase();
 
@@ -52,7 +51,7 @@ export const useKeyPress = (
       window.removeEventListener('keydown', downHandler);
       window.removeEventListener('keyup', upHandler);
     };
-  }, [targetKey, options.ctrlKey, options.altKey, options.shiftKey, options.metaKey]);
+  }, [targetKey, ctrlKey, altKey, shiftKey, metaKey]);
 
   return keyPressed;
 };

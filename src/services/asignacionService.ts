@@ -1,5 +1,6 @@
 // src/services/asignacionService.ts
 import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
+import apiClient from './apiClient';
 
 export interface AsignacionPredio {
   id: number | string;
@@ -137,7 +138,7 @@ class AsignacionService {
   }
 
   private async request(path: string, init: RequestInit): Promise<unknown> {
-    const response = await fetch(buildApiUrl(path), {
+    const response = await apiClient.fetch(buildApiUrl(path), {
       ...init,
       credentials: 'include',
       headers: getApiHeaders(true)

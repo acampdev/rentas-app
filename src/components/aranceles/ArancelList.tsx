@@ -1,5 +1,5 @@
 // src/components/aranceles/ArancelList.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -53,7 +53,7 @@ export const ArancelList: React.FC<ArancelListProps> = ({
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  const handleBuscar = () => {
+  const handleBuscar = useCallback(() => {
     if (onSearch) {
       onSearch({ 
         anio: anioFiltro, 
@@ -61,12 +61,12 @@ export const ArancelList: React.FC<ArancelListProps> = ({
       });
     }
     setPage(1);
-  };
+  }, [anioFiltro, onSearch, paramBusqueda]);
 
   // Efecto para búsqueda automática al cambiar el año
   useEffect(() => {
     handleBuscar();
-  }, [anioFiltro]);
+  }, [handleBuscar]);
 
   const handlePageChange = (_: any, value: number) => setPage(value);
 

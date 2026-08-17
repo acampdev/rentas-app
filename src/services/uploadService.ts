@@ -1,6 +1,7 @@
 // src/services/uploadService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import { NotificationService } from '../components/utils/Notification';
+import apiClient from './apiClient';
 
 export interface UploadResponse {
   success: boolean;
@@ -37,7 +38,7 @@ class UploadService {
   
   /**
    * Sube un archivo al servidor
-   * NO requiere autenticación
+   * Requiere autenticación Bearer.
    */
   async uploadFile(
     file: File, 
@@ -64,7 +65,7 @@ class UploadService {
       }
       
       // Upload simple sin progreso
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         body: formData
         // NO incluir headers, el navegador los configura automáticamente para FormData
@@ -188,7 +189,7 @@ class UploadService {
               };
             }
             resolve(response);
-          } catch (error) {
+          } catch {
             // Si hay error al parsear, devolver respuesta de éxito genérica
             resolve({
               success: true,

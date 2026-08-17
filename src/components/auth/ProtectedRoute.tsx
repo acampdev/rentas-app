@@ -1,22 +1,16 @@
 import React from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
+import {
+  getAllowedRolesForPath,
+  getUserRoles,
+  hasAllowedRole
+} from '../../config/accessControl';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: readonly string[];
 }
-
-const normalizeRole = (role: string): string => {
-  const normalized = role
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]+/g, '_');
-
-  return normalized === 'ADMIN' ? 'ADMINISTRADOR' : normalized;
-};
 
 /**
  * Componente para proteger rutas que requieren autenticación
@@ -37,19 +31,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles?.length) {
-    const storedRoles: unknown = user?.roles;
-    const roleList = Array.isArray(storedRoles)
-      ? storedRoles.filter((role): role is string => typeof role === 'string')
-      : typeof storedRoles === 'string'
-        ? [storedRoles]
-        : [];
-    const userRoles = new Set(roleList.map(normalizeRole));
-    const requiredRoles = allowedRoles.map(normalizeRole);
-    const isAdministrator = userRoles.has('ADMINISTRADOR');
-    const hasRequiredRole = requiredRoles.some(role => userRoles.has(role));
+  const routeRoles = getAllowedRolesForPath(location.pathname);
+  const effectiveAllowedRoles = routeRoles ?? allowedRoles;
 
-    if (!isAdministrator && !hasRequiredRole) {
+  if (effectiveAllowedRoles?.length) {
+    const userRoles = getUserRoles(user);
+
+    if (!hasAllowedRole(userRoles, effectiveAllowedRoles)) {
       return (
         <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
           <section className="w-full max-w-lg rounded-xl bg-white p-8 text-center shadow-lg dark:bg-gray-800">

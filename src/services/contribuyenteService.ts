@@ -1,6 +1,7 @@
 // src/services/contribuyenteService.ts
 import BaseApiService from './BaseApiService';
 import { buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
 
 /**
  * Interfaces para Contribuyente
@@ -387,12 +388,8 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       const getUrl = `${url}?${queryParams.toString()}`;
       console.log('📡 [ContribuyenteService] GET URL general:', getUrl);
       
-      const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+      const response = await apiClient.fetch(getUrl, {
+        method: 'GET'
       });
       
       console.log(`📥 [ContribuyenteService] Respuesta API general: ${response.status} ${response.statusText}`);
@@ -453,12 +450,8 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       const getUrl = `${url}?codigoContribuyente=${codContribuyenteValue}&codigoPersona=${codPersonaValue}`;
       console.log('📡 [ContribuyenteService] GET URL:', getUrl);
       
-      const response = await fetch(getUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+      const response = await apiClient.fetch(getUrl, {
+        method: 'GET'
       });
       
       console.log(`📥 [ContribuyenteService] Respuesta: ${response.status} ${response.statusText}`);
@@ -512,15 +505,11 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
         throw new Error('Código de persona y estado son requeridos');
       }
       
-      const { codContribuyente, ...datosParaEnviar } = datos;
+      const { codContribuyente: _codContribuyente, ...datosParaEnviar } = datos;
       console.log('📤 [ContribuyenteService] Enviando datos (codContribuyente omitido):', JSON.stringify(datosParaEnviar, null, 2));
       
-      const response = await fetch(API_URL, {
+      const response = await apiClient.fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify(datosParaEnviar)
       });
       

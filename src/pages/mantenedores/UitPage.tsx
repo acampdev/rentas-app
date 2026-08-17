@@ -18,7 +18,9 @@ import {
   Calculate as CalculateIcon
 } from '@mui/icons-material';
 import MainLayout from '../../layout/MainLayout';
-import { UitFormAlicuota, UitList, Breadcrumb } from '../../components';
+import UitFormAlicuota from '../../components/uit/UitFormAlicuota';
+import UitList from '../../components/uit/UitList';
+import Breadcrumb from '../../components/utils/Breadcrumb';
 import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
 import { useUIT } from '../../hooks/useUIT';
 import { UITData } from '../../services/uitService';
@@ -34,10 +36,10 @@ const UitPage: React.FC = () => {
 
   const {
     uits,
-    uitVigente,
+    uitVigente: _uitVigente,
     loading,
     error,
-    aniosDisponibles,
+    aniosDisponibles: _aniosDisponibles,
     crearUIT,
     actualizarUIT,
     eliminarUIT,
@@ -83,7 +85,7 @@ const UitPage: React.FC = () => {
     handleNuevo();
   };
 
-  const handleEliminar = async (id: number) => {
+  const _handleEliminar = async (id: number) => {
     try {
       await eliminarUIT(id);
       setTabValue(1);

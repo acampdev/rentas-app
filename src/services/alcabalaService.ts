@@ -1,6 +1,5 @@
 // src/services/alcabalaService.ts
 import BaseApiService from './BaseApiService';
-import { buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Alcabala API

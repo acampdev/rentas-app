@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interface para los datos de constante
@@ -214,7 +215,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarConstantesPorPadre(codConstante: string): Promise<ConstanteData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarConstantePadre?codConstante=${codConstante}`);
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const res = await response.json();
       const items = (res.data || (Array.isArray(res) ? res : [res])) as ConstanteRaw[];
@@ -231,7 +232,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarConstantesPorHijo(codConstante: string): Promise<ConstanteData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarConstanteHijo?codConstante=${codConstante}`);
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const res = await response.json();
       const items = (res.data || (Array.isArray(res) ? res : [res])) as ConstanteRaw[];
@@ -278,7 +279,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async obtenerRutas(): Promise<RutaData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarRuta`);
-      const response = await fetch(url);
+      const response = await apiClient.fetch(url);
       if (!response.ok) return [];
       const data = await response.json();
       const items = (Array.isArray(data) ? data : data.data || []) as RutaRaw[];
@@ -287,7 +288,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -295,7 +296,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarGrupoUso(): Promise<GrupoUsoData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarGrupoUso`);
-      const response = await fetch(url);
+      const response = await apiClient.fetch(url);
       if (!response.ok) return [];
       const data = await response.json();
       const items = (Array.isArray(data) ? data : data.data || []) as GrupoUsoRaw[];
@@ -303,7 +304,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
         codigo: i.codigo || 0,
         descripcion: i.descripcion || ''
       }));
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -311,7 +312,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarUbicacionAreaVerde(): Promise<UbicacionAreaVerdeData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarUbicacionAreaVerde`);
-      const response = await fetch(url);
+      const response = await apiClient.fetch(url);
       if (!response.ok) return [];
       const data = await response.json();
       const items = (Array.isArray(data) ? data : data.data || []) as UbicacionAreaVerdeRaw[];
@@ -320,7 +321,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -341,7 +342,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
           codGrupoUso: Number(i.codGrupoUso ?? 0)
         }))
         .filter((i) => i.codUso > 0 && i.descripcion !== '');
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -349,7 +350,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async obtenerZonas(): Promise<ZonaData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarZona`);
-      const response = await fetch(url);
+      const response = await apiClient.fetch(url);
       if (!response.ok) return [];
       const data = await response.json();
       const items = (Array.isArray(data) ? data : data.data || []) as ZonaRaw[];
@@ -358,7 +359,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch (error) {
+    } catch {
       return [];
     }
   }

@@ -1,5 +1,5 @@
 // src/components/resolucionInteres/ResolucionInteres.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -34,6 +34,13 @@ const ResolucionInteres: React.FC<ResolucionInteresProps> = ({
   const [descripcion, setDescripcion] = useState<string>('');
   const [tasa, setTasa] = useState<string>('');
 
+  const handleLimpiar = useCallback(() => {
+    setAnioFiscal('');
+    setDescripcion('');
+    setTasa('');
+    onNuevo();
+  }, [onNuevo]);
+
   // Sincronizar estado cuando se selecciona una resolución para editar
   useEffect(() => {
     if (resolucionSeleccionada) {
@@ -43,14 +50,7 @@ const ResolucionInteres: React.FC<ResolucionInteresProps> = ({
     } else {
       handleLimpiar();
     }
-  }, [resolucionSeleccionada]);
-
-  const handleLimpiar = () => {
-    setAnioFiscal('');
-    setDescripcion('');
-    setTasa('');
-    onNuevo();
-  };
+  }, [handleLimpiar, resolucionSeleccionada]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

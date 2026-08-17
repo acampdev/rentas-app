@@ -1,5 +1,6 @@
 import BaseApiService from './BaseApiService';
-import { API_CONFIG, buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
+import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
  * Interfaces para Arbitrio de Serenazgo
@@ -68,7 +69,7 @@ class SerenazgoService extends BaseApiService<SerenazgoData, CrearSerenazgoDTO, 
 
   async listar(anio?: number): Promise<SerenazgoData[]> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(`${url}${anio ? `?anio=${anio}` : ''}`);
+    const response = await apiClient.fetch(`${url}${anio ? `?anio=${anio}` : ''}`);
     if (!response.ok) return [];
     const res = await response.json() as any;
     return this.normalizeData(res.data || res);
@@ -76,7 +77,7 @@ class SerenazgoService extends BaseApiService<SerenazgoData, CrearSerenazgoDTO, 
 
   async crear(datos: CrearSerenazgoDTO): Promise<SerenazgoData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -88,7 +89,7 @@ class SerenazgoService extends BaseApiService<SerenazgoData, CrearSerenazgoDTO, 
 
   async actualizar(datos: CrearSerenazgoDTO): Promise<SerenazgoData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)

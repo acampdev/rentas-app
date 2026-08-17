@@ -1,29 +1,48 @@
 // src/utils/pdfUtils.ts
-// @ts-expect-error - missing types for pdfmake library
-import * as pdfMakeLib from 'pdfmake/build/pdfmake';
+interface PdfDocument {
+  download: (filename: string) => void;
+  open: () => void;
+}
 
-// Obtener pdfMake correctamente según el tipo de export
-const pdfMake = (pdfMakeLib as any).default || pdfMakeLib;
+interface PdfMakeApi {
+  vfs?: Record<string, string>;
+  createPdf: (definition: Record<string, unknown>) => PdfDocument;
+}
 
-// Función para inicializar las fuentes
-const initializeFonts = async () => {
-  try {
-    // @ts-expect-error - missing types for vfs_fonts
-    const vfsModule = await import('pdfmake/build/vfs_fonts');
-    const vfs = (vfsModule as any).default?.pdfMake?.vfs ||
-                (vfsModule as any).pdfMake?.vfs ||
-                (vfsModule as any).vfs;
-
-    if (vfs && pdfMake) {
-      pdfMake.vfs = vfs;
-    }
-  } catch (error) {
-    console.warn('No se pudieron cargar las fuentes de pdfmake:', error);
-  }
+type PdfMakeModule = { default?: PdfMakeApi } & Partial<PdfMakeApi>;
+type PdfFontsModule = {
+  default?: { pdfMake?: { vfs?: Record<string, string> }; vfs?: Record<string, string> };
+  pdfMake?: { vfs?: Record<string, string> };
+  vfs?: Record<string, string>;
 };
 
-// Inicializar fuentes inmediatamente
-initializeFonts();
+let pdfMakePromise: Promise<PdfMakeApi> | null = null;
+
+// pdfmake y sus fuentes pesan más de 2 MB: se descargan únicamente al exportar.
+const loadPdfMake = (): Promise<PdfMakeApi> => {
+  if (!pdfMakePromise) {
+    pdfMakePromise = Promise.all([
+      import('pdfmake/build/pdfmake'),
+      import('pdfmake/build/vfs_fonts')
+    ]).then(([pdfModule, fontsModule]) => {
+      const typedPdfModule = pdfModule as unknown as PdfMakeModule;
+      const typedFontsModule = fontsModule as unknown as PdfFontsModule;
+      const pdfMake = (typedPdfModule.default ?? typedPdfModule) as PdfMakeApi;
+      const vfs = typedFontsModule.default?.pdfMake?.vfs
+        ?? typedFontsModule.default?.vfs
+        ?? typedFontsModule.pdfMake?.vfs
+        ?? typedFontsModule.vfs;
+
+      if (vfs) pdfMake.vfs = vfs;
+      return pdfMake;
+    }).catch((error) => {
+      pdfMakePromise = null;
+      throw error;
+    });
+  }
+
+  return pdfMakePromise;
+};
 
 // Estilos personalizados para PDFs
 export type PDFAlignment = 'left' | 'center' | 'right' | 'justify';
@@ -218,13 +237,15 @@ export const createTable = (columns: TableColumn[], data: Record<string, unknown
 };
 
 // Función para generar y descargar PDF
-export const generateAndDownloadPdf = (docDefinition: Record<string, unknown>, fileName: string) => {
+export const generateAndDownloadPdf = async (docDefinition: Record<string, unknown>, fileName: string): Promise<void> => {
+  const pdfMake = await loadPdfMake();
   const pdf = pdfMake.createPdf(docDefinition);
   pdf.download(`${fileName}_${new Date().getTime()}.pdf`);
 };
 
 // Función para abrir PDF en nueva ventana
-export const generateAndOpenPdf = (docDefinition: Record<string, unknown>) => {
+export const generateAndOpenPdf = async (docDefinition: Record<string, unknown>): Promise<void> => {
+  const pdfMake = await loadPdfMake();
   const pdf = pdfMake.createPdf(docDefinition);
   pdf.open();
 };

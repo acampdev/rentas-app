@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { NotificationService } from '../components/utils/Notification';
 import {
   usuarioService,
-  UsuarioData,
   CreateUsuarioDTO,
   UpdateUsuarioDTO,
   CambiarClaveDTO,
@@ -105,17 +104,23 @@ export const useUsuarios = (paramsIniciales: ListarUsuariosParams = { parametroB
     }
   }, []);
 
+  const cargarUsuariosConParams = useCallback((newParams?: ListarUsuariosParams) => {
+    if (newParams) setParams(newParams);
+    else void cargarUsuarios();
+  }, [cargarUsuarios]);
+
+  const buscarUsuarios = useCallback((parametroBusqueda: string) => {
+    setParams({ parametroBusqueda });
+  }, []);
+
   return {
     usuarios,
     loading,
     error: error ? (error as Error).message : null,
 
     // Métodos de carga y búsqueda
-    cargarUsuarios: (newParams?: ListarUsuariosParams) => {
-      if (newParams) setParams(newParams);
-      else cargarUsuarios();
-    },
-    buscarUsuarios: (parametroBusqueda: string) => setParams({ parametroBusqueda }),
+    cargarUsuarios: cargarUsuariosConParams,
+    buscarUsuarios,
 
     // Métodos CRUD (Promesas)
     crearUsuario: mutationCrear.mutateAsync,

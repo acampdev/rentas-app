@@ -15,24 +15,15 @@ import {
   IconButton,
   Stack,
   Chip,
-  LinearProgress,
-  Tooltip,
   useTheme,
   alpha,
-  InputAdornment,
-  Divider,
-  CircularProgress,
-  Fade
+  CircularProgress
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Home as HomeIcon,
-  Domain as DomainIcon,
   Layers as LayersIcon,
-  AttachMoney as MoneyIcon,
-  TrendingUp as TrendingUpIcon,
   Clear as ClearIcon,
   Add as AddIcon
 } from '@mui/icons-material';
@@ -97,7 +88,7 @@ const ConsultaPisos: React.FC = () => {
         codPredio: ''
       });
     }
-  }, [location.state]);
+  }, [consultarPisos, filtrosUI.anio, location.state]);
 
   const handleBuscar = () => {
     if (!filtrosUI.codPredio.trim()) {

@@ -1,5 +1,5 @@
 // src/components/arbitrios/ParquesJardines.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -16,23 +16,19 @@ import {
   CircularProgress,
   Chip,
   alpha,
-  Grid,
   Divider,
   Tooltip,
-  useTheme,
-  Stack
+  useTheme
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Save as SaveIcon,
   DeleteOutline as ClearIcon,
   Forest as ParkIcon,
-  Calculate as CalculateIcon,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
 import { useRutasOptions, useUbicacionAreaVerdeOptions } from '../../hooks/useConstantesOptions';
 import { useParquesJardines } from '../../hooks/useParquesJardines';
-import { ParquesJardinesData } from '../../services/parquesJardinesService';
 
 /**
  * Componente para la gestión de arbitrios de Parques y Jardines

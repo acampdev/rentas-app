@@ -1,10 +1,10 @@
 // src/services/fraccionamientoService.ts
-import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
+import { buildApiUrl } from '../config/api.unified.config';
+import apiClient from './apiClient';
 import type {
   Fraccionamiento,
   DeudaFraccionamiento,
   CuotaFraccionamiento,
-  SolicitudFraccionamientoForm,
   AprobacionFraccionamientoForm,
   FraccionamientoFiltros,
   EstadisticasFraccionamiento,
@@ -13,7 +13,7 @@ import type {
 
 /**
  * Servicio para gestión de Fraccionamientos
- * NO requiere autenticación
+ * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
  */
 class FraccionamientoService {
   private static instance: FraccionamientoService;
@@ -35,7 +35,7 @@ class FraccionamientoService {
     console.log('📦 [FraccionamientoService] Request Payload:', JSON.stringify(data, null, 2));
 
     try {
-      const response = await fetch(url, {
+      const response = await apiClient.fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(data)
@@ -65,7 +65,7 @@ class FraccionamientoService {
     if (filtros?.estado) params.estado = String(filtros.estado);
 
     const url = buildApiUrl(this.endpoint, params);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -77,7 +77,7 @@ class FraccionamientoService {
 
   async obtenerSolicitudPorId(id: number): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -89,7 +89,7 @@ class FraccionamientoService {
 
   async obtenerSolicitudPorCodigo(codigo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/codigo/${codigo}`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -102,7 +102,7 @@ class FraccionamientoService {
   // Aprobación
   async aprobarSolicitud(id: number, data: AprobacionFraccionamientoForm): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/aprobar`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
@@ -115,7 +115,7 @@ class FraccionamientoService {
 
   async rechazarSolicitud(id: number, motivo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/rechazar`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ motivoRechazo: motivo })
@@ -127,47 +127,15 @@ class FraccionamientoService {
   }
 
   async obtenerDeudasContribuyente(codigoContribuyente: string): Promise<DeudaFraccionamiento[]> {
-    return this.obtenerDeudasMock(codigoContribuyente);
-  }
-
-  private obtenerDeudasMock(codigoContribuyente: string): DeudaFraccionamiento[] {
-    return [
-      {
-        id: 101,
-        codigoDeuda: 'D-2024-001',
-        concepto: 'Impuesto Predial 2024 - 1er Trimestre',
-        periodo: '2024-03',
-        montoOriginal: 5000,
-        montoInteres: 350,
-        montoTotal: 5350,
-        seleccionada: true
-      },
-      {
-        id: 102,
-        codigoDeuda: 'D-2024-002',
-        concepto: 'Impuesto Predial 2024 - 2do Trimestre',
-        periodo: '2024-06',
-        montoOriginal: 5000,
-        montoInteres: 250,
-        montoTotal: 5250,
-        seleccionada: true
-      },
-      {
-        id: 103,
-        codigoDeuda: 'D-2025-001',
-        concepto: 'Arbitrios Limpieza Pública 2025',
-        periodo: '2025-03',
-        montoOriginal: 2200,
-        montoInteres: 200,
-        montoTotal: 2400,
-        seleccionada: true
-      }
-    ];
+    void codigoContribuyente;
+    throw new Error(
+      'Módulo no disponible: la consulta de deudas de fraccionamiento aún no está conectada al API.'
+    );
   }
 
   async agregarDeuda(idFraccionamiento: number, deuda: DeudaFraccionamiento): Promise<DeudaFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/deudas`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(deuda)
@@ -180,14 +148,14 @@ class FraccionamientoService {
 
   async eliminarDeuda(idFraccionamiento: number, idDeuda: number): Promise<void> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/deudas/${idDeuda}`);
-    const response = await fetch(url, { method: 'PUT' });
+    const response = await apiClient.fetch(url, { method: 'PUT' });
     if (!response.ok) throw new Error(`Error ${response.status}`);
   }
 
   // Cronograma
   async generarCronograma(idFraccionamiento: number): Promise<CuotaFraccionamiento[]> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/cronograma/generar`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'POST',
       headers: { 'Accept': 'application/json' }
     });
@@ -202,7 +170,7 @@ class FraccionamientoService {
       anio: String(anio),
       codResolucion: String(codResolucion)
     });
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -214,7 +182,7 @@ class FraccionamientoService {
 
   async registrarPagoCuota(idFraccionamiento: number, idCuota: number, monto: number): Promise<CuotaFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/cuotas/${idCuota}/pagar`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ monto })
@@ -228,7 +196,7 @@ class FraccionamientoService {
   // Búsqueda y filtros
   async buscarPorContribuyente(codigoContribuyente: string): Promise<Fraccionamiento[]> {
     const url = buildApiUrl(this.endpoint, { codContribuyente: codigoContribuyente });
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -240,7 +208,7 @@ class FraccionamientoService {
 
   async buscarPorEstado(estado: string): Promise<Fraccionamiento[]> {
     const url = buildApiUrl(`${this.endpoint}/estado/${estado}`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -253,7 +221,7 @@ class FraccionamientoService {
   // Estadísticas
   async obtenerEstadisticas(): Promise<EstadisticasFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/estadisticas`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -265,7 +233,7 @@ class FraccionamientoService {
 
   async obtenerEstadisticasPorPeriodo(fechaInicio: string, fechaFin: string): Promise<EstadisticasFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/estadisticas/periodo`, { fechaInicio, fechaFin });
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -278,7 +246,7 @@ class FraccionamientoService {
   // Cancelación
   async cancelarFraccionamiento(id: number, motivo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/cancelar`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ motivo })
@@ -292,7 +260,7 @@ class FraccionamientoService {
   // Actualización
   async actualizarFraccionamiento(id: number, data: Partial<Fraccionamiento>): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
@@ -306,7 +274,7 @@ class FraccionamientoService {
   // Validación
   async validarMontoMinimo(monto: number): Promise<boolean> {
     const url = buildApiUrl(`${this.endpoint}/validar/monto-minimo`, { monto: monto.toString() });
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -318,7 +286,7 @@ class FraccionamientoService {
 
   async validarDeudaContribuyente(codigoContribuyente: string): Promise<{ valido: boolean; mensaje?: string }> {
     const url = buildApiUrl(`${this.endpoint}/validar/deuda/${codigoContribuyente}`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
@@ -333,7 +301,7 @@ class FraccionamientoService {
     if (filtros?.estado) params.estado = filtros.estado;
 
     const url = buildApiUrl(`${this.endpoint}/reportes/solicitudes`, params);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/pdf' }
     });
@@ -344,7 +312,7 @@ class FraccionamientoService {
 
   async generarReporteCronograma(idFraccionamiento: number): Promise<Blob> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/reportes/cronograma`);
-    const response = await fetch(url, {
+    const response = await apiClient.fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/pdf' }
     });
@@ -357,10 +325,8 @@ class FraccionamientoService {
     const url = buildApiUrl('/api/fraccionamiento/listarCronogramaContri', {
       codContribuyente: String(codContribuyente)
     });
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getApiHeaders(true),
-      credentials: 'include'
+    const response = await apiClient.fetch(url, {
+      method: 'GET'
     });
 
     if (!response.ok) throw new Error(`Error ${response.status}`);

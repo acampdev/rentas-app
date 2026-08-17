@@ -80,15 +80,22 @@ const LoginPage = lazy(() => import('../pages/Login/LoginPage'));
 const ModuleUnavailablePage = lazy(() => import('../pages/ModuleUnavailablePage'));
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import AuthHandler from '../components/auth/AuthHandler';
+import RouteErrorBoundary from '../components/utils/RouteErrorBoundary';
 
 // Sistema de notificaciones
 import NotificationContainer from '../components/utils/Notification';
-
-const ADMIN_ROLES = ['ADMINISTRADOR'] as const;
-const CASH_OPERATION_ROLES = ['CAJERO', 'SUPERVISOR'] as const;
-const CASH_MANAGEMENT_ROLES = ['SUPERVISOR'] as const;
-const CASH_REPORT_ROLES = ['CAJERO', 'SUPERVISOR', 'GERENTE'] as const;
-const AUDIT_ROLES = ['AUDITOR', 'GERENTE'] as const;
+import {
+  ADMIN_ROLES,
+  CASH_OPERATION_ROLES,
+  CASH_MANAGEMENT_ROLES,
+  CASH_REPORT_ROLES,
+  AUDIT_ROLES,
+  AUTHENTICATED_ROLES,
+  TAX_READ_ROLES,
+  TAX_OPERATION_ROLES,
+  TAX_MANAGEMENT_ROLES,
+  COACTIVE_COLLECTION_ROLES
+} from '../config/accessControl';
 
 const AppRouter: React.FC = () => {
   return (
@@ -99,6 +106,7 @@ const AppRouter: React.FC = () => {
             <CommandProvider>
               <SidebarProvider>
                 <Router>
+                  <RouteErrorBoundary>
                   {/* Manejador de autenticación automática y notificaciones */}
                   <AuthHandler />
 
@@ -115,87 +123,87 @@ const AppRouter: React.FC = () => {
                   
                   {/* Rutas protegidas - Dashboard */}
                   <Route path="/dashboard" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={AUTHENTICATED_ROLES}>
                       <DemoPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de contribuyente */}
                   <Route path="/contribuyente/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <NuevoContribuyente />
                     </ProtectedRoute>
                   } />
                   <Route path="/contribuyente/editar/:id" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <NuevoContribuyente />
                     </ProtectedRoute>
                   } />
                   <Route path="/contribuyente/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaContribuyente />
                     </ProtectedRoute>
                   } />
                   <Route path="/contribuyente/deduccion-beneficio" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <DeduccionBeneficioPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de predio */}
                   <Route path="/predio/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <NuevoPredio />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/editar/:anio/:codPredio" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <NuevoPredio />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaPredioPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/asignacion/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <AsignacionPredioPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/asignacion/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaAsignacionPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de pisos */}
                   <Route path="/predio/pisos/registro" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <RegistroPisoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/pisos/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaPisosPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Ruta PU-HR */}
                   <Route path="/predio/puhr/consulta-pu-hr" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaPUHRPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de Transferencia */}
                   <Route path="/predio/transferencia/alcabala" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <TransferenciaAlcabalaPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/predio/transferencia/reporte-alcabala" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReporteAlcabalaPage />
                     </ProtectedRoute>
                   } />
@@ -239,165 +247,165 @@ const AppRouter: React.FC = () => {
 
                   {/* Rutas de Cuenta Corriente */}
                   <Route path="/cuenta-corriente/cargo/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <ModuleUnavailablePage title="Nuevo cargo" />
                     </ProtectedRoute>
                   } />
                   <Route path="/cuenta-corriente/abono/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <ModuleUnavailablePage title="Nuevo abono" />
                     </ProtectedRoute>
                   } />
                   <Route path="/cuenta-corriente/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <CuentaConsultaPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de Reportes */}
                   <Route path="/reportes/contribuyentes" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReportesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/predios" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReportesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/cuentas" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReportesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/recaudacion" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReportesPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas de Fraccionamiento */}
                   <Route path="/fraccionamiento/solicitud" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <SolicitudFraccionamientoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/nuevo" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
                       <SolicitudFraccionamientoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/consulta" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ConsultaFraccionamientoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/aprobacion" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <AprobacionFraccionamientoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/cronograma" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <CronogramaPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/cronograma/:id" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <CronogramaPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/fraccionamiento/reportes" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
                       <ReportesFraccionamientoPage />
                     </ProtectedRoute>
                   } />
 
                   {/* Rutas coactiva */}
                   <Route path="/coactiva" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={COACTIVE_COLLECTION_ROLES}>
                       <CoactivaPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/coactiva/expedientes" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={COACTIVE_COLLECTION_ROLES}>
                       <ExpedientePage />
                     </ProtectedRoute>
                   } />
                   <Route path="/coactiva/resoluciones" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={COACTIVE_COLLECTION_ROLES}>
                       <ResolucionesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/coactiva/notificaciones" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={COACTIVE_COLLECTION_ROLES}>
                       <NotificacionesPage />
                     </ProtectedRoute>
                   } />
                   
                   {/* Rutas de mantenedores - Ubicación */}
                   <Route path="/mantenedores/sectores" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <SectoresPage />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/mantenedores/barrios" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <BarriosPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/direcciones" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <DireccionesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/calles" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <CallePage />
                     </ProtectedRoute>
                   } />
                   
                   {/* Rutas de mantenedores - Aranceles */}
                   <Route path="/mantenedores/aranceles" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <ArancelesPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/valores-unitarios" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <ValoresUnitariosPage />
                     </ProtectedRoute>
                   } />
                   
                   {/* Rutas de mantenedores - Tarifas */}
                   <Route path="/mantenedores/resolucion-interes" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <ResolucionInteresPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/uit" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <UitPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/ipm" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <IPMPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/alcabala" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <AlcabalaPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/depreciacion" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <DepreciacionPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/arbitrios" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <ArbitriosPage />
                     </ProtectedRoute>
                   } />
@@ -409,17 +417,17 @@ const AppRouter: React.FC = () => {
 
                   {/* Rutas de Escalas */}
                   <Route path="/mantenedores/escalas/registro-tim" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <RegistroTIMPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/escalas/vencimiento" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <VencimientoPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/escalas/interes" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={TAX_MANAGEMENT_ROLES}>
                       <InteresPage />
                     </ProtectedRoute>
                   } />
@@ -458,8 +466,8 @@ const AppRouter: React.FC = () => {
                   } />
 
                   {/* Rutas de usuarios */}
-                  <Route path="/persona/nueva" element={<ProtectedRoute><PersonaPage /></ProtectedRoute>} />
-                  <Route path="/persona/consulta" element={<ProtectedRoute><PersonaPage /></ProtectedRoute>} />
+                  <Route path="/persona/nueva" element={<ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}><PersonaPage /></ProtectedRoute>} />
+                  <Route path="/persona/consulta" element={<ProtectedRoute allowedRoles={TAX_READ_ROLES}><PersonaPage /></ProtectedRoute>} />
                   <Route path="/usuarios/crear-cuenta" element={
                     <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                       <UsersPage />
@@ -505,24 +513,24 @@ const AppRouter: React.FC = () => {
 
                   {/* Rutas adicionales */}
                   <Route path="/perfil" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={AUTHENTICATED_ROLES}>
                       <ModuleUnavailablePage title="Perfil de usuario" />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracion" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                       <Navigate to="/sistema/configuracion" replace />
                     </ProtectedRoute>
                   } />
                   <Route path="/buscar" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={AUTHENTICATED_ROLES}>
                       <ModuleUnavailablePage title="Búsqueda global" />
                     </ProtectedRoute>
                   } />
 
                   {/* Ruta 404 */}
                   <Route path="*" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={AUTHENTICATED_ROLES}>
                       <div className="flex items-center justify-center min-h-screen">
                         <div className="text-center">
                           <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">404</h1>
@@ -533,6 +541,7 @@ const AppRouter: React.FC = () => {
                   } />
                 </Routes>
                 </Suspense>
+                  </RouteErrorBoundary>
               </Router>
             </SidebarProvider>
           </CommandProvider>
