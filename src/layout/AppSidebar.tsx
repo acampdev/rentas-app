@@ -276,6 +276,7 @@ const sistemaMenuItems: MenuItem[] = [
         label: 'Tarifas',
         subMenuItems: [
           { id: 'uit-epa', label: 'UIT - EPA', path: '/mantenedores/uit' },
+          { id: 'ipm', label: 'IPM', path: '/mantenedores/ipm' },
           { id: 'arbitrios', label: 'Arbitrios', path: '/mantenedores/arbitrios' },
         ]
       },

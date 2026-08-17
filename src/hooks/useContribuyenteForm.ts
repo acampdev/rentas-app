@@ -23,8 +23,15 @@ export interface ContribuyenteFormValues {
   sexo: string;
   estadoCivil: string;
   fechaNacimiento: Date | string | null;
-  exonerado?: string;
+  esExonerado: boolean;
+  esPensionista: boolean;
 }
+
+const toBooleanFlag = (value: unknown): boolean => {
+  if (value === true || value === 1) return true;
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'si' || normalized === 'sí';
+};
 
 interface UseContribuyenteFormProps {
   onSubmit?: (data: {
@@ -67,7 +74,8 @@ export const useContribuyenteForm = ({
       sexo: initialData?.sexo || BUSINESS_CODES.SEXO.MASCULINO,
       estadoCivil: initialData?.estadoCivil || '',
       fechaNacimiento: initialData?.fechaNacimiento || null,
-      exonerado: initialData?.exonerado || 'No'
+      esExonerado: toBooleanFlag(initialData?.esExonerado),
+      esPensionista: toBooleanFlag(initialData?.esPensionista)
     },
     mode: 'onBlur'
   });
@@ -90,7 +98,8 @@ export const useContribuyenteForm = ({
       sexo: BUSINESS_CODES.SEXO.MASCULINO,
       estadoCivil: '',
       fechaNacimiento: null,
-      exonerado: 'No'
+      esExonerado: false,
+      esPensionista: false
     }
   });
 
@@ -114,7 +123,9 @@ export const useContribuyenteForm = ({
         telefono: initialData.telefono || '',
         sexo: initialData.sexo || BUSINESS_CODES.SEXO.MASCULINO,
         estadoCivil: initialData.estadoCivil || '',
-        fechaNacimiento: initialData.fechaNacimiento || null
+        fechaNacimiento: initialData.fechaNacimiento || null,
+        esExonerado: toBooleanFlag(initialData.esExonerado),
+        esPensionista: toBooleanFlag(initialData.esPensionista)
       };
 
       principalForm.reset(formData);
@@ -253,7 +264,9 @@ export const useContribuyenteForm = ({
       telefono: '',
       sexo: BUSINESS_CODES.SEXO.MASCULINO,
       estadoCivil: '',
-      fechaNacimiento: null
+      fechaNacimiento: null,
+      esExonerado: false,
+      esPensionista: false
     });
     conyugeRepresentanteForm.reset({
       codPersona: null,
@@ -270,7 +283,9 @@ export const useContribuyenteForm = ({
       telefono: '',
       sexo: BUSINESS_CODES.SEXO.MASCULINO,
       estadoCivil: '',
-      fechaNacimiento: null
+      fechaNacimiento: null,
+      esExonerado: false,
+      esPensionista: false
     });
     setShowConyugeRepresentante(false);
     setTipoContribuyente('natural');
@@ -328,7 +343,9 @@ export const useContribuyenteForm = ({
         codConyuge: conyugeRepresentanteId,
         codRepresentanteLegal: esPersonaJuridica ? conyugeRepresentanteId : null,
         codestado: "0201",
-        codUsuario: getAuthenticatedUserCode()
+        codUsuario: getAuthenticatedUserCode(),
+        esExonerado: Boolean(data.esExonerado),
+        esPensionista: Boolean(data.esPensionista)
       };
       
       const contribuyente = await contribuyenteService.crearContribuyenteAPI(contribuyenteAPIData);

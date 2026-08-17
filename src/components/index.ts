@@ -40,6 +40,8 @@ export { default as ValorUnitarioList } from './unitarios/ValorUnitarioList';
 // Exportación centralizada de los componentes UIT
 export { default as UitFormAlicuota } from './uit/UitFormAlicuota';
 export { default as UitList } from './uit/UitList';
+export { default as IPMForm } from './ipm/IPMForm';
+export { default as IPMConsulta } from './ipm/IPMConsulta';
 
 // Exportación centralizada de los componentes Alcabala
 export { default as AlcabalaComponent } from './alcabala/Alcabala';

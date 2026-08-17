@@ -11,6 +11,7 @@ export const DireccionesPage = lazy(() => import('./mantenedores/DireccionesPage
 export const ArancelesPage = lazy(() => import('./mantenedores/ArancelesPage'));
 export const ValoresUnitariosPage = lazy(() => import('./mantenedores/ValoresUnitariosPage'));
 export const UitPage = lazy(() => import('./mantenedores/UitPage'));
+export const IPMPage = lazy(() => import('./mantenedores/IPMPage'));
 export const AlcabalaPage = lazy(() => import('./mantenedores/AlcabalaPage'));
 export const DepreciacionPage = lazy(() => import('./mantenedores/DepreciacionPage'));
 export const ArbitriosPage = lazy(() => import('./mantenedores/ArbitriosPage'));

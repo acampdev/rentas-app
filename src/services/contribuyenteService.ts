@@ -88,6 +88,8 @@ export interface CreateContribuyenteAPIDTO {
   codRepresentanteLegal?: number | null;
   codestado: string;
   codUsuario: number;
+  esExonerado?: boolean;
+  esPensionista?: boolean;
 }
 
 export interface BusquedaContribuyenteParams {
@@ -561,7 +563,9 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
           numeroDocumento: '',
           nombreCompleto: '',
           estado: 'ACTIVO',
-          codUsuario: datos.codUsuario
+          codUsuario: datos.codUsuario,
+          esExonerado: datos.esExonerado ?? false,
+          esPensionista: datos.esPensionista ?? false
         };
         console.log('✅ [ContribuyenteService] Contribuyente normalizado a partir de ID y DTO:', normalized);
         return normalized;

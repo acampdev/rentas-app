@@ -42,4 +42,29 @@ describe('ContribuyenteService selector contract', () => {
       nombreCompleto: 'Castro Ramirez Aydee Zenobia'
     });
   });
+
+  it('sends exemption and pensioner flags as contributor data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({
+      success: true,
+      data: 55
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await contribuyenteService.crearContribuyenteAPI({
+      codPersona: 10,
+      codConyuge: null,
+      codRepresentanteLegal: null,
+      codestado: '0201',
+      codUsuario: 17,
+      esExonerado: true,
+      esPensionista: false
+    });
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(String(options.body))).toMatchObject({
+      codPersona: 10,
+      esExonerado: true,
+      esPensionista: false
+    });
+  });
 });

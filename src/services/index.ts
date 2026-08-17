@@ -14,6 +14,7 @@ export { constanteService, type ConstanteData, CODIGO_CONSTANTE_PADRE } from './
 export { barrioService, type BarrioData } from './barrioService';
 export { sectorService, type SectorData } from './SectorService';
 export { uitService, type UITData } from './uitService';
+export { ipmService, type IPMData, type IPMWriteDTO } from './ipmService';
 export { valorUnitarioService, type ValorUnitarioData } from './valorUnitarioService';
 export { arancelService, type ArancelData } from './arancelService';
 export { direccionService, type DireccionData } from './direccionService';

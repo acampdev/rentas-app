@@ -1,4 +1,6 @@
+// src/components/contribuyentes/ContribuyenteForm.tsx
 import React from 'react';
+import { Controller } from 'react-hook-form';
 import {
   Paper,
   Box,
@@ -9,6 +11,9 @@ import {
   ToggleButton,
   Collapse,
   CircularProgress,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
   useTheme,
   alpha
 } from '@mui/material';
@@ -121,6 +126,50 @@ const ContribuyenteFormMUI: React.FC<ContribuyenteFormMUIProps> = ({
               getDireccionTextoCompleto={getDireccionTextoCompleto}
               disablePersonaFields={loading}
             />
+
+            {/* Condiciones tributarias propias del contribuyente */}
+            <Paper variant="outlined" sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+              <Typography variant="subtitle2" fontWeight={700} color="text.secondary" mb={1}>
+                Condiciones del Contribuyente
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, sm: 4 } }}>
+                <Controller
+                  name="esExonerado"
+                  control={principalForm.control}
+                  render={({ field }) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: { xs: '100%', sm: 245 } }}>
+                      <Typography variant="body2" fontWeight={600}>Exonerado:</Typography>
+                      <RadioGroup
+                        row
+                        value={field.value ? 'true' : 'false'}
+                        onChange={(_, value) => field.onChange(value === 'true')}
+                      >
+                        <FormControlLabel value="true" control={<Radio size="small" />} label="Sí" disabled={loading} />
+                        <FormControlLabel value="false" control={<Radio size="small" />} label="No" disabled={loading} />
+                      </RadioGroup>
+                    </Box>
+                  )}
+                />
+
+                <Controller
+                  name="esPensionista"
+                  control={principalForm.control}
+                  render={({ field }) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: { xs: '100%', sm: 265 } }}>
+                      <Typography variant="body2" fontWeight={600}>Pensionista:</Typography>
+                      <RadioGroup
+                        row
+                        value={field.value ? 'true' : 'false'}
+                        onChange={(_, value) => field.onChange(value === 'true')}
+                      >
+                        <FormControlLabel value="true" control={<Radio size="small" />} label="Sí" disabled={loading} />
+                        <FormControlLabel value="false" control={<Radio size="small" />} label="No" disabled={loading} />
+                      </RadioGroup>
+                    </Box>
+                  )}
+                />
+              </Box>
+            </Paper>
 
             {/* Acciones */}
             <Box sx={{ my: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

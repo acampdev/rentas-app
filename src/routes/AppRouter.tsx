@@ -20,6 +20,7 @@ import {
   ConsultaContribuyente,
   DeduccionBeneficioPage,
   UitPage,
+  IPMPage,
   AlcabalaPage,
   DepreciacionPage,
   ArbitriosPage,
@@ -378,6 +379,11 @@ const AppRouter: React.FC = () => {
                   <Route path="/mantenedores/uit" element={
                     <ProtectedRoute>
                       <UitPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mantenedores/ipm" element={
+                    <ProtectedRoute>
+                      <IPMPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mantenedores/alcabala" element={

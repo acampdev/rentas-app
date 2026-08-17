@@ -113,6 +113,12 @@ const NuevoContribuyente: React.FC = () => {
               }
             };
 
+            const convertirBandera = (valor: unknown): boolean => {
+              if (valor === true || valor === 1) return true;
+              const normalizado = String(valor ?? '').trim().toLowerCase();
+              return normalizado === '1' || normalizado === 'true' || normalizado === 'si' || normalizado === 'sí';
+            };
+
             // Función para extraer el lote de la dirección
             // Ejemplo: "URB. Manuel Arevalo II  Mz. 03 Lt. 45" -> { direccion: "URB. Manuel Arevalo II  Mz. 03", lote: "45" }
             const extraerLoteDeDireccion = (direccionCompleta: string): { direccion: string; lote: string } => {
@@ -176,7 +182,9 @@ const NuevoContribuyente: React.FC = () => {
               nFinca: nFincaFinal,
               otroNumero: detalleObj.otros?.trim() || '',
               direccion: direccionObj,
-              codDireccion: detalleObj.codDireccion
+              codDireccion: detalleObj.codDireccion,
+              esExonerado: convertirBandera(detalleObj.esExonerado),
+              esPensionista: convertirBandera(detalleObj.esPensionista)
             };
 
             console.log('📋 [NuevoContribuyente] ========== DATOS MAPEADOS ==========');
