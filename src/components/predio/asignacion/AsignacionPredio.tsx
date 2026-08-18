@@ -428,16 +428,6 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
                     textField: { size: 'small', sx: { width: 160 } }
                   }}
                 />
-              </Box>
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 2,
-                  flexWrap: 'wrap',
-                  alignItems: 'center'
-                }}
-              >
                 <TextField
                   label="Porcentaje condómino"
                   type="number"
@@ -453,6 +443,17 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
                   inputProps={{ min: 0, max: 100, step: 0.01 }}
                   sx={{ width: 190 }}
                 />
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                  alignItems: 'center'
+                }}
+              >
+                
               </Box>
             </Stack>
 
