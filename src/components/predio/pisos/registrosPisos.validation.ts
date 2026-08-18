@@ -50,3 +50,11 @@ export const determinarNumeroPiso = (description: string): number => {
   };
   return descriptions[description] ?? 1;
 };
+
+export const normalizarValorAreasComunes = (value: string | number | null | undefined): string => {
+  const normalized = String(value ?? '').trim().replace(',', '.');
+  if (!normalized) return '0';
+
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? normalized : '0';
+};

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { determinarNumeroPiso, extraerAnioYCodigoBase, parseFechaConstruccion, validatePisoForm } from './registrosPisos.validation';
+import { determinarNumeroPiso, extraerAnioYCodigoBase, normalizarValorAreasComunes, parseFechaConstruccion, validatePisoForm } from './registrosPisos.validation';
 
 describe('RegistrosPisos validation', () => {
   it('parses API dates without UTC displacement', () => {
@@ -40,5 +40,12 @@ describe('RegistrosPisos validation', () => {
       areaConstruida: '20',
       materialPredominante: '0701',
     }, true).descripcion).toContain('mayor o igual a 0');
+  });
+
+  it('preserves the value entered for common areas in the API format', () => {
+    expect(normalizarValorAreasComunes('125.75')).toBe('125.75');
+    expect(normalizarValorAreasComunes('125,75')).toBe('125.75');
+    expect(normalizarValorAreasComunes('')).toBe('0');
+    expect(normalizarValorAreasComunes('-1')).toBe('0');
   });
 });

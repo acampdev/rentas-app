@@ -57,7 +57,7 @@ import {
 } from '../../../hooks/useConstantesOptions';
 import { valorUnitarioService, ValorUnitarioData } from '../../../services/valorUnitarioService';
 import { constanteService } from '../../../services/constanteService';
-import { determinarNumeroPiso, extraerAnioYCodigoBase, parseFechaConstruccion, validatePisoForm } from './registrosPisos.validation';
+import { determinarNumeroPiso, extraerAnioYCodigoBase, normalizarValorAreasComunes, parseFechaConstruccion, validatePisoForm } from './registrosPisos.validation';
 
 
 
@@ -969,6 +969,7 @@ const RegistrosPisos: React.FC = () => {
         codPredio: String(predio.codigoPredio).trim(),
         numeroPiso: determinarNumeroPiso(formData.descripcion),
         areaConstruida: String(formData.areaConstruida || '0'),
+        valorAreasComunes: normalizarValorAreasComunes(formData.areasComunes),
         
         // Fecha de construcción
         fechaConstruccion: formData.fechaConstruccion 
@@ -1564,8 +1565,10 @@ const RegistrosPisos: React.FC = () => {
                     type="number"
                     value={formData.areasComunes || ''}
                     onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      handleInputChange('areasComunes', value >= 0 ? e.target.value : '0');
+                      const value = e.target.value;
+                      if (value === '' || Number(value) >= 0) {
+                        handleInputChange('areasComunes', value);
+                      }
                     }}
                     InputProps={{
                       inputProps: { min: 0, step: 0.01 },

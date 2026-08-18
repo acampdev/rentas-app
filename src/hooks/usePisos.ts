@@ -107,7 +107,7 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
         codEstadoConservacion: String(datos.codEstadoConservacion || "9402"),
         codMaterialEstructural: String(datos.codMaterialEstructural || "0703"),
         areaConstruida: String(datos.areaConstruida),
-        valorAreasComunes: String(datos.valorAreasComunes || "0"),
+        valorAreasComunes: String(datos.valorAreasComunes ?? "0"),
         codUsuario: getAuthenticatedUserCode()
       };
 

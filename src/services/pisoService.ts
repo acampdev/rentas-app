@@ -388,7 +388,7 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
         codEstadoConservacion: String(datos.codEstadoConservacion || "9402"),
         codMaterialEstructural: String(datos.codMaterialEstructural || "0703"),
         areaConstruida: String(datos.areaConstruida),
-        valorAreasComunes: String(datos.valorAreasComunes || "0"),
+        valorAreasComunes: String(datos.valorAreasComunes ?? "0"),
         codUsuario: getAuthenticatedUserCode()
       };
 
@@ -528,7 +528,7 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
         codEstadoConservacion: String(datos.codEstadoConservacion || "9402"),
         codMaterialEstructural: String(datos.codMaterialEstructural || "0703"),
         areaConstruida: String(datos.areaConstruida),
-        valorAreasComunes: String(datos.valorAreasComunes || "0"),
+        valorAreasComunes: String(datos.valorAreasComunes ?? "0"),
         codUsuario: getAuthenticatedUserCode(),
         codPiso: Number(datos.codPiso || 1)
       };
