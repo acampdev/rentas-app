@@ -8,9 +8,6 @@ import {
   Stack,
   Card,
   CardContent,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   alpha,
   Autocomplete,
   CircularProgress,
@@ -29,7 +26,7 @@ import { SelectorContribuyente } from '../../';
 import SelectorPredio from '../../modal/SelectorPredio';
 import { NotificationService } from '../../utils/Notification';
 import { useModoDeclaracionOptions } from '../../../hooks/useConstantesOptions';
-import type { CreateAsignacionAPIDTO, PrevalidacionBeneficio } from '../../../services/asignacionService';
+import type { CreateAsignacionAPIDTO } from '../../../services/asignacionService';
 import { Predio } from '../../../models/Predio';
 import type { ContribuyenteListItem } from '../../../hooks/useContribuyentes';
 
@@ -39,15 +36,12 @@ interface AsignacionContribuyente {
 }
 
 interface AsignacionData {
-  año: number;
   contribuyente: AsignacionContribuyente | null;
   predio: Predio | null;
   modoDeclaracion: string;
   fechaVenta: Date | null;
   fechaDeclaracion: Date | null;
   porcentajeCondomino: number;
-  esPensionista: boolean;
-  estado: string;
 }
 
 interface DatosEdicionAsignacion {
@@ -81,8 +75,6 @@ interface AsignacionPredioProps {
   onCrearAsignacion?: (datos: CreateAsignacionAPIDTO) => Promise<unknown>;
   onActualizarAsignacion?: (datos: CreateAsignacionAPIDTO) => Promise<unknown>;
   onDesasignar?: (datos: CreateAsignacionAPIDTO) => Promise<unknown>;
-  onPrevalidarPensionista?: (codContribuyente: number | string) => Promise<PrevalidacionBeneficio>;
-  onPrevalidarAdultoMayor?: (codContribuyente: number | string) => Promise<PrevalidacionBeneficio>;
   loading?: boolean;
   error?: string | null;
   isEditMode?: boolean;
@@ -90,32 +82,21 @@ interface AsignacionPredioProps {
   datosEdicion?: DatosEdicionAsignacion | null;
 }
 
-const estadoOptions = [
-  { value: 'Activo', label: 'Activo' },
-  { value: 'Inactivo', label: 'Inactivo' }
-];
-
 const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
   onCrearAsignacion,
   onActualizarAsignacion,
   onDesasignar,
-  onPrevalidarPensionista,
-  onPrevalidarAdultoMayor,
   loading: externalLoading = false,
   isEditMode = false,
   isDesasignarMode = false,
   datosEdicion = null
 }) => {
   const navigate = useNavigate();
-  const currentYear = new Date().getFullYear();
-
   // Hooks para opciones
   const { options: modoDeclaracionOptions, loading: loadingModoDeclaracion } = useModoDeclaracionOptions();
 
   const [internalLoading, setInternalLoading] = useState(false);
   const loading = externalLoading || internalLoading;
-  const [validandoBeneficio, setValidandoBeneficio] = useState(false);
-  const [resultadoBeneficio, setResultadoBeneficio] = useState<PrevalidacionBeneficio | null>(null);
   const [confirmarDesasignacion, setConfirmarDesasignacion] = useState(false);
   const [datosDesasignacion, setDatosDesasignacion] = useState<CreateAsignacionAPIDTO | null>(null);
 
@@ -148,15 +129,12 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
   };
 
   const [asignacionData, setAsignacionData] = useState<AsignacionData>({
-    año: currentYear,
     contribuyente: null,
     predio: null,
     modoDeclaracion: '',
     fechaVenta: null,
     fechaDeclaracion: null,
-    porcentajeCondomino: 100,
-    esPensionista: false,
-    estado: 'Activo'
+    porcentajeCondomino: 100
   });
 
   const [showContribuyenteModal, setShowContribuyenteModal] = useState(false);
@@ -197,31 +175,18 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
         if (!isNaN(parsed)) porcentajeValue = parsed;
       }
 
-      let estadoValue = 'Activo';
-      if (datosEdicion.estado) {
-        const u = String(datosEdicion.estado).toUpperCase();
-        if (u === 'INACTIVO' || u === '0202') {
-          estadoValue = 'Inactivo';
-        }
-      } else if (datosEdicion.codEstado === '0202') {
-        estadoValue = 'Inactivo';
-      }
-
       setAsignacionData({
-        año: datosEdicion.anio || currentYear,
         contribuyente: contribuyenteFromData,
         predio: predioFromData as Predio,
         modoDeclaracion: modoDeclaracionValue,
         fechaDeclaracion: fechaDeclaracionParsed,
         fechaVenta: fechaVentaParsed,
-        porcentajeCondomino: porcentajeValue,
-        esPensionista: datosEdicion.pensionista === 1,
-        estado: estadoValue
+        porcentajeCondomino: porcentajeValue
       });
 
       setDatosEdicionCargados(true);
     }
-  }, [isEditMode, isDesasignarMode, datosEdicion, datosEdicionCargados, loadingModoDeclaracion, modoDeclaracionOptions, currentYear]);
+  }, [isEditMode, isDesasignarMode, datosEdicion, datosEdicionCargados, loadingModoDeclaracion, modoDeclaracionOptions]);
 
   const handleSelectContribuyente = (contribuyente: ContribuyenteListItem) => {
     const contribuyenteAdaptado = {
@@ -232,57 +197,12 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       ...asignacionData,
       contribuyente: contribuyenteAdaptado
     });
-    setResultadoBeneficio(null);
     setShowContribuyenteModal(false);
   };
 
   const handleSelectPredio = (predio: Predio) => {
     setAsignacionData({ ...asignacionData, predio });
     setShowPredioModal(false);
-  };
-
-  const validarBeneficio = async (tipo: 'pensionista' | 'adultoMayor'): Promise<PrevalidacionBeneficio | null> => {
-    const codigo = asignacionData.contribuyente?.codigo;
-    if (!codigo) {
-      NotificationService.error('Debe seleccionar un contribuyente');
-      return null;
-    }
-
-    const prevalidar = tipo === 'pensionista' ? onPrevalidarPensionista : onPrevalidarAdultoMayor;
-    if (!prevalidar) return null;
-
-    try {
-      setValidandoBeneficio(true);
-      const resultado = await prevalidar(codigo);
-      setResultadoBeneficio(resultado);
-      if (resultado.success) {
-        NotificationService.success(resultado.data || 'El contribuyente cumple con la prevalidación');
-      } else {
-        NotificationService.warning(resultado.data || resultado.message || 'El contribuyente no cumple con la prevalidación');
-      }
-      return resultado;
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error al prevalidar el beneficio';
-      setResultadoBeneficio({ success: false, message, data: message });
-      NotificationService.error(message);
-      return null;
-    } finally {
-      setValidandoBeneficio(false);
-    }
-  };
-
-  const handlePensionistaChange = async (value: string) => {
-    if (value === 'no') {
-      setAsignacionData({ ...asignacionData, esPensionista: false });
-      setResultadoBeneficio(null);
-      return;
-    }
-
-    const resultado = await validarBeneficio('pensionista');
-    setAsignacionData((actual) => ({
-      ...actual,
-      esPensionista: resultado?.success === true
-    }));
   };
 
   const ejecutarOperacion = async (datosAPI: CreateAsignacionAPIDTO) => {
@@ -302,7 +222,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       navigate('/predio/asignacion/consulta', {
         state: {
           searchParams: {
-            anio: datosAPI.anio,
+            anio: Number(asignacionData.predio?.anio || String(datosAPI.codPredio).slice(0, 4)),
             codContribuyente: String(datosAPI.codContribuyente)
           },
           nombreContribuyente: asignacionData.contribuyente?.nombreCompleto || ''
@@ -336,9 +256,11 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       return;
     }
 
-    const predioBaseCodigo = String(asignacionData.predio.codPredioBase || asignacionData.predio.codigoPredio || asignacionData.predio.codPredio || '').trim();
-    const anioPredio = Number(asignacionData.año || asignacionData.predio.anio);
-    const codigoPredioFinal = predioBaseCodigo.startsWith(String(anioPredio)) ? predioBaseCodigo : `${anioPredio}${predioBaseCodigo}`;
+    const predioBaseCodigo = String(asignacionData.predio.codigoPredio || asignacionData.predio.codPredio || asignacionData.predio.codPredioBase || '').trim();
+    const anioPredio = Number(asignacionData.predio.anio || datosEdicion?.anio);
+    const codigoPredioFinal = /^\d{4}/.test(predioBaseCodigo) || !Number.isFinite(anioPredio)
+      ? predioBaseCodigo
+      : `${anioPredio}${predioBaseCodigo}`;
     const codigoContribuyente = Number(asignacionData.contribuyente.codigo);
 
     if (!predioBaseCodigo || !Number.isFinite(codigoContribuyente)) {
@@ -347,16 +269,13 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
     }
 
     const datosAPI: CreateAsignacionAPIDTO = {
-      anio: anioPredio,
       codPredio: codigoPredioFinal.trim(),
       codContribuyente: codigoContribuyente,
       codAsignacion: datosEdicion?.codAsignacion ?? null,
       porcentajeCondomino: asignacionData.porcentajeCondomino >= 100 ? null : asignacionData.porcentajeCondomino,
       fechaDeclaracion: formatFechaAPI(asignacionData.fechaDeclaracion),
       fechaVenta: formatFechaAPI(asignacionData.fechaVenta || asignacionData.fechaDeclaracion),
-      codModoDeclaracion: String(asignacionData.modoDeclaracion).trim(),
-      pensionista: asignacionData.esPensionista ? 1 : 0,
-      codEstado: isDesasignarMode ? datosEdicion?.codEstado || '0201' : asignacionData.estado === 'Activo' ? '0201' : '0202'
+      codModoDeclaracion: String(asignacionData.modoDeclaracion).trim()
     };
 
     if (isDesasignarMode) {
@@ -377,15 +296,12 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
 
   const handleNuevo = () => {
     setAsignacionData({
-      año: currentYear,
       contribuyente: null,
       predio: null,
       modoDeclaracion: '',
       fechaVenta: null,
       fechaDeclaracion: null,
-      porcentajeCondomino: 100,
-      esPensionista: false,
-      estado: 'Activo'
+      porcentajeCondomino: 100
     });
     setDatosEdicionCargados(false);
   };
@@ -472,21 +388,6 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
 
             <Stack spacing={3}>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <TextField
-                  label="Año"
-                  type="number"
-                  size="small"
-                  disabled={isDesasignarMode}
-                  value={asignacionData.año}
-                  onChange={(event) =>
-                    setAsignacionData({
-                      ...asignacionData,
-                      año: Number(event.target.value)
-                    })
-                  }
-                  inputProps={{ min: 1900, max: currentYear + 10 }}
-                  sx={{ width: 110 }}
-                />
                 {/* Modo Declaración */}
                 <Autocomplete
                   sx={{ width: 280 }}
@@ -529,7 +430,6 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
                 />
               </Box>
 
-              {/* Fila para Estado y Es Pensionista */}
               <Box
                 sx={{
                   display: 'flex',
@@ -553,62 +453,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
                   inputProps={{ min: 0, max: 100, step: 0.01 }}
                   sx={{ width: 190 }}
                 />
-                {/* Autocomplete de Estado */}
-                <Autocomplete
-                  sx={{ width: 200 }}
-                  disabled={isDesasignarMode}
-                  options={estadoOptions}
-                  getOptionLabel={(o) => o?.label || ''}
-                  value={estadoOptions.find((opt) => opt.value === asignacionData.estado) || estadoOptions[0]}
-                  onChange={(_, v) =>
-                    setAsignacionData({
-                      ...asignacionData,
-                      estado: v?.value || 'Activo'
-                    })
-                  }
-                  renderInput={(p) => <TextField {...p} label="Estado" size="small" />}
-                />
-
-                {/* Es Pensionista */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                    Es Pensionista:
-                  </Typography>
-                  <RadioGroup
-                    row
-                    value={asignacionData.esPensionista ? 'si' : 'no'}
-                    onChange={(event) => {
-                      void handlePensionistaChange(event.target.value);
-                    }}
-                  >
-                    <FormControlLabel
-                      value="si"
-                      disabled={isDesasignarMode || validandoBeneficio}
-                      control={<Radio size="small" />}
-                      label={<Typography variant="body2">Sí</Typography>}
-                    />
-                    <FormControlLabel
-                      value="no"
-                      disabled={isDesasignarMode || validandoBeneficio}
-                      control={<Radio size="small" />}
-                      label={<Typography variant="body2">No</Typography>}
-                    />
-                  </RadioGroup>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  disabled={isDesasignarMode || validandoBeneficio || !asignacionData.contribuyente}
-                  onClick={() => {
-                    void validarBeneficio('adultoMayor');
-                  }}
-                >
-                  Validar adulto mayor
-                </Button>
               </Box>
-              {resultadoBeneficio && (
-                <Alert severity={resultadoBeneficio.success ? 'success' : 'warning'}>{resultadoBeneficio.data || resultadoBeneficio.message}</Alert>
-              )}
             </Stack>
 
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 2 }}>

@@ -31,7 +31,7 @@ const AsignacionPredioPage: React.FC = () => {
   const asignacionDataFromConsulta = navigationState?.asignacionData || null;
 
   // Hook para manejo de asignaciones
-  const { crearAsignacionAPI, actualizarAsignacionAPI, desasignarAPI, prevalidarBeneficioPensionista, prevalidarBeneficioAdultoMayor, isCreating, error } =
+  const { crearAsignacionAPI, actualizarAsignacionAPI, desasignarAPI, isCreating, error } =
     useAsignacion();
 
   // Breadcrumbs con iconos - Cambia según modo edición/desasignación
@@ -230,8 +230,6 @@ const AsignacionPredioPage: React.FC = () => {
             onCrearAsignacion={crearAsignacionAPI}
             onActualizarAsignacion={actualizarAsignacionAPI}
             onDesasignar={desasignarAPI}
-            onPrevalidarPensionista={prevalidarBeneficioPensionista}
-            onPrevalidarAdultoMayor={prevalidarBeneficioAdultoMayor}
             loading={isCreating}
             error={error}
             isEditMode={isEditMode}

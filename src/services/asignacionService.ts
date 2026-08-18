@@ -39,7 +39,6 @@ export interface AsignacionQueryParams {
 }
 
 export interface AsignacionPredioDTO {
-  anio: number;
   codPredio: string;
   codContribuyente: number;
   codAsignacion: number | string | null;
@@ -47,8 +46,6 @@ export interface AsignacionPredioDTO {
   fechaDeclaracion: string;
   fechaVenta: string;
   codModoDeclaracion: string;
-  pensionista: number;
-  codEstado: string;
 }
 
 export type CreateAsignacionAPIDTO = AsignacionPredioDTO;
@@ -83,6 +80,16 @@ const getErrorMessage = (payload: unknown, fallback: string): string => {
   }
   return fallback;
 };
+
+const toWritePayload = (datos: CreateAsignacionAPIDTO): CreateAsignacionAPIDTO => ({
+  codPredio: String(datos.codPredio).trim(),
+  codContribuyente: Number(datos.codContribuyente),
+  codAsignacion: datos.codAsignacion ?? null,
+  porcentajeCondomino: datos.porcentajeCondomino ?? null,
+  fechaDeclaracion: datos.fechaDeclaracion,
+  fechaVenta: datos.fechaVenta,
+  codModoDeclaracion: String(datos.codModoDeclaracion).trim()
+});
 
 class AsignacionService {
   private readonly endpoint = '/api/asignacionpredio';
@@ -202,22 +209,23 @@ class AsignacionService {
   }
 
   private async guardarAsignacion(method: 'POST' | 'PUT', datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
+    const writePayload = toWritePayload(datos);
     const payload = await this.request(this.endpoint, {
       method,
-      body: JSON.stringify(datos)
+      body: JSON.stringify(writePayload)
     });
     const response = toRecord(payload);
     if (response.success === false) {
       throw new Error(getErrorMessage(payload, 'No se pudo guardar la asignación'));
     }
     const responseData = toRecord(response.data || payload);
-    return this.normalizeItem({ ...datos, ...responseData });
+    return this.normalizeItem({ ...writePayload, ...responseData });
   }
 
   async desasignarAPI(datos: CreateAsignacionAPIDTO): Promise<ApiAsignacionResponse> {
     const payload = await this.request(`${this.endpoint}/desasignar`, {
       method: 'POST',
-      body: JSON.stringify(datos)
+      body: JSON.stringify(toWritePayload(datos))
     });
     const response = toRecord(payload);
     if (response.success === false) {
