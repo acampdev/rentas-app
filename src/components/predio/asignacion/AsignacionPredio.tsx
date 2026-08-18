@@ -15,7 +15,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  InputAdornment
 } from '@mui/material';
 import { Home as HomeIcon, Assignment as AssignmentIcon, Person as PersonIcon } from '@mui/icons-material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -41,7 +42,7 @@ interface AsignacionData {
   modoDeclaracion: string;
   fechaVenta: Date | null;
   fechaDeclaracion: Date | null;
-  porcentajeCondomino: number;
+  porcentajeCondomino: string;
 }
 
 interface DatosEdicionAsignacion {
@@ -134,7 +135,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
     modoDeclaracion: '',
     fechaVenta: null,
     fechaDeclaracion: null,
-    porcentajeCondomino: 100
+    porcentajeCondomino: ''
   });
 
   const [showContribuyenteModal, setShowContribuyenteModal] = useState(false);
@@ -166,13 +167,13 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
         autoavaluo: datosEdicion.autoavaluo
       };
 
-      let porcentajeValue = 0;
+      let porcentajeValue = '';
       if (datosEdicion.porcentajeCondomino !== null && datosEdicion.porcentajeCondomino !== undefined) {
-        porcentajeValue = Number(datosEdicion.porcentajeCondomino);
+        porcentajeValue = String(datosEdicion.porcentajeCondomino);
       } else if (datosEdicion.porcentajeCondominoDesc) {
         const porcentajeStr = datosEdicion.porcentajeCondominoDesc.replace('%', '').replace(/\s/g, '').replace(',', '.').trim();
         const parsed = parseFloat(porcentajeStr);
-        if (!isNaN(parsed)) porcentajeValue = parsed;
+        if (!isNaN(parsed)) porcentajeValue = String(parsed);
       }
 
       setAsignacionData({
@@ -251,7 +252,13 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       return;
     }
 
-    if (asignacionData.porcentajeCondomino < 0 || asignacionData.porcentajeCondomino > 100) {
+    if (asignacionData.porcentajeCondomino.trim() === '') {
+      NotificationService.error('Debe ingresar el porcentaje condómino');
+      return;
+    }
+
+    const porcentajeCondomino = Number(asignacionData.porcentajeCondomino);
+    if (!Number.isFinite(porcentajeCondomino) || porcentajeCondomino < 0 || porcentajeCondomino > 100) {
       NotificationService.error('El porcentaje condómino debe estar entre 0 y 100');
       return;
     }
@@ -272,7 +279,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       codPredio: codigoPredioFinal.trim(),
       codContribuyente: codigoContribuyente,
       codAsignacion: datosEdicion?.codAsignacion ?? null,
-      porcentajeCondomino: asignacionData.porcentajeCondomino >= 100 ? null : asignacionData.porcentajeCondomino,
+      porcentajeCondomino: porcentajeCondomino >= 100 ? null : porcentajeCondomino,
       fechaDeclaracion: formatFechaAPI(asignacionData.fechaDeclaracion),
       fechaVenta: formatFechaAPI(asignacionData.fechaVenta || asignacionData.fechaDeclaracion),
       codModoDeclaracion: String(asignacionData.modoDeclaracion).trim()
@@ -301,7 +308,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
       modoDeclaracion: '',
       fechaVenta: null,
       fechaDeclaracion: null,
-      porcentajeCondomino: 100
+      porcentajeCondomino: ''
     });
     setDatosEdicionCargados(false);
   };
@@ -434,14 +441,22 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
                   size="small"
                   disabled={isDesasignarMode}
                   value={asignacionData.porcentajeCondomino}
-                  onChange={(event) =>
-                    setAsignacionData({
-                      ...asignacionData,
-                      porcentajeCondomino: Number(event.target.value)
-                    })
-                  }
+                  onChange={(event) => setAsignacionData({
+                    ...asignacionData,
+                    porcentajeCondomino: event.target.value
+                  })}
                   inputProps={{ min: 0, max: 100, step: 0.01 }}
-                  sx={{ width: 190 }}
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">%</InputAdornment>
+                  }}
+                  sx={{
+                    width: 190,
+                    '& input[type=number]': { MozAppearance: 'textfield' },
+                    '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                      WebkitAppearance: 'none',
+                      margin: 0
+                    }
+                  }}
                 />
               </Box>
 
