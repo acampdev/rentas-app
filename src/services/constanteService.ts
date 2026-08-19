@@ -273,6 +273,7 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   obtenerTiposFraccionamiento = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.TIPO_FRACCIONAMIENTO);
   obtenerClaseDeInteres = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.CLASES_DE_INTERES);
   obtenerTiposModoTransferencia = () => this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.MODO_TRANSFERENCIA);
+  obtenerTipoInscripcion = () =>  this.listarConstantesPorPadre(CODIGO_CONSTANTE_PADRE.TIPOS_DE_INSCRIPCION_DE_PREDIO);
   /**
    * Obtiene rutas
    */

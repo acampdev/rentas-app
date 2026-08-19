@@ -192,6 +192,11 @@ export const useTiposClaseDeInteresOptions = () => {
 export const useTiposModoTransferenciaOptions = () => {
   return useConstantesOptions('tipos-modo-transferencia', () => constanteService.obtenerTiposModoTransferencia());
 };
+// TIPOS DE INSCRIPCION Predio
+export const useTipoInscripcionPredio  = () => { 
+  return useConstantesOptions('tipo-inscripcion', () => constanteService.obtenerTipoInscripcion());
+ };
+
 // LETRAS DE VALORES UNITARIOS
 export const useLetraValoresUnitariosOptions = () => {
   const { data = [], isLoading } = useQuery({

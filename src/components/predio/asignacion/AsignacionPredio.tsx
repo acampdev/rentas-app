@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { SelectorContribuyente } from '../../';
 import SelectorPredio from '../../modal/SelectorPredio';
 import { NotificationService } from '../../utils/Notification';
-import { useModoDeclaracionOptions } from '../../../hooks/useConstantesOptions';
+import { useTipoInscripcionPredio } from '../../../hooks/useConstantesOptions';
 import type { CreateAsignacionAPIDTO } from '../../../services/asignacionService';
 import { Predio } from '../../../models/Predio';
 import type { ContribuyenteListItem } from '../../../hooks/useContribuyentes';
@@ -94,7 +94,7 @@ const AsignacionPredio: React.FC<AsignacionPredioProps> = ({
 }) => {
   const navigate = useNavigate();
   // Hooks para opciones
-  const { options: modoDeclaracionOptions, loading: loadingModoDeclaracion } = useModoDeclaracionOptions();
+  const { options: modoDeclaracionOptions, loading: loadingModoDeclaracion } = useTipoInscripcionPredio();
 
   const [internalLoading, setInternalLoading] = useState(false);
   const loading = externalLoading || internalLoading;
