@@ -12,7 +12,8 @@ export interface Piso {
   porcentajeDepreciacion: number;
   valorUnicoDepreciado: number;
   valorAreaConstruida: number;
-  areaConstruida: number;
+  valorAreasComunes?: number;
+  areaConstruida: number | null;
   areaTotalConstruccion: number;
   valorConstruccion?: number;
   fechaConstruccion?: string;

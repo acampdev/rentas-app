@@ -11,7 +11,7 @@ export interface PisoData {
   codigoPredio: number | string;
   numeroPiso: number;
   numeroPisoDesc?: string;
-  areaConstruida: number;
+  areaConstruida: number | null;
   areaTotalConstruccion?: number;
   estado?: string;
   fechaRegistro?: string;
@@ -231,13 +231,10 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
           codUsuario: item.codUsuario,
           descripcionUso: item.descripcionUso,
           valorUnitario: parseFloat(String(item.valorUnitario || 0)),
-          areaConstruida: parseFloat(
-            String(
-              item.areaConstruida !== null && item.areaConstruida !== undefined && item.areaConstruida !== ''
-                ? item.areaConstruida
-                : (item.areaTotalConstruccion || item.totalAreaConstruccion || 0)
-            )
-          ),
+          areaConstruida:
+            item.areaConstruida !== null && item.areaConstruida !== undefined && item.areaConstruida !== ''
+              ? parseFloat(String(item.areaConstruida))
+              : null,
           areaTotalConstruccion: parseFloat(String(item.areaTotalConstruccion || item.totalAreaConstruccion || 0)),
           totalAreaConstruccion: parseFloat(String(item.totalAreaConstruccion || item.areaTotalConstruccion || 0)),
           incremento: parseFloat(String(item.incremento || 0)),

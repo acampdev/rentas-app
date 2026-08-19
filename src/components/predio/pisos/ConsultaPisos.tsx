@@ -341,7 +341,7 @@ const ConsultaPisos: React.FC = () => {
                 <TableCell align="center" sx={headerStyle}>Incremento</TableCell>
                 <TableCell align="center" sx={headerStyle}>Depreciación</TableCell>
                 <TableCell align="center" sx={headerStyle}>Valor Único Depreciado</TableCell>
-                <TableCell align="center" sx={headerStyle}>Valor Área Construida</TableCell>
+                <TableCell align="center" sx={headerStyle}>Valor Áreas Comunes</TableCell>
                 <TableCell align="center" sx={headerStyle}>Área Construida</TableCell>
                 <TableCell align="center" sx={headerStyle}>Acciones</TableCell>
               </TableRow>
@@ -374,8 +374,10 @@ const ConsultaPisos: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell align="center" sx={{ ...cellStyle, fontFamily: 'monospace', fontWeight: 600, color: theme.palette.primary.main }}>{formatCurrency(p.valorUnicoDepreciado)}</TableCell>
-                    <TableCell align="center" sx={{ ...cellStyle, fontFamily: 'monospace', fontWeight: 600, color: theme.palette.success.main }}>{formatCurrency(p.valorAreaConstruida)}</TableCell>
-                    <TableCell align="center" sx={{ ...cellStyle, fontWeight: 'bold' }}>{p.areaConstruida} m²</TableCell>
+                    <TableCell align="center" sx={{ ...cellStyle, fontFamily: 'monospace', fontWeight: 600 }}>{formatCurrency(p.valorAreasComunes ?? 0)}</TableCell>
+                    <TableCell align="center" sx={{ ...cellStyle, fontWeight: 'bold' }}>
+                      {p.areaConstruida === null || p.areaConstruida === undefined ? '—' : `${p.areaConstruida} m²`}
+                    </TableCell>
                     <TableCell align="center" sx={cellStyle}>
                       <IconButton
                         size="small"

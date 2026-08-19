@@ -190,8 +190,6 @@ const SelectorPredio: React.FC<SelectorPredioProps> = ({
         'OBJETO COMPLETO': predioParaEnviar
       });
 
-      console.warn('⚠️ SI RECIBES 20258 EN EL FORMULARIO, EL PROBLEMA ESTÁ EN EL FORMULARIO RECEPTOR, NO AQUÍ');
-
       onSelectPredio(predioParaEnviar);
       onClose();
     }

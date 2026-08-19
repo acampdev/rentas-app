@@ -17,8 +17,8 @@ describe('PisoService editing API contract', () => {
       codLetraMurosColumnas: '1101',
       codEstadoConservacion: '9401',
       codMaterialEstructural: '0701',
-      areaConstruida: 160,
-      valorAreasComunes: 0,
+      areaConstruida: null,
+      valorAreasComunes: 200,
       areaTotalConstruccion: 160
     }]));
     vi.stubGlobal('fetch', fetchMock);
@@ -39,8 +39,8 @@ describe('PisoService editing API contract', () => {
       codPiso: 1,
       numeroPiso: 1,
       fechaConstruccion: '2020-01-16',
-      areaConstruida: 160,
-      valorAreasComunes: 0,
+      areaConstruida: null,
+      valorAreasComunes: 200,
       areaTotalConstruccion: 160
     });
   });
