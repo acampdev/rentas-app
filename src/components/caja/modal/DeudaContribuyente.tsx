@@ -257,13 +257,21 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
   // Manejar el cambio de año en Deuda Ordinaria
   const handleSeleccionarAñoOrdinaria = useCallback((año: number) => {
     setSelectedAñoOrdinaria(año);
-    // Activar por defecto todos los checks para el año seleccionado
-    const yearDetails = allDetailsRaw.find(item => item.year === año)?.details || [];
-    const defaultSelected = yearDetails
-      .filter(det => det.saldoNeto > 0)
-      .map((det, idx) => `debt-${año}-${det.tributo}-${idx}`);
-    setSelectedRows(defaultSelected);
-  }, [allDetailsRaw]);
+    setMontoAPagar('');
+    setSelectedCells({});
+
+    if (tipoMonto === 'repartir') {
+      // Repartir monto trabaja siempre con todas las deudas del año activo.
+      const yearDetails = allDetailsRaw.find(item => item.year === año)?.details || [];
+      const defaultSelected = yearDetails
+        .filter(det => det.saldoNeto > 0)
+        .map((det, idx) => `debt-${año}-${det.tributo}-${idx}`);
+      setSelectedRows(defaultSelected);
+    } else {
+      // Seleccionar monto comienza sin filas y el usuario decide cuáles pagar.
+      setSelectedRows([]);
+    }
+  }, [allDetailsRaw, tipoMonto]);
 
   // Estados para Deuda Fraccionamiento
   const [selectedAño, setSelectedAño] = useState<number | null>(null);
@@ -631,50 +639,34 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
 
   // Manejar selección de filas
   const handleRowSelection = useCallback((itemId: string) => {
+    if (tipoMonto !== 'seleccionar') return;
+
     const isChecking = !selectedRows.includes(itemId);
-    
-    setSelectedRows(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
+    const nextSelectedRows = isChecking
+      ? [...selectedRows, itemId]
+      : selectedRows.filter(id => id !== itemId);
 
-    if (tipoMonto === 'seleccionar') {
-      setSelectedCells(prev => {
-        const updated = { ...prev };
-        if (isChecking) {
-          const row = deudaGlobalData.find(d => d.id === itemId);
-          if (row) {
-            const rowMeses: string[] = [];
-            for (let mes = 1; mes <= 12; mes++) {
-              if (Number(row[`mes${mes}` as keyof typeof row] || 0) > 0) {
-                rowMeses.push(`mes${mes}`);
-              }
-            }
-            rowMeses.push('deuda');
-            updated[itemId] = rowMeses;
-          }
-        } else {
-          delete updated[itemId];
+    setSelectedRows(nextSelectedRows);
+    setSelectedCells(prev => {
+      const updated = { ...prev };
+      if (isChecking) {
+        const row = deudaGlobalData.find(d => d.id === itemId);
+        if (row) {
+          updated[itemId] = Array.from({ length: 12 }, (_, index) => `mes${index + 1}`)
+            .filter(key => Number(row[key as keyof typeof row] || 0) > 0)
+            .concat('deuda');
         }
+      } else {
+        delete updated[itemId];
+      }
+      return updated;
+    });
 
-        // Recalcular la suma de todos los montos seleccionados para poner en "Monto a Pagar"
-        let nuevoMontoTotal = 0;
-        Object.keys(updated).forEach(id => {
-          const row = deudaGlobalData.find(d => d.id === id);
-          if (row) {
-            updated[id].forEach(key => {
-              if (key !== 'deuda') {
-                nuevoMontoTotal += Number(row[key as keyof typeof row] || 0);
-              }
-            });
-          }
-        });
-        
-        setMontoAPagar(nuevoMontoTotal > 0 ? nuevoMontoTotal.toFixed(2) : '');
-        return updated;
-      });
-    }
+    // En selección manual el monto es exactamente la suma de las filas marcadas.
+    const nuevoMontoTotal = deudaGlobalData
+      .filter(row => nextSelectedRows.includes(row.id))
+      .reduce((total, row) => total + Number(row.deuda || 0), 0);
+    setMontoAPagar(nuevoMontoTotal > 0 ? nuevoMontoTotal.toFixed(2) : '');
   }, [selectedRows, tipoMonto, deudaGlobalData]);
 
   // Manejar clic en celdas de meses o deuda total
@@ -760,8 +752,16 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
   const handleDeudaTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setDeudaTabValue(newValue);
     setMontoAPagar('');
-    setSelectedRows([]);
     setSelectedCells({});
+    if (newValue === 1 && tipoMonto === 'repartir' && selectedAñoOrdinaria) {
+      setSelectedRows(
+        deudaGlobalData
+          .filter(item => item.año === selectedAñoOrdinaria && item.deuda > 0)
+          .map(item => item.id)
+      );
+    } else {
+      setSelectedRows([]);
+    }
     setSelectedResolucion('');
     setSelectedAño(null);
     setSelectedResolucionCode(null);
@@ -1060,7 +1060,13 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
   const handleNuevo = () => {
     setMontoAPagar('');
     setTipoMonto('repartir');
-    setSelectedRows([]);
+    setSelectedRows(
+      deudaTabValue === 1 && selectedAñoOrdinaria
+        ? deudaGlobalData
+            .filter(item => item.año === selectedAñoOrdinaria && item.deuda > 0)
+            .map(item => item.id)
+        : []
+    );
     setSelectedCells({});
     setSelectedAño(null);
     setSelectedResolucion('');
@@ -1204,7 +1210,11 @@ const DeudaContribuyente: React.FC<DeudaContribuyenteProps> = ({
                       type="number"
                       inputProps={{ min: 0, step: 0.01 }}
                       placeholder="0.00"
-                      disabled={deudaTabValue === 0 || deudaTabValue === 2}
+                      disabled={
+                        deudaTabValue === 0 ||
+                        deudaTabValue === 2 ||
+                        (deudaTabValue === 1 && tipoMonto === 'seleccionar')
+                      }
                     />
                   </Box>
                   {/** RadioGroup */}

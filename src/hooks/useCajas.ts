@@ -30,7 +30,8 @@ const mapToListItem = (data: CajaData): CajaListItem => ({
  */
 export const useCajas = () => {
   const queryClient = useQueryClient();
-  const [params, setParams] = useState<ListarCajaParams>({ descripcion: 'C' });
+  // Sin filtros iniciales: el selector de asignación debe recibir el catálogo completo.
+  const [params, setParams] = useState<ListarCajaParams>({});
 
   // Query para listar cajas
   const {

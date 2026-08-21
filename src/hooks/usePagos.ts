@@ -15,6 +15,11 @@ const mapTributoNameToCode = (name: string): number => {
   return 1; // Fallback por defecto
 };
 
+export interface PagoFeedback {
+  severity: 'success' | 'error' | 'info';
+  message: string;
+}
+
 export const usePagos = (onPagoExitoso?: () => void) => {
   const [pagoData, setPagoData] = useState<Pago>({
     codigo: '',
@@ -33,6 +38,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
   const [modalDeudaOpen, setModalDeudaOpen] = useState(false);
   const [contribuyenteSeleccionado, setContribuyenteSeleccionado] = useState<ContribuyenteOption | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pagoFeedback, setPagoFeedback] = useState<PagoFeedback | null>(null);
 
   const handleNuevo = useCallback(() => {
     setPagoData({
@@ -42,13 +48,16 @@ export const usePagos = (onPagoExitoso?: () => void) => {
     });
     setBusquedaContribuyente('');
     setContribuyenteSeleccionado(null);
+    setPagoFeedback(null);
   }, []);
 
   const handleGrabar = useCallback(async () => {
     if (pagoData.conceptos.length === 0 || !contribuyenteSeleccionado) return;
-    
+
+    setPagoFeedback(null);
     setLoading(true);
     try {
+      const mensajesApi: string[] = [];
       // 1. Obtener la caja activa de localStorage
       const savedEstado = localStorage.getItem('estado_caja');
       console.log('[usePagos] savedEstado de localStorage:', savedEstado);
@@ -130,7 +139,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
         console.log('[usePagos] Enviando PagoOrdinario unificado:', saldosDeuda);
         const totalOrdinario = ordinarioConceptos.reduce((sum, c) => sum + c.total, 0);
 
-        await pagoService.registrarPagoOrdinario({
+        const resultadoOrdinario = await pagoService.registrarPagoOrdinario({
           codAperturaCaja,
           codContribuyente: Number(contribuyenteSeleccionado.id || contribuyenteSeleccionado.codigo),
           montoPagoTotal: Number(totalOrdinario.toFixed(2)),
@@ -138,6 +147,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
           codTipoAbono: '12',
           saldosDeuda
         });
+        mensajesApi.push(resultadoOrdinario.message);
       }
 
       // 3. Procesar cuotas de fraccionamiento unificadamente (si existen)
@@ -153,7 +163,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
 
       if (saldosDeudaFracc.length > 0) {
         console.log('[usePagos] Enviando PagoCuotaFraccionamiento unificado:', saldosDeudaFracc);
-        await pagoService.registrarPagoCuotaFraccionamiento({
+        const resultadoFraccionamiento = await pagoService.registrarPagoCuotaFraccionamiento({
           codAperturaCaja,
           codContribuyente: Number(contribuyenteSeleccionado.id || contribuyenteSeleccionado.codigo),
           montoPagoTotal: Number(totalFracc.toFixed(2)),
@@ -161,16 +171,22 @@ export const usePagos = (onPagoExitoso?: () => void) => {
           codTipoAbono: '12',
           saldosDeuda: saldosDeudaFracc
         });
+        mensajesApi.push(resultadoFraccionamiento.message);
       }
 
-      NotificationService.success('El pago se ha registrado exitosamente en el servidor.');
+      const mensajeResultado = [...new Set(mensajesApi.filter(Boolean))].join(' ')
+        || 'El pago se ha registrado exitosamente en el servidor.';
+      NotificationService.success(mensajeResultado);
       handleNuevo(); // Limpiar formulario
+      setPagoFeedback({ severity: 'success', message: mensajeResultado });
       if (onPagoExitoso) {
         onPagoExitoso();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Intente de nuevo.';
       console.error('[usePagos] Error al registrar pago:', error);
-      NotificationService.error(`Error al registrar pago: ${error.message || 'Intente de nuevo.'}`);
+      NotificationService.error(`Error al registrar pago: ${message}`);
+      setPagoFeedback({ severity: 'error', message });
     } finally {
       setLoading(false);
     }
@@ -255,6 +271,7 @@ export const usePagos = (onPagoExitoso?: () => void) => {
     handlePagoGenerado,
     handleEliminarConcepto,
     calcularTotal,
-    loading
+    loading,
+    pagoFeedback
   };
 };

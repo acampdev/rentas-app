@@ -60,7 +60,10 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
           estado: String(item.estado || 'DISPONIBLE')
         }),
         validateItem: (item: CajaData) => {
-          return !!(item.codCaja && item.numcaja);
+          // Algunas cajas creadas desde el mantenedor no incluyen numcaja en la
+          // respuesta. El código identifica válidamente el registro y la UI usa
+          // la descripción como etiqueta alternativa.
+          return item.codCaja > 0;
         }
       },
       'caja'

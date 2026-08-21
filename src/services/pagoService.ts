@@ -1,6 +1,31 @@
 // src/services/pagoService.ts
 import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
-import apiClient from './apiClient';
+import apiClient, { extractApiMessage } from './apiClient';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * En las operaciones de pago el backend suele devolver un message genérico
+ * ("Operation Failed!") y colocar la causa real en data.
+ */
+const extractPagoOperationMessage = (payload: unknown, fallback: string): string => {
+  if (isRecord(payload) && typeof payload.data === 'string' && payload.data.trim()) {
+    return payload.data.trim();
+  }
+
+  return extractApiMessage(payload, fallback);
+};
+
+const normalizePagoError = (error: unknown, fallback: string): Error => {
+  if (isRecord(error) && 'data' in error) {
+    return new Error(extractPagoOperationMessage(error.data, fallback));
+  }
+
+  return error instanceof Error
+    ? error
+    : new Error(extractPagoOperationMessage(error, fallback));
+};
 
 export interface SaldoDeudaItem {
   codTributo: number;
@@ -37,6 +62,11 @@ export interface PagoCuotaFraccionamientoDTO {
   saldosDeuda: SaldoDeudaFraccionamientoItem[];
 }
 
+export interface PagoOperationResult {
+  data: unknown;
+  message: string;
+}
+
 class PagoService {
   private static instance: PagoService;
   private endpoint = '/api/pago';
@@ -56,7 +86,7 @@ class PagoService {
    * Registra un pago ordinario
    * POST /api/pago/pagoOrdinario
    */
-  async registrarPagoOrdinario(datos: PagoOrdinarioDTO): Promise<any> {
+  async registrarPagoOrdinario(datos: PagoOrdinarioDTO): Promise<PagoOperationResult> {
     try {
       console.log('[PagoService] Registrando Pago Ordinario:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoOrdinario`);
@@ -80,14 +110,25 @@ class PagoService {
       console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoOrdinario:', responseData);
 
       if (responseData && responseData.success === false) {
-        console.error('[PagoService] Error de negocio retornado por el servidor:', responseData.message);
-        throw new Error(responseData.message || 'El servidor rechazó el procesamiento del pago.');
+        const operationMessage = extractPagoOperationMessage(
+          responseData,
+          'El servidor rechazó el procesamiento del pago.'
+        );
+        console.error('[PagoService] Error de negocio retornado por el servidor:', operationMessage);
+        throw new Error(operationMessage);
       }
 
-      return responseData.data || responseData;
+      return {
+        data: responseData.data ?? responseData,
+        message: extractApiMessage(responseData, 'Pago ordinario registrado correctamente.')
+      };
     } catch (error: unknown) {
-      console.error('[PagoService] Error al registrar pago ordinario:', error);
-      throw error;
+      const normalizedError = normalizePagoError(
+        error,
+        'Error al registrar el pago ordinario.'
+      );
+      console.error('[PagoService] Error al registrar pago ordinario:', normalizedError);
+      throw normalizedError;
     }
   }
 
@@ -95,7 +136,7 @@ class PagoService {
    * Registra un pago de cuota de fraccionamiento
    * POST /api/pago/pagoCuotaFraccionamiento
    */
-  async registrarPagoCuotaFraccionamiento(datos: PagoCuotaFraccionamientoDTO): Promise<any> {
+  async registrarPagoCuotaFraccionamiento(datos: PagoCuotaFraccionamientoDTO): Promise<PagoOperationResult> {
     try {
       console.log('[PagoService] Registrando Pago Cuota Fraccionamiento:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoCuotaFraccionamiento`);
@@ -119,14 +160,28 @@ class PagoService {
       console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoCuotaFraccionamiento:', responseData);
 
       if (responseData && responseData.success === false) {
-        console.error('[PagoService] Error de negocio retornado por el servidor:', responseData.message);
-        throw new Error(responseData.message || 'El servidor rechazó el procesamiento del pago de fraccionamiento.');
+        const operationMessage = extractPagoOperationMessage(
+          responseData,
+          'El servidor rechazó el procesamiento del pago de fraccionamiento.'
+        );
+        console.error('[PagoService] Error de negocio retornado por el servidor:', operationMessage);
+        throw new Error(operationMessage);
       }
 
-      return responseData.data || responseData;
+      return {
+        data: responseData.data ?? responseData,
+        message: extractApiMessage(
+          responseData,
+          'Pago de fraccionamiento registrado correctamente.'
+        )
+      };
     } catch (error: unknown) {
-      console.error('[PagoService] Error al registrar pago cuota fraccionamiento:', error);
-      throw error;
+      const normalizedError = normalizePagoError(
+        error,
+        'Error al registrar el pago de fraccionamiento.'
+      );
+      console.error('[PagoService] Error al registrar pago cuota fraccionamiento:', normalizedError);
+      throw normalizedError;
     }
   }
 }

@@ -91,14 +91,13 @@ export const useUsuarios = (paramsIniciales: ListarUsuariosParams = { parametroB
   // Verificar Supervisor state y callback
   const [verificandoSupervisor, setVerificandoSupervisor] = useState(false);
 
-  const verificarSupervisor = useCallback(async (username: string, password: string): Promise<boolean> => {
+  const verificarSupervisor = useCallback(async (username: string, password: string): Promise<string | null> => {
     try {
       setVerificandoSupervisor(true);
-      const esValido = await usuarioService.verificarSupervisorCajero(username, password);
-      return esValido;
+      return await usuarioService.verificarSupervisorCajero(username, password);
     } catch (err: any) {
       NotificationService.error(err.message || 'Error al verificar supervisor');
-      return false;
+      return null;
     } finally {
       setVerificandoSupervisor(false);
     }

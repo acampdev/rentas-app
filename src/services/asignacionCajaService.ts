@@ -25,6 +25,7 @@ export interface CreateAsignacionCajaDTO {
   codCaja: number;
   codTurno: number;
   fecha: string; // formato: "2025-11-07"
+  usuario: string;
 }
 
 export interface UpdateAsignacionCajaDTO {
@@ -32,11 +33,12 @@ export interface UpdateAsignacionCajaDTO {
   codUsuario: number;
   codCaja: number;
   codTurno: number;
+  usuario: string;
 }
 
 export interface DeleteAsignacionCajaDTO {
   codAsignacionCaja: number;
-  usuario?: number;
+  usuario: string;
 }
 
 export interface ListarAsignacionCajaParams {
@@ -44,6 +46,12 @@ export interface ListarAsignacionCajaParams {
   fecha?: string; // formato: "2025-11-04"
   codUsuario?: number;
 }
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(String(value).trim());
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
 
 /**
  * Servicio para gestion de asignacion de caja
@@ -67,9 +75,9 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
       {
         normalizeItem: (item: Record<string, unknown>) => ({
           codAsignacionCaja: Number(item.codAsignacionCaja) || 0,
-          codUsuario: (item.codUsuario as number | null) ?? null,
-          codCaja: (item.codCaja as number | null) ?? null,
-          codTurno: (item.codTurno as number | null) ?? null,
+          codUsuario: toNullableNumber(item.codUsuario),
+          codCaja: toNullableNumber(item.codCaja),
+          codTurno: toNullableNumber(item.codTurno),
           fecha: item.fecha ? String(item.fecha) : null,
           terminoBusqueda: (item.terminoBusqueda as string | null) ?? null,
           numCaja: String(item.numCaja || ''),

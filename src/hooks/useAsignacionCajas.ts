@@ -187,7 +187,7 @@ export const useAsignacionCajas = () => {
   /**
    * Elimina una asignacion de caja
    */
-  const eliminarAsignacion = useCallback(async (codAsignacionCaja: number, usuario?: number): Promise<boolean> => {
+  const eliminarAsignacion = useCallback(async (codAsignacionCaja: number, usuario: string): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);

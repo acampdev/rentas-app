@@ -17,7 +17,8 @@ import {
   CardContent,
   IconButton,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -69,7 +70,8 @@ const Pagos: React.FC<PagosProps> = ({ onPagoExitoso }) => {
     handlePagoGenerado,
     handleEliminarConcepto,
     calcularTotal,
-    loading
+    loading,
+    pagoFeedback
   } = usePagos(onPagoExitoso);
 
   return (
@@ -167,6 +169,17 @@ const Pagos: React.FC<PagosProps> = ({ onPagoExitoso }) => {
             </Box>
           </CardContent>
         </Card>
+
+        {pagoFeedback && (
+          <Alert
+            severity={pagoFeedback.severity}
+            variant="outlined"
+            role="status"
+            sx={{ mb: 2, fontWeight: 600 }}
+          >
+            {pagoFeedback.message}
+          </Alert>
+        )}
         
         <Box display="flex" gap={2} justifyContent="center">
           <Button 

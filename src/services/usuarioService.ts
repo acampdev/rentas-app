@@ -101,12 +101,14 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
       '/api/usuario',
       {
         normalizeItem: (item: UsuarioRaw) => ({
-          codUsuario: item.codUsuario || 0,
+          codUsuario: Number(item.codUsuario) || 0,
           nombrePersona: item.nombrePersona || '',
           documento: item.documento || '',
           username: item.username || '',
           password: item.password || null,
-          codRol: item.codRol || null,
+          codRol: item.codRol === null || item.codRol === undefined
+            ? null
+            : Number(item.codRol) || null,
           parametroBusqueda: item.parametroBusqueda || null,
           rol: item.rol || '',
           estado: item.estado || '',
@@ -256,21 +258,31 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
 
   /**
    * Verifica credenciales de supervisor/cajero
-   * POST /api/usuario/verificarSupervisorCajero?username=davila&password=123456
+   * POST /api/usuario/verificarSupervisorCajero
    */
-  async verificarSupervisorCajero(username: string, password: string): Promise<boolean> {
+  async verificarSupervisorCajero(username: string, password: string): Promise<string> {
     try {
-      const queryParams = new URLSearchParams({ username, password });
-
       const response = await this.makeRequest<string | UsuarioApiResponse<unknown>>(
-        `/verificarSupervisorCajero?${queryParams.toString()}`,
-        { method: 'POST' }
+        '/verificarSupervisorCajero',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            username: username.trim(),
+            password
+          })
+        }
       );
 
-      // El backend retorna "data": "Usuario correcto."
+      // El backend retorna en data el código del supervisor autorizado.
       const rawData =
         typeof response === 'object' && response !== null && 'data' in response ? response.data : response;
-      return String(rawData).toLowerCase().includes('usuario correcto');
+      const codigoSupervisor = String(rawData ?? '').trim();
+
+      if (!codigoSupervisor || !/^\d+$/.test(codigoSupervisor)) {
+        throw new Error('La API no devolvió un código de supervisor válido');
+      }
+
+      return codigoSupervisor;
     } catch (error) {
       console.error('[UsuarioService] Error al verificar supervisor:', error);
       throw error;

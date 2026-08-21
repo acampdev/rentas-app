@@ -1,5 +1,5 @@
 // src/components/caja/AsignacionCaja.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Tab,
@@ -49,6 +49,7 @@ import { useTurnos } from '../../hooks/useTurnos';
 import { useCajas } from '../../hooks/useCajas';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { NotificationService } from '../utils/Notification';
+import type { AsignacionCaja as AsignacionCajaData } from '../../models/Caja';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -76,7 +77,20 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const AsignacionCaja: React.FC = () => {
+interface AsignacionCajaProps {
+  codigoSupervisor: string;
+}
+
+const normalizeLookupText = (value: unknown): string =>
+  String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('es-PE')
+    .replace(/\s+/g, ' ');
+
+const normalizeLookupCode = (value: unknown): string =>
+  normalizeLookupText(value).replace(/[^a-z0-9]/g, '');
+
+const AsignacionCaja: React.FC<AsignacionCajaProps> = ({ codigoSupervisor }) => {
   const theme = useTheme();
 
   // Tabs state
@@ -89,7 +103,7 @@ const AsignacionCaja: React.FC = () => {
   const [selectedTurno, setSelectedTurno] = useState<number | ''>('');
   
   // Edit mode state
-  const [editandoAsignacion, setEditandoAsignacion] = useState<any | null>(null);
+  const [editandoAsignacion, setEditandoAsignacion] = useState<AsignacionCajaData | null>(null);
 
   // Search states
   const [searchDate, setSearchDate] = useState<Date | null>(new Date());
@@ -124,16 +138,57 @@ const AsignacionCaja: React.FC = () => {
     loading: loadingUsuarios
   } = useUsuarios();
 
-  // Filtrar cajas y usuarios activos para el formulario
-  const cajasActivas = cajas.filter(c => {
-    const est = c.estado?.trim().toUpperCase();
-    return est === 'ACTIVO' || est === 'DISPONIBLE' || c.codCaja === selectedCaja || !c.estado;
-  });
+  // El selector debe mostrar el catálogo completo de cajas. La disponibilidad
+  // operativa se valida al guardar en el backend, sin ocultar registros aquí.
+  const cajasParaSeleccion = cajas;
   const usuariosCajeros = usuarios.filter(
-    u => u.rol?.trim().toLowerCase() === 'cajero' && (u.estado === 'ACTIVO' || u.codUsuario === selectedCajero)
+    u => (
+      u.rol?.trim().toLowerCase() === 'cajero' &&
+      u.estado?.trim().toUpperCase() === 'ACTIVO'
+    ) || Number(u.codUsuario) === selectedCajero
   );
-  const selectedCajeroObj = usuariosCajeros.find(u => u.codUsuario === selectedCajero) || null;
-  const selectedCajaObj = cajasActivas.find(c => c.codCaja === selectedCaja) || null;
+  const selectedCajeroObj = usuariosCajeros.find(u => Number(u.codUsuario) === selectedCajero) || null;
+  const selectedCajaObj = cajasParaSeleccion.find(c => Number(c.codCaja) === selectedCaja) || null;
+
+  // El listado de asignaciones puede omitir los códigos y devolver únicamente
+  // nombres. En modo edición resolvemos cada código contra sus catálogos.
+  useEffect(() => {
+    if (!editandoAsignacion) return;
+
+    if (selectedCajero === '' && editandoAsignacion.nombreUsuario) {
+      const nombreUsuario = normalizeLookupText(editandoAsignacion.nombreUsuario);
+      const cajero = usuarios.find(usuario =>
+        normalizeLookupText(usuario.username) === nombreUsuario ||
+        normalizeLookupText(usuario.nombrePersona) === nombreUsuario
+      );
+      if (cajero) setSelectedCajero(Number(cajero.codUsuario));
+    }
+
+    if (selectedCaja === '' && editandoAsignacion.numCaja) {
+      const numeroCaja = normalizeLookupCode(editandoAsignacion.numCaja);
+      const caja = cajasParaSeleccion.find(item =>
+        normalizeLookupCode(item.numcaja) === numeroCaja ||
+        normalizeLookupCode(item.descripcion) === numeroCaja
+      );
+      if (caja) setSelectedCaja(Number(caja.codCaja));
+    }
+
+    if (selectedTurno === '' && editandoAsignacion.turno) {
+      const nombreTurno = normalizeLookupText(editandoAsignacion.turno);
+      const turno = turnos.find(item =>
+        normalizeLookupText(item.nombreTurno) === nombreTurno
+      );
+      if (turno) setSelectedTurno(Number(turno.codTurno));
+    }
+  }, [
+    cajasParaSeleccion,
+    editandoAsignacion,
+    selectedCaja,
+    selectedCajero,
+    selectedTurno,
+    turnos,
+    usuarios
+  ]);
 
   // Parser seguro para fechas de string
   const parseFechaStr = (str: string): Date => {
@@ -193,20 +248,6 @@ const AsignacionCaja: React.FC = () => {
 
     const fechaStr = format(selectedDate, 'yyyy-MM-dd');
 
-    // Obtener el usuario logeado desde localStorage
-    const userStr = sessionStorage.getItem('auth_user');
-    let loggedUserId: number | undefined = undefined;
-    if (userStr) {
-      try {
-        const userObj = JSON.parse(userStr);
-        if (userObj && userObj.id) {
-          loggedUserId = Number(userObj.id);
-        }
-      } catch (e) {
-        console.error('[AsignacionCaja] Error al parsear auth_user:', e);
-      }
-    }
-
     if (editandoAsignacion) {
       // Flujo de Actualización (PUT)
       const resultado = await actualizarAsignacion({
@@ -214,7 +255,7 @@ const AsignacionCaja: React.FC = () => {
         codUsuario: Number(selectedCajero),
         codCaja: Number(selectedCaja),
         codTurno: Number(selectedTurno),
-        usuario: loggedUserId
+        usuario: codigoSupervisor
       });
 
       if (resultado) {
@@ -228,7 +269,7 @@ const AsignacionCaja: React.FC = () => {
         codCaja: Number(selectedCaja),
         codTurno: Number(selectedTurno),
         fecha: fechaStr,
-        usuario: loggedUserId
+        usuario: codigoSupervisor
       });
 
       if (resultado) {
@@ -238,11 +279,15 @@ const AsignacionCaja: React.FC = () => {
     }
   };
 
-  const handleEditClick = (asignacion: any) => {
+  const handleEditClick = (asignacion: AsignacionCajaData) => {
+    const codUsuario = Number(asignacion.codUsuario);
+    const codCaja = Number(asignacion.codCaja);
+    const codTurno = Number(asignacion.codTurno);
+
     setEditandoAsignacion(asignacion);
-    setSelectedCajero(asignacion.codUsuario || '');
-    setSelectedCaja(asignacion.codCaja || '');
-    setSelectedTurno(asignacion.codTurno || '');
+    setSelectedCajero(Number.isFinite(codUsuario) && codUsuario > 0 ? codUsuario : '');
+    setSelectedCaja(Number.isFinite(codCaja) && codCaja > 0 ? codCaja : '');
+    setSelectedTurno(Number.isFinite(codTurno) && codTurno > 0 ? codTurno : '');
     
     if (asignacion.fechaStr) {
       setSelectedDate(parseFechaStr(asignacion.fechaStr));
@@ -256,20 +301,7 @@ const AsignacionCaja: React.FC = () => {
   const handleEliminarAsignacion = async (codAsignacionCaja: number) => {
     const confirmacion = window.confirm('¿Está seguro de eliminar esta asignación?');
     if (confirmacion) {
-      // Obtener el usuario logeado desde localStorage
-      const userStr = sessionStorage.getItem('auth_user');
-      let loggedUserId: number | undefined = undefined;
-      if (userStr) {
-        try {
-          const userObj = JSON.parse(userStr);
-          if (userObj && userObj.id) {
-            loggedUserId = Number(userObj.id);
-          }
-        } catch (e) {
-          console.error('[AsignacionCaja] Error al parsear auth_user:', e);
-        }
-      }
-      await eliminarAsignacion(codAsignacionCaja, loggedUserId);
+      await eliminarAsignacion(codAsignacionCaja, codigoSupervisor);
     }
   };
 
@@ -401,10 +433,11 @@ const AsignacionCaja: React.FC = () => {
                     setSelectedCajero(newValue ? newValue.codUsuario : '');
                   }}
                   getOptionLabel={(option) => `${option.nombrePersona} (${option.username?.trim()})`}
-                  isOptionEqualToValue={(option, value) => option.codUsuario === value.codUsuario}
+                  isOptionEqualToValue={(option, value) => Number(option.codUsuario) === Number(value.codUsuario)}
                   sx={{ 
-                    flex: '1 1 250px', 
-                    minWidth: '180px',
+                    flex: '0 0 220px',
+                    width: 220,
+                    minWidth: 220,
                     m: 0,
                     p: 0,
                     '& .MuiOutlinedInput-root': {
@@ -434,17 +467,24 @@ const AsignacionCaja: React.FC = () => {
                 {/* Caja */}
                 <Autocomplete
                   size="small"
-                  options={cajasActivas}
+                  options={cajasParaSeleccion}
                   loading={loadingCajas}
                   value={selectedCajaObj}
                   onChange={(_event, newValue) => {
                     setSelectedCaja(newValue ? newValue.codCaja : '');
                   }}
-                  getOptionLabel={(option) => option.numcaja || ''}
-                  isOptionEqualToValue={(option, value) => option.codCaja === value.codCaja}
+                  getOptionLabel={(option) => {
+                    const nombreCaja = option.numcaja?.trim() || `Caja ${option.codCaja}`;
+                    const descripcion = option.descripcion?.trim();
+                    return descripcion && descripcion !== nombreCaja
+                      ? `${nombreCaja} - ${descripcion}`
+                      : nombreCaja;
+                  }}
+                  isOptionEqualToValue={(option, value) => Number(option.codCaja) === Number(value.codCaja)}
                   sx={{ 
-                    flex: '1 1 180px', 
-                    minWidth: '130px',
+                    flex: '0 0 180px',
+                    width: 180,
+                    minWidth: 180,
                     m: 0,
                     p: 0,
                     '& .MuiOutlinedInput-root': {
@@ -476,8 +516,9 @@ const AsignacionCaja: React.FC = () => {
                   size="small" 
                   margin="none"
                   sx={{ 
-                    flex: '1 1 180px', 
-                    minWidth: '130px',
+                    flex: '0 0 180px',
+                    width: 180,
+                    minWidth: 180,
                     m: 0,
                     p: 0
                   }}

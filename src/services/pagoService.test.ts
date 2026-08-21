@@ -29,8 +29,8 @@ describe('PagoService', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(pagoService.registrarPagoOrdinario(pagoOrdinario)).resolves.toEqual({
-      codPago: 91,
-      numeroRecibo: '000091'
+      data: { codPago: 91, numeroRecibo: '000091' },
+      message: 'Pago ordinario registrado correctamente.'
     });
 
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/pago/pagoOrdinario');
@@ -51,21 +51,29 @@ describe('PagoService', () => {
         numeroCuota: 1
       }]
     };
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ success: true, data: { codPago: 92 } }));
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({
+      success: true,
+      message: 'Cuota pagada correctamente.',
+      data: { codPago: 92 }
+    }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(pagoService.registrarPagoCuotaFraccionamiento(payload)).resolves.toEqual({ codPago: 92 });
+    await expect(pagoService.registrarPagoCuotaFraccionamiento(payload)).resolves.toEqual({
+      data: { codPago: 92 },
+      message: 'Cuota pagada correctamente.'
+    });
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/pago/pagoCuotaFraccionamiento');
   });
 
   it('propagates the backend business message instead of reporting an empty result', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
       success: false,
-      message: 'La caja se encuentra cerrada'
+      message: 'Operation Failed!',
+      data: 'No existe deuda pendiente ordinaria para el periodo indicado.'
     })));
 
     await expect(pagoService.registrarPagoOrdinario(pagoOrdinario)).rejects.toThrow(
-      'La caja se encuentra cerrada'
+      'No existe deuda pendiente ordinaria para el periodo indicado.'
     );
   });
 });

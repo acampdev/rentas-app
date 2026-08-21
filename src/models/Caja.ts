@@ -67,7 +67,7 @@ export interface CreateAsignacionCajaDTO {
   codCaja: number;
   codTurno: number;
   fecha: string;
-  usuario?: number;
+  usuario: string;
 }
 
 export interface UpdateAsignacionCajaDTO {
@@ -75,7 +75,7 @@ export interface UpdateAsignacionCajaDTO {
   codUsuario: number;
   codCaja: number;
   codTurno: number;
-  usuario?: number;
+  usuario: string;
 }
 
 /**

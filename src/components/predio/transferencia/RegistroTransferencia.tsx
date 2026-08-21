@@ -26,8 +26,7 @@ import {
   PersonSearch as PersonSearchIcon,
   ShoppingCart as ShoppingCartIcon,
   Save as SaveIcon,
-  Clear as ClearIcon,
-  Receipt as ReceiptIcon
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import SelectorContribuyente from '../../modal/SelectorContribuyente';
 import { useTiposModoTransferenciaOptions } from '../../../hooks/useConstantesOptions';
@@ -511,10 +510,6 @@ const RegistroTransferencia: React.FC<RegistroTransferenciaProps> = ({
                 disabled={guardando}
               >
                 {formData.codTransferencia !== null ? 'Actualizar' : 'Guardar'}
-              </Button>
-              {/* Boton para generar recibo */}
-              <Button variant="contained" color="success" startIcon={<ReceiptIcon />}>
-                Generar Recibo
               </Button>
             </Stack>
           </Paper>

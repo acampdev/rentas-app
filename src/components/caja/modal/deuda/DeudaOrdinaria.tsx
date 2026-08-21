@@ -234,6 +234,10 @@ const DeudaOrdinariaComponent: React.FC<DeudaOrdinariaProps> = ({
                         size="small"
                         checked={selectedRows.includes(item.id)}
                         onChange={() => onRowSelection(item.id)}
+                        disabled={tipoMonto === 'repartir'}
+                        inputProps={{
+                          'aria-label': `${item.titulo} - ${item.año}`
+                        }}
                         sx={{ p: 0 }}
                       />
                     </TableCell>
@@ -244,7 +248,7 @@ const DeudaOrdinariaComponent: React.FC<DeudaOrdinariaProps> = ({
                       const mesKey = `mes${mes}` as keyof DeudaOrdinaria;
                       const mesValue = item[mesKey] as number;
                       const cellColor = getCellColor(item.id, `mes${mes}`, mesValue);
-                      const isClickable = tipoMonto === 'seleccionar' && mesValue > 0;
+                      const isClickable = false;
                       
                       return (
                         <TableCell 
@@ -270,7 +274,7 @@ const DeudaOrdinariaComponent: React.FC<DeudaOrdinariaProps> = ({
 
                     {(() => {
                       const cellColor = getCellColor(item.id, 'deuda', item.deuda);
-                      const isClickable = tipoMonto === 'seleccionar' && item.deuda > 0;
+                      const isClickable = false;
                       
                       return (
                         <TableCell 

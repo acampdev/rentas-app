@@ -13,6 +13,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   CircularProgress,
   Chip,
@@ -53,7 +54,7 @@ function TabPanel(props: TabPanelProps) {
       {...other}
     >
       {value === index && (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
           {children}
         </Box>
       )}
@@ -72,6 +73,8 @@ const Cajas: React.FC = () => {
   // Estados para Consulta
   const [descripcionBusqueda, setDescripcionBusqueda] = useState('');
   const [codUsuarioBusqueda, setCodUsuarioBusqueda] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Hook de mantenedor de cajas
   const {
@@ -140,6 +143,7 @@ const Cajas: React.FC = () => {
       params.codUsuario = Number(codUsuarioBusqueda);
     }
 
+    setPage(0);
     await buscarCajas(params);
   };
 
@@ -147,6 +151,16 @@ const Cajas: React.FC = () => {
   const handleNuevoBusqueda = () => {
     setDescripcionBusqueda('');
     setCodUsuarioBusqueda('');
+    setPage(0);
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(Number(event.target.value));
+    setPage(0);
   };
 
   const handleEditClick = (caja: any) => {
@@ -167,10 +181,24 @@ const Cajas: React.FC = () => {
     }
   };
 
+  const lastPage = Math.max(0, Math.ceil(cajas.length / rowsPerPage) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const cajasPaginadas = cajas.slice(
+    currentPage * rowsPerPage,
+    currentPage * rowsPerPage + rowsPerPage
+  );
+
   return (
-    <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+    <Paper elevation={2} sx={{ width: '100%', minWidth: 0, borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
       <Box sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04), borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="cajas tabs">
+        <Tabs
+          value={value}
+          onChange={handleChange}
+          aria-label="cajas tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
           <Tab
             label="Registro Cajas"
             icon={<RegistrationIcon />}
@@ -186,9 +214,9 @@ const Cajas: React.FC = () => {
 
       {/* Tab: Registro Cajas */}
       <TabPanel value={value} index={0}>
-        <Paper variant="outlined" sx={{ p: 3, bgcolor: alpha('#f5f5f5', 0.5), borderRadius: 2 }}>
+        <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, bgcolor: alpha('#f5f5f5', 0.5), borderRadius: 2 }}>
           <Stack spacing={3}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
               {/* Descripcion Caja - Ancho a la mitad */}
               <TextField
                 label="Descripción Caja"
@@ -197,7 +225,7 @@ const Cajas: React.FC = () => {
                 size="small"
                 disabled={loading}
                 placeholder="Ingrese descripción de la caja"
-                sx={{ width: '300px' }}
+                sx={{ width: { xs: '100%', sm: 300 } }}
               />
 
               {/* Botones alineados vertical y horizontalmente */}
@@ -207,7 +235,7 @@ const Cajas: React.FC = () => {
                 startIcon={<AddIcon />}
                 onClick={handleNuevoRegistro}
                 disabled={loading}
-                sx={{ textTransform: 'none', fontWeight: 600, height: '40px' }}
+                sx={{ width: { xs: '100%', sm: 'auto' }, textTransform: 'none', fontWeight: 600, height: '40px' }}
               >
                 Nuevo
               </Button>
@@ -224,7 +252,7 @@ const Cajas: React.FC = () => {
                   minWidth: '120px',
                   height: '40px'
                 }}
-                sx={{ textTransform: 'none' }}
+                sx={{ width: { xs: '100%', sm: 'auto' }, textTransform: 'none' }}
               >
                 {editandoCaja ? 'Actualizar' : 'Guardar'}
               </Button>
@@ -235,20 +263,25 @@ const Cajas: React.FC = () => {
 
       {/* Tab: Consulta Cajas */}
       <TabPanel value={value} index={1}>
-        <Box sx={{ px: 1 }}>
+        <Box sx={{ px: { xs: 0, sm: 0.5, md: 1 }, minWidth: 0 }}>
           <Stack spacing={3}>
             {/* Filtros de búsqueda estilo unificado */}
             <Box sx={{ 
-              display: 'flex', 
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'minmax(0, 1fr)',
+                sm: 'minmax(220px, 1fr) minmax(150px, 0.65fr)',
+                md: 'minmax(250px, 1fr) minmax(150px, 180px) auto auto'
+              },
               gap: 2, 
               alignItems: 'center', 
               bgcolor: alpha(theme.palette.grey[100], 0.5), 
-              p: 2, 
+              p: { xs: 1.5, sm: 2 },
               borderRadius: 2,
               border: `1px solid ${alpha(theme.palette.divider, 0.5)}`
             }}>
               {/* Descripcion */}
-              <Box sx={{ width: '250px' }}>
+              <Box sx={{ width: '100%', minWidth: 0 }}>
                 <TextField
                   fullWidth
                   label="Descripción"
@@ -262,7 +295,7 @@ const Cajas: React.FC = () => {
               </Box>
 
               {/* Codigo Usuario */}
-              <Box sx={{ width: '150px' }}>
+              <Box sx={{ width: '100%', minWidth: 0 }}>
                 <TextField
                   fullWidth
                   label="Cod. Usuario"
@@ -295,7 +328,7 @@ const Cajas: React.FC = () => {
                   height: '40px',
                   minWidth: '120px'
                 }}
-                sx={{ textTransform: 'none' }}
+                sx={{ width: { xs: '100%', md: 'auto' }, textTransform: 'none' }}
               >
                 Buscar
               </Button>
@@ -305,21 +338,22 @@ const Cajas: React.FC = () => {
                 startIcon={<AddIcon />}
                 onClick={handleNuevoBusqueda}
                 disabled={loading}
-                sx={{ textTransform: 'none', fontWeight: 600, height: '40px' }}
+                sx={{ width: { xs: '100%', md: 'auto' }, textTransform: 'none', fontWeight: 600, height: '40px' }}
               >
                 Limpiar
               </Button>
             </Box>
 
             {/* Tabla de resultados estilo unificado */}
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <Paper variant="outlined" sx={{ minWidth: 0, borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ 
                 p: 1.5, 
                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                 borderBottom: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1
+                gap: 1,
+                flexWrap: 'wrap'
               }}>
                 <DashboardIcon color="primary" fontSize="small" />
                 <Typography variant="subtitle2" fontWeight={700} color="primary.dark">
@@ -327,16 +361,31 @@ const Cajas: React.FC = () => {
                 </Typography>
               </Box>
 
-              <TableContainer sx={{ maxHeight: 500 }}>
-                <Table stickyHeader size="small">
+              <TableContainer
+                sx={{
+                  maxHeight: { xs: 360, sm: 440, md: 500 },
+                  overflowY: 'auto',
+                  overflowX: 'auto',
+                  scrollbarGutter: 'stable',
+                  '&::-webkit-scrollbar': { width: 8, height: 8 },
+                  '&::-webkit-scrollbar-thumb': {
+                    bgcolor: alpha(theme.palette.text.primary, 0.25),
+                    borderRadius: 4
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    bgcolor: alpha(theme.palette.text.primary, 0.05)
+                  }
+                }}
+              >
+                <Table stickyHeader size="small" sx={{ minWidth: 760 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>COD. CAJA</TableCell>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>DESCRIPCIÓN</TableCell>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>USUARIO</TableCell>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>NUM. CAJA</TableCell>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>ESTADO</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>ACCIONES</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>COD. CAJA</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>DESCRIPCIÓN</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>USUARIO</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>NUM. CAJA</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>ESTADO</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>ACCIONES</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -351,7 +400,7 @@ const Cajas: React.FC = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      cajas.map((caja) => (
+                      cajasPaginadas.map((caja) => (
                         <TableRow key={caja.codCaja} hover>
                           <TableCell sx={{ fontWeight: 600 }}>{caja.codCaja}</TableCell>
                           <TableCell>{caja.descripcion}</TableCell>
@@ -400,6 +449,30 @@ const Cajas: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              <TablePagination
+                component="div"
+                count={cajas.length}
+                page={currentPage}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                labelRowsPerPage="Filas por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                sx={{
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                  '& .MuiTablePagination-toolbar': {
+                    minHeight: 52,
+                    px: { xs: 1, sm: 2 },
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                    justifyContent: { xs: 'center', sm: 'flex-end' },
+                    gap: { xs: 0.5, sm: 1 }
+                  },
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    my: 0
+                  }
+                }}
+              />
             </Paper>
           </Stack>
         </Box>

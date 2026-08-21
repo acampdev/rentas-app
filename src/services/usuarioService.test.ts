@@ -16,17 +16,22 @@ describe('UsuarioService API contracts', () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({
       success: true,
       message: 'Operation Success!',
-      data: 'Usuario correcto.'
+      data: '26'
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(usuarioService.verificarSupervisorCajero('davila', '13579')).resolves.toBe(true);
+    await expect(usuarioService.verificarSupervisorCajero('davila', '13579')).resolves.toBe('26');
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://26.161.18.122:8085/api/usuario/verificarSupervisorCajero?username=davila&password=13579'
+      'http://26.161.18.122:8085/api/usuario/verificarSupervisorCajero'
     );
     const options = fetchMock.mock.calls[0][1] as RequestInit;
     expect(options.method).toBe('POST');
+    expect(JSON.parse(String(options.body))).toEqual({
+      username: 'davila',
+      password: '13579'
+    });
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('password');
     expect(new Headers(options.headers).get('Authorization')).toBe('Bearer token-cajero');
   });
 

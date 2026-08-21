@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, Typography, Box, Breadcrumbs, Link } from '@mui/material';
 import { NavigateNext } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import AsignacionCaja from '@/components/caja/AsignacionCaja';
+import LogeoSupervisor from '@/components/caja/modal/LogeoSupervisor';
 import MainLayout from '@/layout/MainLayout';
 
 const AsignacionCajaPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [codigoSupervisor, setCodigoSupervisor] = useState<string | null>(null);
+
   return (
     <MainLayout title="Asignación de Cajeros">
+      <LogeoSupervisor
+        open={codigoSupervisor === null}
+        onAuthenticated={setCodigoSupervisor}
+        onCancel={() => navigate(-1)}
+      />
       <Container maxWidth="xl">
         <Box sx={{ my: 3 }}>
           <Breadcrumbs
@@ -32,7 +42,9 @@ const AsignacionCajaPage: React.FC = () => {
           </Typography>
         </Box>
         
-        <AsignacionCaja />
+        {codigoSupervisor !== null && (
+          <AsignacionCaja codigoSupervisor={codigoSupervisor} />
+        )}
       </Container>
     </MainLayout>
   );
