@@ -43,7 +43,6 @@ const ArancelesPage: React.FC = () => {
     setBusqueda,
     crearArancel,
     actualizarArancel,
-    eliminarArancel,
     cargarAranceles,
     isCreating,
     isUpdating
@@ -112,20 +111,6 @@ const ArancelesPage: React.FC = () => {
     }
   };
 
-  const handleEliminar = async (id: number) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este arancel?')) {
-      try {
-        await eliminarArancel(id);
-        cargarAranceles();
-        handleNuevo();
-        setTabValue(1);
-      } catch (err) {
-        console.error('Error al eliminar:', err);
-      }
-    }
-  };
-
-
   return (
     <MainLayout title="Gestión de Aranceles">
       <Box sx={{ p: 3 }}>
@@ -154,7 +139,6 @@ const ArancelesPage: React.FC = () => {
               key={arancelSeleccionado?.codArancel || (arancelSeleccionado as any)?.id || 'nuevo'}
               initialData={arancelSeleccionado || undefined}
               onSubmit={handleGuardar}
-              onDelete={arancelSeleccionado ? () => handleEliminar(arancelSeleccionado.codArancel || (arancelSeleccionado as any).id) : undefined}
               onNuevo={handleNuevo}
               isSubmitting={isCreating || isUpdating}
             />
@@ -164,7 +148,6 @@ const ArancelesPage: React.FC = () => {
             <ArancelList 
               aranceles={aranceles as any as ArancelData[]}
               onEditArancel={handleSeleccionar}
-              onEliminar={handleEliminar}
               onSearch={handleSearch}
               loading={loading}
               onRefresh={() => cargarAranceles()}

@@ -152,7 +152,7 @@ export class AuthService {
 
   async register(data: RegisterData): Promise<RegisterResponse> {
     try {
-      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REGISTER), {
+      const responseData = await apiClient.request<Record<string, unknown>>(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REGISTER), {
         method: 'POST',
         auth: false,
         credentials: 'include',
@@ -160,24 +160,20 @@ export class AuthService {
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        if (response.status === 409) throw new Error('El usuario ya existe');
-        throw new Error(errorText || `Error ${response.status}`);
-      }
-
-      const responseData = await response.json();
-      const userData = responseData.data || responseData.user || responseData;
+      const rawUserData = responseData.data ?? responseData.user ?? responseData;
+      const userData = rawUserData && typeof rawUserData === 'object'
+        ? rawUserData as Record<string, unknown>
+        : {};
       NotificationService.success(`Usuario ${data.username} registrado correctamente`);
 
       return {
         success: true,
         user: {
-          id: userData.id || userData.codUsuario || '0',
-          username: userData.username || data.username,
-          nombrePersona: userData.nombrePersona || data.nombrePersona,
-          documento: userData.documento || data.documento,
-          role: userData.role || data.role
+          id: String(userData.id || userData.codUsuario || '0'),
+          username: String(userData.username || data.username),
+          nombrePersona: String(userData.nombrePersona || data.nombrePersona),
+          documento: String(userData.documento || data.documento),
+          role: String(userData.role || data.role)
         }
       };
     } catch (error) {
@@ -191,7 +187,7 @@ export class AuthService {
 
   async login(credentials: AuthCredentials): Promise<AuthResponse> {
     try {
-      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGIN), {
+      const data = await apiClient.request<AuthApiPayload>(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGIN), {
         method: 'POST',
         auth: false,
         credentials: 'include',
@@ -199,12 +195,6 @@ export class AuthService {
         body: JSON.stringify(credentials)
       });
 
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('Usuario o contraseña incorrectos');
-        throw new Error(`Error ${response.status}`);
-      }
-
-      const data = (await response.json()) as AuthApiPayload;
       const token = data.token || data.access_token || data.accessToken;
 
       if (!token) throw new Error('No se recibió token del servidor');
@@ -255,15 +245,12 @@ export class AuthService {
     if (!currentToken || !storedUser) return false;
 
     try {
-      const response = await apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REFRESH), {
+      const data = await apiClient.request<AuthApiPayload>(buildApiUrl(AUTH_CONFIG.ENDPOINTS.REFRESH), {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true)
       });
 
-      if (!response.ok) return false;
-
-      const data = (await response.json()) as AuthApiPayload;
       const refreshedToken = data.token || data.access_token || data.accessToken;
       if (!refreshedToken) return false;
 
@@ -291,7 +278,7 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    const logoutRequest = apiClient.fetch(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGOUT), {
+    const logoutRequest = apiClient.request<unknown>(buildApiUrl(AUTH_CONFIG.ENDPOINTS.LOGOUT), {
       method: 'POST',
       credentials: 'include',
       headers: getApiHeaders(true),
@@ -303,15 +290,14 @@ export class AuthService {
     this.clearLocalSession();
 
     try {
-      const response = await logoutRequest;
-
-      if (!response.ok && response.status !== 401 && response.status !== 403) {
-        const detail = await response.text();
-        throw new Error(detail || `Error ${response.status} al cerrar la sesión`);
-      }
+      await logoutRequest;
 
       NotificationService.info('Sesión cerrada correctamente');
     } catch (error) {
+      if (error instanceof ApiClientError && (error.statusCode === 401 || error.statusCode === 403)) {
+        NotificationService.info('Sesión cerrada correctamente');
+        return;
+      }
       console.warn('[AuthService] No se pudo confirmar el cierre de sesión en el servidor:', error);
       NotificationService.warning('La sesión local se cerró, pero el servidor no confirmó la operación');
     }

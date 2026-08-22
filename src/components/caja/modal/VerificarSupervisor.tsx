@@ -49,21 +49,15 @@ const VerificarSupervisor: React.FC<VerificarSupervisorProps> = ({
         try {
           const loginUrl = buildApiUrl('/auth/login');
           console.log('[VerificarSupervisor] Intentando login en:', loginUrl);
-          const loginRes = await apiClient.fetch(loginUrl, {
+          const loginData = await apiClient.request<Record<string, unknown>>(loginUrl, {
             method: 'POST',
             auth: false,
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: username.trim(), password: password.trim() })
           });
-          console.log('[VerificarSupervisor] Respuesta login status:', loginRes.status);
-          if (loginRes.ok) {
-            const loginData = await loginRes.json();
-            supervisorToken = loginData.token || loginData.access_token || loginData.accessToken || null;
-            console.log('[VerificarSupervisor] Token obtenido con éxito:', supervisorToken ? `${supervisorToken.substring(0, 15)}...` : 'null');
-          } else {
-            const errText = await loginRes.text();
-            console.error('[VerificarSupervisor] Error en respuesta de login:', errText);
-          }
+          const tokenValue = loginData.token ?? loginData.access_token ?? loginData.accessToken;
+          supervisorToken = typeof tokenValue === 'string' ? tokenValue : null;
+          console.log('[VerificarSupervisor] Token obtenido con éxito:', supervisorToken ? `${supervisorToken.substring(0, 15)}...` : 'null');
         } catch (loginErr) {
           console.error('[VerificarSupervisor] Excepción al obtener token de supervisor:', loginErr);
         }

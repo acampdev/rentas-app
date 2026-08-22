@@ -397,7 +397,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       console.log('📡 [DireccionService] Enviando POST a:', buildApiUrl(this.endpoint));
       console.log('📡 [DireccionService] Datos a enviar:', requestData);
 
-      const response = await apiClient.fetch(buildApiUrl(this.endpoint), {
+      const responseData = await apiClient.request<DireccionApiResponse | DireccionRaw | string | number>(buildApiUrl(this.endpoint), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -406,28 +406,8 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
         body: JSON.stringify(requestData)
       });
 
-      console.log('📡 [DireccionService] Response status:', response.status);
-      console.log('📡 [DireccionService] Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [DireccionService] Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-
-      // Try to parse response
-      let responseData: DireccionApiResponse | DireccionRaw | string | number;
-      const contentType = response.headers.get('content-type');
-      console.log('📡 [DireccionService] Content-Type:', contentType);
-
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-        console.log('📡 [DireccionService] Respuesta JSON parseada:', responseData);
-      } else {
-        // If response is not JSON, it might be a simple text or number (ID)
-        const responseText = await response.text();
-        console.log('📡 [DireccionService] Respuesta no JSON (texto):', responseText);
-
+      if (typeof responseData === 'string' || typeof responseData === 'number') {
+        const responseText = String(responseData);
         // If we get a number, it's likely the ID of the created direccion
         const possibleId = parseInt(responseText);
         if (!isNaN(possibleId) && possibleId > 0) {
@@ -446,23 +426,8 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
             loteFinal: datos.loteFinal,
             estado: 'ACTIVO'
           } as DireccionData;
-        } else {
-          // If it's just a success message or something else
-          console.log('✅ [DireccionService] Respuesta exitosa (no numérica):', responseText);
-          return {
-            id: Date.now(),
-            codigo: Date.now(),
-            codigoSector: datos.codigoSector,
-            codigoBarrio: datos.codigoBarrio,
-            codigoCalle: datos.codigoCalle,
-            cuadra: datos.cuadra?.toString(),
-            manzana: datos.manzana,
-            lado: datos.lado,
-            loteInicial: datos.loteInicial,
-            loteFinal: datos.loteFinal,
-            estado: 'ACTIVO'
-          } as DireccionData;
         }
+        throw new Error(responseText || 'El servidor no devolvió el identificador de la dirección creada');
       }
 
       // Handle different response structures
@@ -620,7 +585,7 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
       console.log('📡 [DireccionService] Tipo:', tieneBarrio ? 'CON BARRIO' : 'SIN BARRIO');
       console.log('📡 [DireccionService] Datos a enviar:', requestData);
 
-      const response = await apiClient.fetch(buildApiUrl(this.endpoint), {
+      const responseData = await apiClient.request<DireccionApiResponse | DireccionRaw | string | null>(buildApiUrl(this.endpoint), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -629,22 +594,8 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
         body: JSON.stringify(requestData)
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-
-      // Try to parse response
-      let responseData: DireccionApiResponse | DireccionRaw | null;
-      const contentType = response.headers.get('content-type');
-
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-      } else {
-        // If response is not JSON, assume success
-        const responseText = await response.text();
-        console.log('📡 [DireccionService] Respuesta no JSON:', responseText);
-
+      if (typeof responseData === 'string') {
+        console.log('📡 [DireccionService] Respuesta de texto:', responseData);
         return {
           id: id,
           codigo: id,
@@ -713,19 +664,6 @@ class DireccionService extends BaseApiService<DireccionData, CreateDireccionDTO,
     }
   }
   
-  /**
-   * Elimina una dirección (cambio de estado lógico)
-   */
-  async eliminarDireccion(id: number): Promise<void> {
-    try {
-      await this.actualizarDireccion(id, {
-        estado: 'INACTIVO'
-      });
-    } catch (error) {
-      console.error('Error al eliminar dirección:', error);
-      throw error;
-    }
-  }
 }
 
 export const direccionService = DireccionService.getInstance();

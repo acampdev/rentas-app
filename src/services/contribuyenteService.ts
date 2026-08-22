@@ -1,7 +1,7 @@
 // src/services/contribuyenteService.ts
 import BaseApiService from './BaseApiService';
 import { buildApiUrl } from '../config/api.unified.config';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Contribuyente
@@ -388,19 +388,9 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       const getUrl = `${url}?${queryParams.toString()}`;
       console.log('📡 [ContribuyenteService] GET URL general:', getUrl);
       
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<Record<string, unknown> | unknown[]>(getUrl, {
         method: 'GET'
       });
-      
-      console.log(`📥 [ContribuyenteService] Respuesta API general: ${response.status} ${response.statusText}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [ContribuyenteService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-      
-      const responseData = await response.json() as Record<string, unknown> | unknown[];
       console.log('✅ [ContribuyenteService] Datos obtenidos de API general:', responseData);
       
       let items: ContribuyenteRaw[] = [];
@@ -450,20 +440,9 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       const getUrl = `${url}?codigoContribuyente=${codContribuyenteValue}&codigoPersona=${codPersonaValue}`;
       console.log('📡 [ContribuyenteService] GET URL:', getUrl);
       
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<Record<string, unknown> | unknown[]>(getUrl, {
         method: 'GET'
       });
-      
-      console.log(`📥 [ContribuyenteService] Respuesta: ${response.status} ${response.statusText}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [ContribuyenteService] Error del servidor:', errorText);
-        if (response.status === 404) return null;
-        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
-      }
-      
-      const responseData = await response.json() as Record<string, unknown> | unknown[];
       console.log('✅ [ContribuyenteService] Detalle obtenido:', responseData);
 
       if (Array.isArray(responseData)) {
@@ -488,6 +467,7 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       return null;
       
     } catch (error) {
+      if (isApiNotFoundError(error)) return null;
       console.error('❌ [ContribuyenteService] Error obteniendo detalle del contribuyente:', error);
       throw error;
     }
@@ -508,20 +488,10 @@ class ContribuyenteService extends BaseApiService<ContribuyenteData, CreateContr
       const { codContribuyente: _codContribuyente, ...datosParaEnviar } = datos;
       console.log('📤 [ContribuyenteService] Enviando datos (codContribuyente omitido):', JSON.stringify(datosParaEnviar, null, 2));
       
-      const response = await apiClient.fetch(API_URL, {
+      const responseJson = await apiClient.request<Record<string, unknown>>(API_URL, {
         method: 'POST',
         body: JSON.stringify(datosParaEnviar)
       });
-      
-      console.log(`📥 [ContribuyenteService] Respuesta del servidor: ${response.status} ${response.statusText}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [ContribuyenteService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
-      }
-      
-      const responseJson = await response.json() as Record<string, unknown>;
       console.log('✅ [ContribuyenteService] Respuesta completa del API:', responseJson);
 
       const isNumeric = (val: any) => val !== null && val !== undefined && !isNaN(val) && !isNaN(parseFloat(val));

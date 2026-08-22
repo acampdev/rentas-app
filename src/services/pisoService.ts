@@ -1,5 +1,6 @@
 // src/services/pisoService.ts
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 import {  getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -315,7 +316,8 @@ class PisoService extends BaseApiService<PisoData, CreatePisoApiDTO, Partial<Cre
 
     } catch (error: unknown) {
       console.error('❌ [PisoService] Error consultando pisos:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

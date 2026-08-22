@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interface para los datos de UIT como vienen del API
@@ -134,7 +135,8 @@ class UITService extends BaseApiService<UITData, CreateUITDTO, UpdateUITDTO, UIT
       return this.normalizeData(arrayData);
     } catch (error) {
       console.error('Error al listar UITs:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

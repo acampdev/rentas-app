@@ -20,8 +20,7 @@ import {
   DialogActions,
   Button,
   CircularProgress,
-  Alert,
-  Grid
+  Alert
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -100,10 +99,11 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
           Buscar por Código de Resolución
         </Typography>
-        <Grid container spacing={3} alignItems="center">
-          <Grid size={{ xs: 12, sm: 8 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ width: { xs: '100%', sm: 240 }, flexShrink: 0 }}>
             <TextField
               fullWidth
+              size="small"
               label="Código Resolución Interés"
               type="number"
               value={searchCode}
@@ -116,8 +116,8 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
                 }
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: 240 }, flexShrink: 0 }}>
             <Button
               fullWidth
               variant="contained"
@@ -125,7 +125,7 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
               onClick={handleBuscar}
               disabled={!searchCode || loading}
               sx={{
-                height: 56,
+                height: 40,
                 bgcolor: '#3b82f6 !important',
                 color: 'white !important',
                 fontWeight: 'bold',
@@ -140,8 +140,8 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
             >
               Buscar
             </Button>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Paper>
 
       {/* Alertas */}

@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Sector
@@ -91,7 +92,8 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
       return this.normalizeData(data);
     } catch (error) {
       console.error('[SectorService] Error obteniendo todos:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -127,7 +129,8 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
       }));
     } catch (error) {
       console.error('[SectorService] Error obteniendo cuadrantes:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -143,7 +146,8 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
       }));
     } catch (error) {
       console.error('[SectorService] Error obteniendo unidades urbanas:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 }

@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
 import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -20,8 +20,8 @@ export interface LimpiezaPublicaRaw {
   codigo?: number | null;
   anio?: number | null;
   tasaMensual: string | number;
-  codZona?: number | null;
-  codCriterio?: number | null;
+  codZona?: number | string | null;
+  codCriterio?: number | string | null;
   nombreZona?: string | null;
   tasaAnual?: string | number;
   criterioUso?: string | null;
@@ -48,8 +48,16 @@ class LimpiezaPublicaService extends BaseApiService<LimpiezaPublicaData, CreateL
           codigo: item.codigo || item.id || null,
           anio: item.anio || item.año || null,
           tasaMensual: parseFloat(String(item.tasaMensual || item.montoMensual || 0)),
-          codZona: item.codZona || item.codigoZona || null,
-          codCriterio: item.codCriterio || item.codigoCriterio || null,
+          codZona: item.codZona !== undefined && item.codZona !== null
+            ? Number(item.codZona)
+            : item.codigoZona !== undefined && item.codigoZona !== null
+              ? Number(item.codigoZona)
+              : null,
+          codCriterio: item.codCriterio !== undefined && item.codCriterio !== null
+            ? Number(item.codCriterio)
+            : item.codigoCriterio !== undefined && item.codigoCriterio !== null
+              ? Number(item.codigoCriterio)
+              : null,
           nombreZona: item.nombreZona || item.zonaNombre || null,
           tasaAnual: parseFloat(String(item.tasaAnual || item.monto || item.totalAnual || item.tasaAnualizado || 0)),
           criterioUso: item.criterioUso || item.descripcionCriterio || null
@@ -72,38 +80,32 @@ class LimpiezaPublicaService extends BaseApiService<LimpiezaPublicaData, CreateL
     const suffix = tipo === 'otros' ? '/listarArbitrioLimpiezaPublicaOtros' : '';
     const url = `${baseUrl}${suffix}${anio ? `?anio=${anio}` : ''}`;
     
-    const response = await apiClient.fetch(url);
-    if (!response.ok) return [];
-    const res = await response.json() as any;
-    return this.normalizeData(res.data || res);
+    const res = await apiClient.request<unknown>(url);
+    return this.normalizeData(unwrapApiList<LimpiezaPublicaRaw>(res));
   }
 
   async crear(datos: CreateLimpiezaPublicaDTO, tipo: 'normal' | 'otros' = 'normal'): Promise<LimpiezaPublicaData> {
     const baseUrl = buildApiUrl(this.endpoint);
     const suffix = tipo === 'otros' ? '/insertarArbitrioLimpiezaPublicaOtros' : '';
     
-    const response = await apiClient.fetch(`${baseUrl}${suffix}`, {
+    const res = await apiClient.request<unknown>(`${baseUrl}${suffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<LimpiezaPublicaRaw>(res), 0);
   }
 
   async actualizar(datos: CreateLimpiezaPublicaDTO, tipo: 'normal' | 'otros' = 'normal'): Promise<LimpiezaPublicaData> {
     const baseUrl = buildApiUrl(this.endpoint);
     const suffix = tipo === 'otros' ? '/actualizarArbitrioLimpiezaPublicaOtros' : '';
     
-    const response = await apiClient.fetch(`${baseUrl}${suffix}`, {
+    const res = await apiClient.request<unknown>(`${baseUrl}${suffix}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<LimpiezaPublicaRaw>(res), 0);
   }
 }
 

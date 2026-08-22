@@ -26,6 +26,7 @@ import {
   Info as InfoIcon
 } from '@mui/icons-material';
 import { useContribuyentes } from '../../hooks/useContribuyentes';
+import { useAuthContext } from '../../context/AuthContext';
 import {
   createPdfHeader,
   createPdfFooter,
@@ -39,6 +40,7 @@ import {
 
 const ReportesContribuyentes: React.FC = () => {
   const theme = useTheme();
+  const { user } = useAuthContext();
   const { contribuyentes, loading, cargarContribuyentes } = useContribuyentes();
 
   const [filtros, setFiltros] = useState({
@@ -118,7 +120,7 @@ const ReportesContribuyentes: React.FC = () => {
               stack: [
                 createInfoRow('Filtro Tipo Persona', filtros.tipoPersona === 'todos' ? 'Todos' : filtros.tipoPersona === 'natural' ? 'Natural' : 'Jurídica'),
                 createInfoRow('Estado del sistema', 'Activo'),
-                createInfoRow('Usuario', 'Sistema')
+                createInfoRow('Usuario', user?.nombreCompleto || user?.username || 'Usuario autenticado')
               ]
             }
           ],
@@ -158,7 +160,7 @@ const ReportesContribuyentes: React.FC = () => {
 
     // Generar y descargar PDF
     generateAndDownloadPdf(docDefinition, 'reporte_contribuyentes');
-  }, [contribuyentes, filtros]);
+  }, [contribuyentes, filtros, user]);
 
   const stats = {
     naturales: contribuyentes.filter(c => c.tipoPersona === 'natural').length,

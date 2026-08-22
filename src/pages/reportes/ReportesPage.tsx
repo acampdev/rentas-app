@@ -1,5 +1,6 @@
 // src/pages/reportes/ReportesPage.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -51,7 +52,18 @@ function TabPanel(props: TabPanelProps) {
 
 const ReportesPage: React.FC = () => {
   const theme = useTheme();
-  const [tabValue, setTabValue] = useState(0);
+  const location = useLocation();
+  const getTabFromPath = (pathname: string) => {
+    if (pathname.endsWith('/predios')) return 1;
+    if (pathname.endsWith('/recaudacion')) return 2;
+    if (pathname.endsWith('/cuentas')) return 3;
+    return 0;
+  };
+  const [tabValue, setTabValue] = useState(() => getTabFromPath(location.pathname));
+
+  useEffect(() => {
+    setTabValue(getTabFromPath(location.pathname));
+  }, [location.pathname]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

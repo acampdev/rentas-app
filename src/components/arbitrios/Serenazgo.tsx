@@ -202,7 +202,7 @@ const Serenazgo: React.FC = () => {
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'flex-start' }}>
           {/* Campo para seleccionar año */}
           <Box sx={{ width: '100px', flexShrink: 0 }}>
             <TextField 
@@ -225,7 +225,7 @@ const Serenazgo: React.FC = () => {
               renderInput={(p) => <TextField {...p} label="Cuadrante" />}
             />
           </Box>
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Box sx={{ width: { xs: '100%', sm: '180px' }, flexShrink: 0 }}>
             <Autocomplete 
               fullWidth
               size="small" 

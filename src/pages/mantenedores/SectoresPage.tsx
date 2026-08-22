@@ -39,7 +39,6 @@ const SectoresPage: React.FC = () => {
     error,
     crearSector,
     actualizarSector,
-    eliminarSector,
     cargarSectores
   } = useSectores();
 
@@ -77,17 +76,6 @@ const SectoresPage: React.FC = () => {
       cargarSectores();
     } catch (err) {
       console.error('Error al guardar sector:', err);
-    }
-  };
-
-  const handleEliminar = async (id: number) => {
-    try {
-      await eliminarSector(id);
-      setTabValue(1);
-      handleNuevo();
-      cargarSectores();
-    } catch (err) {
-      console.error('Error al eliminar sector:', err);
     }
   };
 
@@ -129,7 +117,6 @@ const SectoresPage: React.FC = () => {
               selectedSector={sectorSeleccionado || undefined}
               onSelectSector={handleSeleccionar}
               onEdit={handleSeleccionar}
-              onEliminar={handleEliminar}
               loading={loading}
             />
           </TabPanel>

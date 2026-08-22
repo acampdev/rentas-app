@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { USER_ESTADOS } from '../../config/constants';
 import { buildApiUrl } from '../../config/api.unified.config';
-import apiClient from '../../services/apiClient';
+import apiClient, { unwrapApiList } from '../../services/apiClient';
 
 // Esquema de validacion con Zod
 const crearUserSchema = z.object({
@@ -62,10 +62,8 @@ const CrearUsers: React.FC = () => {
     queryKey: ['roles'],
     queryFn: async () => {
       const url = buildApiUrl('/api/rol');
-      const response = await apiClient.fetch(url);
-      if (!response.ok) throw new Error('Error al cargar roles');
-      const res = await response.json();
-      return Array.isArray(res) ? res : (res.data || []);
+      const res = await apiClient.request<unknown>(url);
+      return unwrapApiList<RolResponse>(res);
     }
   });
 

@@ -35,7 +35,6 @@ import {
   ReporteAlcabalaPage,
   CajaPage,
   ConsultasCaja,
-  ReportesCajaPage,
   RegistroTIMPage,
   VencimientoPage,
   InteresPage,
@@ -44,12 +43,10 @@ import {
   ConsultaFraccionamientoPage,
   AprobacionFraccionamientoPage,
   CronogramaPage,
-  ReportesFraccionamientoPage,
   ResolucionInteresPage,
   UsuariosPage,
   RolesPage,
   PermisosPage,
-  ConfiguracionPage,
   AuditoriaPage,
   RespaldoPage,
   CoactivaPage,
@@ -88,7 +85,6 @@ import {
   ADMIN_ROLES,
   CASH_OPERATION_ROLES,
   CASH_MANAGEMENT_ROLES,
-  CASH_REPORT_ROLES,
   AUDIT_ROLES,
   AUTHENTICATED_ROLES,
   TAX_READ_ROLES,
@@ -239,12 +235,6 @@ const AppRouter: React.FC = () => {
                       <ConsultasCaja />
                     </ProtectedRoute>
                   } />
-                  <Route path="/caja/reportes" element={
-                    <ProtectedRoute allowedRoles={CASH_REPORT_ROLES}>
-                      <ReportesCajaPage />
-                    </ProtectedRoute>
-                  } />
-
                   {/* Rutas de Cuenta Corriente */}
                   <Route path="/cuenta-corriente/cargo/nuevo" element={
                     <ProtectedRoute allowedRoles={TAX_OPERATION_ROLES}>
@@ -315,12 +305,6 @@ const AppRouter: React.FC = () => {
                       <CronogramaPage />
                     </ProtectedRoute>
                   } />
-                  <Route path="/fraccionamiento/reportes" element={
-                    <ProtectedRoute allowedRoles={TAX_READ_ROLES}>
-                      <ReportesFraccionamientoPage />
-                    </ProtectedRoute>
-                  } />
-
                   {/* Rutas coactiva */}
                   <Route path="/coactiva" element={
                     <ProtectedRoute allowedRoles={COACTIVE_COLLECTION_ROLES}>
@@ -451,7 +435,10 @@ const AppRouter: React.FC = () => {
                   } />
                   <Route path="/sistema/configuracion" element={
                     <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-                      <ConfiguracionPage />
+                      <ModuleUnavailablePage
+                        title="Configuración del sistema en restauración"
+                        description="Este módulo aún no está conectado de forma segura a la configuración real del sistema. No se muestran valores ficticios ni se habilitan acciones de guardado simuladas."
+                      />
                     </ProtectedRoute>
                   } />
                   <Route path="/sistema/auditoria" element={

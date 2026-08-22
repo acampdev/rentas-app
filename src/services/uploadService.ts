@@ -65,40 +65,21 @@ class UploadService {
       }
       
       // Upload simple sin progreso
-      const response = await apiClient.fetch(url, {
+      const rawResponse = await apiClient.request<UploadResponse | string>(url, {
         method: 'POST',
         body: formData
         // NO incluir headers, el navegador los configura automáticamente para FormData
       });
       
-      console.log('📡 [UploadService] Response Status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [UploadService] Error Response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
-      }
-      
-      // Intentar parsear la respuesta como JSON
-      let responseData: any;
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-        console.log('✅ [UploadService] Archivo subido (JSON):', responseData);
-      } else {
-        // Si no es JSON, tomar el texto de la respuesta
-        const responseText = await response.text();
-        console.log('✅ [UploadService] Archivo subido (Texto):', responseText);
-        // Crear una respuesta de éxito genérica
-        responseData = {
+      const responseData: UploadResponse = typeof rawResponse === 'string'
+        ? {
           success: true,
-          message: responseText || 'Archivo subido exitosamente',
+          message: rawResponse || 'Archivo subido exitosamente',
           data: {
             filename: file.name
           }
-        };
-      }
+        }
+        : rawResponse;
       
       if (responseData.success !== false) {
         NotificationService.success(`Archivo ${file.name} subido exitosamente`);

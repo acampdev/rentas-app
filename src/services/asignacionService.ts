@@ -145,26 +145,11 @@ class AsignacionService {
   }
 
   private async request(path: string, init: RequestInit): Promise<unknown> {
-    const response = await apiClient.fetch(buildApiUrl(path), {
+    return apiClient.request<unknown>(buildApiUrl(path), {
       ...init,
       credentials: 'include',
       headers: getApiHeaders(true)
     });
-
-    const responseText = await response.text();
-    let payload: unknown = responseText;
-    if (responseText) {
-      try {
-        payload = JSON.parse(responseText) as unknown;
-      } catch {
-        payload = responseText;
-      }
-    }
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(payload, `Error ${response.status}: ${response.statusText}`));
-    }
-    return payload;
   }
 
   async buscarAsignaciones(params: AsignacionQueryParams): Promise<AsignacionPredio[]> {

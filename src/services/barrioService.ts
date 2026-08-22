@@ -125,10 +125,6 @@ class BarrioService extends BaseApiService<BarrioData, CreateBarrioDTO, UpdateBa
     return this.normalizeOptions.normalizeItem(cleanData, 0);
   }
   
-  async eliminarBarrio(id: number): Promise<void> {
-    await this.actualizarBarrio(id, { estado: 'INACTIVO' });
-  }
-
   async obtenerPorSector(codSector: number): Promise<BarrioData[]> {
     try {
       const res = await this.makeRequest<{ data: BarrioRaw[] } | BarrioRaw[]>(`/listar?codSector=${codSector}`, {

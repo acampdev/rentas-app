@@ -1,7 +1,7 @@
 // src/services/calleApiService.ts - CORREGIDO CON ENDPOINTS CORRECTOS
 
 import BaseApiService, { QueryParams } from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError, unwrapApiData, unwrapApiList } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -86,11 +86,6 @@ export interface RawCalle {
   codUsuario?: number;
 }
 
-interface CalleApiResponse {
-  success: boolean;
-  data: RawCalle | RawCalle[];
-}
-
 /**
  * Servicio para gestión de calles/vías
  * GET: /api/via/listarVia
@@ -155,7 +150,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       const url = buildApiUrl('/api/via/listarVia');
       const queryParams = new URLSearchParams(searchParams as Record<string, string> || {});
       
-      const response = await apiClient.fetch(`${url}?${queryParams}`, {
+      const data = await apiClient.request<unknown>(`${url}?${queryParams}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -163,15 +158,8 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json() as CalleApiResponse | RawCalle[];
       console.log('📋 [CalleApiService] Raw API response:', data);
-      
-      const itemsRaw = Array.isArray(data) ? data : (data.data || []);
-      const items = (Array.isArray(itemsRaw) ? itemsRaw : [itemsRaw]) as RawCalle[];
+      const items = unwrapApiList<RawCalle>(data);
       console.log('📋 [CalleApiService] Items to normalize:', items);
       
       const normalized = this.normalizeData(items);
@@ -205,7 +193,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       // Usar endpoint insertarVias
       const url = buildApiUrl('/api/via/insertarVias');
 
-      const response = await apiClient.fetch(url, {
+      const rawResponse = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,15 +202,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
         body: JSON.stringify(payload)
       });
 
-      console.log('📡 Status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        throw new Error(`Error al crear vía: ${response.status}`);
-      }
-
-      const responseData = await response.json() as RawCalle;
+      const responseData = unwrapApiData<RawCalle>(rawResponse);
       console.log('✅ Respuesta del servidor:', responseData);
 
       // Crear objeto de respuesta
@@ -273,7 +253,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       // Usar endpoint actualizarVias
       const url = buildApiUrl('/api/via/actualizarVias');
 
-      const response = await apiClient.fetch(url, {
+      await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -281,14 +261,6 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
         },
         body: JSON.stringify(payload)
       });
-
-      console.log('📡 Status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        throw new Error(`Error al actualizar vía: ${response.status}`);
-      }
 
       // const responseData = await response.json();
       // console.log('✅ Respuesta del servidor:', responseData);
@@ -326,15 +298,13 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
   async buscarPorNombreVia(nombre: string): Promise<CalleData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/buscar`);
-      const response = await apiClient.fetch(`${url}?nombre=${encodeURIComponent(nombre)}`);
-      if (!response.ok) return [];
-      const res = await response.json() as CalleApiResponse | RawCalle[];
-      const itemsRaw = Array.isArray(res) ? res : (res.data || []);
-      const items = (Array.isArray(itemsRaw) ? itemsRaw : [itemsRaw]) as RawCalle[];
+      const res = await apiClient.request<unknown>(`${url}?nombre=${encodeURIComponent(nombre)}`);
+      const items = unwrapApiList<RawCalle>(res);
       return this.normalizeData(items);
     } catch (error) {
+      if (isApiNotFoundError(error)) return [];
       console.error('❌ [CalleApiService] Error buscando vías por nombre:', error);
-      return [];
+      throw error;
     }
   }
 
@@ -366,7 +336,7 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
       
       console.log('📡 URL para actualizar sector:', url);
       
-      const response = await apiClient.fetch(url, {
+      const rawResponse = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -376,22 +346,9 @@ class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCa
         body: JSON.stringify(data)
       });
       
-      console.log('📡 Status:', response.status);
-      const responseText = await response.text();
-      console.log('📡 Response:', responseText);
-      
-      if (!response.ok) {
-        throw new Error(`Error al actualizar sector: ${response.status} - ${responseText}`);
-      }
-      
-      // Manejar diferentes tipos de respuesta
-      let responseData: { success: boolean; message?: string };
-      try {
-        responseData = responseText ? JSON.parse(responseText) : { success: true };
-      } catch {
-        // Si no es JSON válido, asumir éxito si status es OK
-        responseData = { success: true, message: responseText };
-      }
+      const responseData = rawResponse && typeof rawResponse === 'object'
+        ? rawResponse as { success: boolean; message?: string }
+        : { success: true, message: typeof rawResponse === 'string' ? rawResponse : undefined };
       
       console.log('✅ Sector actualizado exitosamente');
       return responseData;

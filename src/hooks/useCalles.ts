@@ -284,7 +284,6 @@ export const useCalles = () => {
     cargarCalles: actions.loadItems,
     crearCalle,
     actualizarCalle,
-    eliminarCalle: actions.deleteItem,
     seleccionarCalle: actions.selectItem,
     buscarCalles: actions.search,
     limpiarSeleccion: actions.clearSelection,

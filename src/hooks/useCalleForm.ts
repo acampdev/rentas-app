@@ -43,7 +43,6 @@ export const useCalleForm = (initialData?: Partial<CalleFormData>, onSubmit?: (d
   const [tiposVia, setTiposVia] = useState<TipoViaOption[]>([]);
   const [loadingTiposVia, setLoadingTiposVia] = useState(false);
   const [errorTiposVia, setErrorTiposVia] = useState<string | null>(null);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openEditSectorDialog, setOpenEditSectorDialog] = useState(false);
   const [editingSector, setEditingSector] = useState<{id: number, nombre: string} | null>(null);
   const [newSectorName, setNewSectorName] = useState('');
@@ -91,10 +90,10 @@ export const useCalleForm = (initialData?: Partial<CalleFormData>, onSubmit?: (d
         formData.append('codConstante', '38');
         const baseUrl = buildApiUrl('/api/constante/listarConstantePadre');
         const url = `${baseUrl}?${formData.toString()}`;
-        const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-        const data = await response.json();
-        if (data.success && data.data && Array.isArray(data.data)) {
+        const data = await apiClient.request<{ data?: unknown[] }>(url, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (Array.isArray(data.data)) {
           setTiposVia(data.data.map((item: any) => ({
             codConstante: parseInt(item.codConstante),
             nombre: item.nombreCategoria || item.nombre,
@@ -153,8 +152,6 @@ export const useCalleForm = (initialData?: Partial<CalleFormData>, onSubmit?: (d
     barriosFiltrados,
     loadingBarrios,
     errorBarrios,
-    openDeleteDialog,
-    setOpenDeleteDialog,
     openEditSectorDialog,
     setOpenEditSectorDialog,
     editingSector,

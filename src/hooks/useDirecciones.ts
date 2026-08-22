@@ -59,14 +59,6 @@ export const useDirecciones = (
     },
   });
 
-  // Mutación: Eliminar
-  const mutationEliminar = useMutation({
-    mutationFn: (id: number) => direccionService.eliminarDireccion(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["direcciones"] });
-    },
-  });
-
   return {
     direcciones,
     loading,
@@ -77,7 +69,6 @@ export const useDirecciones = (
     cargarDirecciones,
     crearDireccion: mutationCrear.mutateAsync,
     actualizarDireccion: mutationActualizar.mutateAsync,
-    eliminarDireccion: mutationEliminar.mutateAsync,
 
     // Estados de mutación
     isCreating: mutationCrear.isPending,

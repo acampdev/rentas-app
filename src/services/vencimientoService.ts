@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiList } from './apiClient';
 import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -64,14 +64,12 @@ class VencimientoService extends BaseApiService<VencimientoData, CreateVencimien
 
   async crearVencimientos(anio: number): Promise<VencimientoData[]> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(url, {
+    const res = await apiClient.request<unknown>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ anio })
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeData(res.data || res);
+    return this.normalizeData(unwrapApiList<VencimientoRaw>(res));
   }
 }
 

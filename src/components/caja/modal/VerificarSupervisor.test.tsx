@@ -32,7 +32,7 @@ describe('VerificarSupervisor', () => {
     const onVerified = vi.fn();
     const onClose = vi.fn();
     mocks.verificarSupervisor.mockResolvedValue(true);
-    vi.spyOn(apiClient, 'fetch').mockResolvedValue(Response.json({ token: 'token-supervisor' }));
+    vi.spyOn(apiClient, 'request').mockResolvedValue({ token: 'token-supervisor' });
 
     render(<VerificarSupervisor open onClose={onClose} onVerified={onVerified} />);
     fireEvent.change(screen.getByLabelText(/Usuario/), { target: { value: '  supervisora  ' } });
@@ -41,7 +41,7 @@ describe('VerificarSupervisor', () => {
 
     await waitFor(() => expect(onVerified).toHaveBeenCalledWith('supervisora', 'token-supervisor'));
     expect(mocks.verificarSupervisor).toHaveBeenCalledWith('supervisora', 'clave');
-    expect(apiClient.fetch).toHaveBeenCalledWith(expect.stringContaining('/auth/login'), expect.objectContaining({
+    expect(apiClient.request).toHaveBeenCalledWith(expect.stringContaining('/auth/login'), expect.objectContaining({
       method: 'POST',
       auth: false
     }));

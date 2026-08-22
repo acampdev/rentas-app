@@ -123,4 +123,3 @@ export { default as SolicitudFraccionamiento } from './fraccionamiento/Solicitud
 export { default as ConsultaFraccionamiento } from './fraccionamiento/ConsultaFraccionamiento';
 export { default as AprobacionFraccionamiento } from './fraccionamiento/AprobacionFraccionamiento';
 export { default as Cronograma } from './fraccionamiento/Cronograma';
-export { default as ReportesFraccionamiento } from './fraccionamiento/ReportesFraccionamiento';

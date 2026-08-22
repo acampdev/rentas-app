@@ -44,7 +44,7 @@ describe('UsuarioService API contracts', () => {
 
     await expect(usuarioService.verificarSupervisorCajero('davila', 'incorrecta')).rejects.toMatchObject({
       statusCode: 200,
-      message: 'Operation Failed!'
+      message: 'Usuario incorrecto.'
     });
   });
 

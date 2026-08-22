@@ -34,7 +34,7 @@ const DireccionesPage: React.FC = () => {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [direccionSeleccionada, setDireccionSeleccionada] = useState<DireccionData | null>(null);
 
-  const { direcciones, loading, buscarDirecciones, crearDireccion, actualizarDireccion, eliminarDireccion } = useDirecciones();
+  const { direcciones, loading, buscarDirecciones, crearDireccion, actualizarDireccion } = useDirecciones();
 
   const breadcrumbItems: BreadcrumbItem[] = useMemo(() => [
     { label: 'Módulo', path: '/' },
@@ -55,12 +55,6 @@ const DireccionesPage: React.FC = () => {
       setTabValue(1);
     } catch (e) {
       console.error(e);
-    }
-  };
-
-  const handleEliminar = async (id: number) => {
-    if (window.confirm('¿Seguro que desea eliminar esta dirección?')) {
-      await eliminarDireccion(id);
     }
   };
 
@@ -112,7 +106,6 @@ const DireccionesPage: React.FC = () => {
                 direcciones={direcciones}
                 onSelectDireccion={handleSeleccionar}
                 onEditDireccion={handleSeleccionar}
-                onDeleteDireccion={handleEliminar}
                 loading={loading}
                 onSearch={(term) => buscarDirecciones({ parametrosBusqueda: term })}
               />

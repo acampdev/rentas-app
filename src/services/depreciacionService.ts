@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiData } from './apiClient';
 import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -98,26 +98,22 @@ class DepreciacionService extends BaseApiService<DepreciacionData, CreateDepreci
 
   async crear(datos: any): Promise<DepreciacionData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(url, {
+    const res = await apiClient.request<unknown>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<DepreciacionRaw>(res), 0);
   }
 
   async actualizar(datos: any): Promise<DepreciacionData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(url, {
+    const res = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<DepreciacionRaw>(res), 0);
   }
 }
 

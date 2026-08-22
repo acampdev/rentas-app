@@ -144,22 +144,6 @@ export const useSectores = () => {
     }
   });
 
-  // Mutación: Eliminar
-  const mutationEliminar = useMutation({
-    mutationFn: (id: number) => sectorService.delete(id),
-    onSuccess: (_, idEliminado) => {
-      queryClient.setQueryData(['sectores'], (oldSectores: Sector[] | undefined) => {
-        if (!oldSectores) return [];
-        return oldSectores.filter(s => s.id !== idEliminado);
-      });
-      queryClient.invalidateQueries({ queryKey: ['sectores'] });
-      NotificationService.success('Sector eliminado correctamente');
-    },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al eliminar sector');
-    }
-  });
-
   // Filtrado local memoizado
   const memoizedSectores = useMemo(() => {
     let result = [...rawSectores];
@@ -185,11 +169,9 @@ export const useSectores = () => {
     cargarSectores,
     crearSector: mutationCrear.mutateAsync,
     actualizarSector: mutationActualizar.mutateAsync,
-    eliminarSector: mutationEliminar.mutateAsync,
     
     // Estados de mutación
     isCreating: mutationCrear.isPending,
-    isUpdating: mutationActualizar.isPending,
-    isDeleting: mutationEliminar.isPending
+    isUpdating: mutationActualizar.isPending
   };
 };

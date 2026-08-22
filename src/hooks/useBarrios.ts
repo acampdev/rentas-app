@@ -73,22 +73,6 @@ export const useBarrios = () => {
     }
   });
 
-  // Mutación: Eliminar (Lógico)
-  const mutationEliminar = useMutation({
-    mutationFn: (id: number) => barrioService.eliminarBarrio(id),
-    onSuccess: (_, idEliminado) => {
-      queryClient.setQueryData(['barrios'], (oldBarrios: Barrio[] | undefined) => {
-        if (!oldBarrios) return [];
-        return oldBarrios.filter(b => b.id !== idEliminado);
-      });
-      queryClient.invalidateQueries({ queryKey: ['barrios'] });
-      NotificationService.success('Barrio desactivado correctamente');
-    },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al desactivar barrio');
-    }
-  });
-
   // Filtrado local memoizado
   const memoizedBarrios = useMemo(() => {
     let result = [...barrios];
@@ -115,11 +99,9 @@ export const useBarrios = () => {
     cargarBarrios,
     crearBarrio: mutationCrear.mutateAsync,
     actualizarBarrio: mutationActualizar.mutateAsync,
-    eliminarBarrio: mutationEliminar.mutateAsync,
     
     // Estados de mutación
     isCreating: mutationCrear.isPending,
-    isUpdating: mutationActualizar.isPending,
-    isDeleting: mutationEliminar.isPending
+    isUpdating: mutationActualizar.isPending
   };
 };

@@ -1,8 +1,8 @@
 // src/services/interesService.ts
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
-import { InteresData, CreateInteresDTO, UpdateInteresDTO } from '../models/Interes';
+import { InteresData, CreateInteresDTO, UpdateInteresDTO, InactivarInteresDTO } from '../models/Interes';
 
 /**
  * Servicio para gestión de Intereses
@@ -45,19 +45,16 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
     try {
       console.log(`🔍 [InteresService] Obteniendo intereses para año: ${anio}`);
       const url = buildApiUrl(`${this.endpoint}?anio=${anio}`);
-      const response = await apiClient.fetch(url);
-      
-      if (!response.ok) {
-        console.warn(`⚠️ [InteresService] HTTP error: ${response.status}`);
-        return [];
-      }
-      
-      const res = await response.json();
-      const items = res.data || res || [];
-      return this.normalizeData(Array.isArray(items) ? items : [items]);
+      const res = await apiClient.request<unknown>(url);
+      const payload = res && typeof res === 'object' && !Array.isArray(res) && 'data' in res
+        ? (res as { data?: unknown }).data
+        : res;
+      const items = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      return this.normalizeData(items as Record<string, unknown>[]);
     } catch (error) {
       console.error('❌ [InteresService] Error en obtenerPorAnio:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -93,20 +90,26 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
   }
 
   /**
-   * Elimina un interés (PUT /api/interes/eliminarInteres con body JSON)
+   * Inactiva un interés sin eliminarlo del sistema.
+   * PUT /api/interes/inactivarInteres
    */
-  async eliminarConBody(datos: UpdateInteresDTO): Promise<void> {
+  async inactivar(datos: InactivarInteresDTO): Promise<string> {
     try {
-      console.log('🗑️ [InteresService] Eliminando interés con body:', datos);
-      
-      await this.makeRequest('/eliminarInteres', {
+      const response = await this.makeRequest<{
+        message?: string;
+        mensaje?: string;
+        data?: unknown;
+      }>('/inactivarInteres', {
         method: 'PUT',
         body: JSON.stringify(datos)
       });
-      
-      console.log('✅ [InteresService] Interés eliminado exitosamente');
+
+      return response.mensaje
+        || response.message
+        || (typeof response.data === 'string' ? response.data : '')
+        || 'Interés inactivado correctamente';
     } catch (error: unknown) {
-      console.error('❌ [InteresService] Error al eliminar interés:', error);
+      console.error('❌ [InteresService] Error al inactivar interés:', error);
       throw error;
     }
   }

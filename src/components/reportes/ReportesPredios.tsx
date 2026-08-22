@@ -24,6 +24,7 @@ import {
   Info as InfoIcon
 } from '@mui/icons-material';
 import { useConsultaPredios } from '../../hooks/useConsultaPredios';
+import { useAuthContext } from '../../context/AuthContext';
 import {
   createPdfHeader,
   createPdfFooter,
@@ -37,6 +38,7 @@ import {
 
 const ReportesPredios: React.FC = () => {
   const theme = useTheme();
+  const { user } = useAuthContext();
   const { predios, loading, cargarPredios } = useConsultaPredios();
 
   const [filtros, setFiltros] = useState({
@@ -114,7 +116,7 @@ const ReportesPredios: React.FC = () => {
               stack: [
                 createInfoRow('Filtro Uso', filtros.uso === 'todos' ? 'Todos' : filtros.uso),
                 createInfoRow('Filtro Estado', filtros.estado === 'todos' ? 'Todos' : filtros.estado),
-                createInfoRow('Usuario', 'admin_user')
+                createInfoRow('Usuario', user?.nombreCompleto || user?.username || 'Usuario autenticado')
               ]
             }
           ],
@@ -139,7 +141,7 @@ const ReportesPredios: React.FC = () => {
     };
 
     generateAndDownloadPdf(docDefinition, 'reporte_predios_municipal');
-  }, [prediosFiltrados, stats, filtros]);
+  }, [prediosFiltrados, stats, filtros, user]);
 
   return (
     <Stack spacing={4}>

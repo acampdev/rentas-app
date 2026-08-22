@@ -106,4 +106,19 @@ describe('ApiClient', () => {
       data: payload
     });
   });
+
+  it('uses the real data detail when the API only returns a generic failure message', async () => {
+    const payload = {
+      success: false,
+      message: 'Operation Failed!',
+      data: 'No existe deuda pendiente para el periodo indicado.'
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(payload)));
+
+    await expect(apiClient.request('/api/prueba')).rejects.toMatchObject<ApiClientError>({
+      statusCode: 200,
+      message: 'No existe deuda pendiente para el periodo indicado.',
+      data: payload
+    });
+  });
 });

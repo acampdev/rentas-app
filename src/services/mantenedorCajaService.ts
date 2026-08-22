@@ -1,6 +1,6 @@
 // src/services/mantenedorCajaService.ts
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiList } from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -32,11 +32,32 @@ export interface ListarMantenedorCajaParams {
   codUsuario?: number;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const hasPositiveIdentifier = (value: unknown): boolean => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0;
+};
+
+const assertMutationAccepted = (payload: unknown, operation: string): void => {
+  if (!isRecord(payload)) {
+    throw new Error(`El servidor no confirmó la operación de ${operation} la caja.`);
+  }
+
+  if (payload.success === true) return;
+
+  const result = isRecord(payload.data) ? payload.data : payload;
+  if (hasPositiveIdentifier(result.codCaja)) return;
+
+  throw new Error(`El servidor devolvió una respuesta incompleta al ${operation} la caja.`);
+};
+
 /**
  * Servicio para gestion de mantenedor de cajas
  *
  * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
- * Todos los metodos (GET, POST, PUT) funcionan sin token
+ * Los métodos GET, POST y PUT requieren el Bearer de la sesión activa.
  */
 class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMantenedorCajaDTO, UpdateMantenedorCajaDTO> {
   private static instance: MantenedorCajaService;
@@ -99,33 +120,13 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<unknown>(getUrl, {
         method: 'GET',
         headers
       });
 
-      console.log(`[MantenedorCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[MantenedorCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[MantenedorCajaService] Datos obtenidos:', responseData);
-
-      // Procesar respuesta - puede ser un array directo o wrapped
-      let items = [];
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else {
-        items = [responseData];
-      }
-
-      return this.normalizeData(items);
+      return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
       console.error('[MantenedorCajaService] Error listando cajas:', error);
@@ -139,7 +140,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Body: {descripcion}
    * Requiere autenticación Bearer.
    */
-  async insertar(datos: CreateMantenedorCajaDTO): Promise<MantenedorCajaData> {
+  async insertar(datos: CreateMantenedorCajaDTO): Promise<void> {
     try {
       console.log('[MantenedorCajaService] Insertando caja:', datos);
 
@@ -154,38 +155,14 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[MantenedorCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[MantenedorCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[MantenedorCajaService] Caja creada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      let created = responseData.data || responseData;
-      if (typeof created === 'string' || !created || typeof created !== 'object') {
-        created = {
-          codCaja: 999, // ID ficticio no-cero para pasar la validación
-          descripcion: datos.descripcion,
-          usuario: null,
-          numcaja: '',
-          estado: 'DISPONIBLE'
-        };
-      }
-      
-      const normalized = this.normalizeData([created])[0];
-
-      return normalized;
+      assertMutationAccepted(responseData, 'crear');
 
     } catch (error: unknown) {
       console.error('[MantenedorCajaService] Error al insertar caja:', error);
@@ -199,7 +176,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Body: {codCaja, descripcion}
    * Requiere autenticación Bearer.
    */
-  async actualizar(datos: UpdateMantenedorCajaDTO): Promise<MantenedorCajaData> {
+  async actualizar(datos: UpdateMantenedorCajaDTO): Promise<void> {
     try {
       console.log('[MantenedorCajaService] Actualizando caja:', datos);
 
@@ -214,38 +191,14 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[MantenedorCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[MantenedorCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[MantenedorCajaService] Caja actualizada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      let updated = responseData.data || responseData;
-      if (typeof updated === 'string' || !updated || typeof updated !== 'object') {
-        updated = {
-          codCaja: datos.codCaja,
-          descripcion: datos.descripcion,
-          usuario: null,
-          numcaja: '',
-          estado: 'DISPONIBLE'
-        };
-      }
-      
-      const normalized = this.normalizeData([updated])[0];
-
-      return normalized;
+      assertMutationAccepted(responseData, 'actualizar');
 
     } catch (error: unknown) {
       console.error('[MantenedorCajaService] Error al actualizar caja:', error);
@@ -274,20 +227,13 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[MantenedorCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[MantenedorCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
+      assertMutationAccepted(responseData, 'eliminar');
       console.log('[MantenedorCajaService] Caja eliminada exitosamente');
 
     } catch (error: unknown) {

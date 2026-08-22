@@ -11,6 +11,19 @@ import type {
   CronogramaContribuyente
 } from '../types/fraccionamiento.types';
 
+const unwrapData = <T>(payload: unknown): T => {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+};
+
+const unwrapList = <T>(payload: unknown): T[] => {
+  const data = unwrapData<unknown>(payload);
+  if (Array.isArray(data)) return data as T[];
+  return data === null || data === undefined ? [] : [data as T];
+};
+
 /**
  * Servicio para gestión de Fraccionamientos
  * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
@@ -35,23 +48,14 @@ class FraccionamientoService {
     console.log('📦 [FraccionamientoService] Request Payload:', JSON.stringify(data, null, 2));
 
     try {
-      const response = await apiClient.fetch(url, {
+      const result = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(data)
       });
 
-      console.log(`📡 [FraccionamientoService] Response Status: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const text = await response.text();
-        console.error(`❌ [FraccionamientoService] Response Error Body:`, text);
-        throw new Error(`Error ${response.status}: ${text || response.statusText}`);
-      }
-
-      const result = await response.json();
       console.log('✅ [FraccionamientoService] Response Success Data:', result);
-      return result.data || result;
+      return unwrapData<Fraccionamiento>(result);
     } catch (err) {
       console.error('💥 [FraccionamientoService] Fetch exception:', err);
       throw err;
@@ -65,65 +69,55 @@ class FraccionamientoService {
     if (filtros?.estado) params.estado = String(filtros.estado);
 
     const url = buildApiUrl(this.endpoint, params);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : result.data || [];
+    return unwrapList<Fraccionamiento>(result);
   }
 
   async obtenerSolicitudPorId(id: number): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   async obtenerSolicitudPorCodigo(codigo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/codigo/${codigo}`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   // Aprobación
   async aprobarSolicitud(id: number, data: AprobacionFraccionamientoForm): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/aprobar`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   async rechazarSolicitud(id: number, motivo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/rechazar`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ motivoRechazo: motivo })
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   async obtenerDeudasContribuyente(codigoContribuyente: string): Promise<DeudaFraccionamiento[]> {
@@ -135,34 +129,29 @@ class FraccionamientoService {
 
   async agregarDeuda(idFraccionamiento: number, deuda: DeudaFraccionamiento): Promise<DeudaFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/deudas`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(deuda)
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<DeudaFraccionamiento>(result);
   }
 
   async eliminarDeuda(idFraccionamiento: number, idDeuda: number): Promise<void> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/deudas/${idDeuda}`);
-    const response = await apiClient.fetch(url, { method: 'PUT' });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
+    await apiClient.request<unknown>(url, { method: 'PUT' });
   }
 
   // Cronograma
   async generarCronograma(idFraccionamiento: number): Promise<CuotaFraccionamiento[]> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/cronograma/generar`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'POST',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : result.data || [];
+    return unwrapList<CuotaFraccionamiento>(result);
   }
 
   async obtenerCronograma(anio: number, codResolucion: number): Promise<CuotaFraccionamiento[]> {
@@ -170,129 +159,110 @@ class FraccionamientoService {
       anio: String(anio),
       codResolucion: String(codResolucion)
     });
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : result.data || [];
+    return unwrapList<CuotaFraccionamiento>(result);
   }
 
   async registrarPagoCuota(idFraccionamiento: number, idCuota: number, monto: number): Promise<CuotaFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${idFraccionamiento}/cuotas/${idCuota}/pagar`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ monto })
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<CuotaFraccionamiento>(result);
   }
 
   // Búsqueda y filtros
   async buscarPorContribuyente(codigoContribuyente: string): Promise<Fraccionamiento[]> {
     const url = buildApiUrl(this.endpoint, { codContribuyente: codigoContribuyente });
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : result.data || [];
+    return unwrapList<Fraccionamiento>(result);
   }
 
   async buscarPorEstado(estado: string): Promise<Fraccionamiento[]> {
     const url = buildApiUrl(`${this.endpoint}/estado/${estado}`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return Array.isArray(result) ? result : result.data || [];
+    return unwrapList<Fraccionamiento>(result);
   }
 
   // Estadísticas
   async obtenerEstadisticas(): Promise<EstadisticasFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/estadisticas`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<EstadisticasFraccionamiento>(result);
   }
 
   async obtenerEstadisticasPorPeriodo(fechaInicio: string, fechaFin: string): Promise<EstadisticasFraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/estadisticas/periodo`, { fechaInicio, fechaFin });
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<EstadisticasFraccionamiento>(result);
   }
 
   // Cancelación
   async cancelarFraccionamiento(id: number, motivo: string): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}/cancelar`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ motivo })
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   // Actualización
   async actualizarFraccionamiento(id: number, data: Partial<Fraccionamiento>): Promise<Fraccionamiento> {
     const url = buildApiUrl(`${this.endpoint}/${id}`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.data || result;
+    return unwrapData<Fraccionamiento>(result);
   }
 
   // Validación
   async validarMontoMinimo(monto: number): Promise<boolean> {
     const url = buildApiUrl(`${this.endpoint}/validar/monto-minimo`, { monto: monto.toString() });
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = await response.json();
-    return result.valido || false;
+    return unwrapData<{ valido?: boolean }>(result).valido || false;
   }
 
   async validarDeudaContribuyente(codigoContribuyente: string): Promise<{ valido: boolean; mensaje?: string }> {
     const url = buildApiUrl(`${this.endpoint}/validar/deuda/${codigoContribuyente}`);
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    return await response.json();
+    return unwrapData<{ valido: boolean; mensaje?: string }>(result);
   }
 
   // Reportes
@@ -325,19 +295,10 @@ class FraccionamientoService {
     const url = buildApiUrl('/api/fraccionamiento/listarCronogramaContri', {
       codContribuyente: String(codContribuyente)
     });
-    const response = await apiClient.fetch(url, {
+    const result = await apiClient.request<unknown>(url, {
       method: 'GET'
     });
-
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const result = (await response.json()) as { data?: unknown } | unknown[];
-    const items = Array.isArray(result)
-      ? result
-      : Array.isArray(result.data)
-        ? result.data
-        : result.data
-          ? [result.data]
-          : [];
+    const items = unwrapList<unknown>(result);
 
     return items.map((item) => {
       const raw = item as Record<string, unknown>;

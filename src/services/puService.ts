@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError, unwrapApiList } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -182,23 +182,14 @@ class PUService extends BaseApiService<PUData, void, void> {
       queryParams.append('codContribuyente', params.codContribuyente);
       queryParams.append('codPredio', params.codPredio);
 
-      const response = await apiClient.fetch(`${url}?${queryParams.toString()}`);
-      if (!response.ok) {
-        console.warn(`[PUService] Error HTTP ${response.status} al consultar PU`);
-        return [];
-      }
-      
-      const res = await response.json() as any;
-      const items = res.data || (Array.isArray(res) ? res : [res]);
-
-      if (!Array.isArray(items) && items.codPredio) {
-        return [this.normalizeOptions.normalizeItem(items, 0)];
-      }
+      const payload = await apiClient.request<unknown>(`${url}?${queryParams.toString()}`);
+      const items = unwrapApiList<Record<string, unknown>>(payload);
 
       return this.normalizeData(Array.isArray(items) ? items : []);
     } catch (error) {
+      if (isApiNotFoundError(error)) return [];
       console.warn('[PUService] Error al buscar PU:', error);
-      return [];
+      throw error;
     }
   }
 }

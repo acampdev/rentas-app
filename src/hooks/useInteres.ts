@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { interesService } from '../services/interesService';
-import { CreateInteresDTO, UpdateInteresDTO } from '../models/Interes';
+import { CreateInteresDTO, UpdateInteresDTO, InactivarInteresDTO } from '../models/Interes';
 import { NotificationService } from '../components/utils/Notification';
 
 /**
@@ -48,15 +48,15 @@ export const useInteres = (anioInicial: number = new Date().getFullYear()) => {
     }
   });
 
-  // Mutación: Eliminar interés (PUT con body JSON)
-  const mutationEliminar = useMutation({
-    mutationFn: (datos: UpdateInteresDTO) => interesService.eliminarConBody(datos),
-    onSuccess: () => {
+  // Mutación: Inactivar interés
+  const mutationInactivar = useMutation({
+    mutationFn: (datos: InactivarInteresDTO) => interesService.inactivar(datos),
+    onSuccess: (mensaje) => {
       queryClient.invalidateQueries({ queryKey: ['intereses', anio] });
-      NotificationService.success('Interés eliminado correctamente');
+      NotificationService.success(mensaje);
     },
-    onError: (err: any) => {
-      NotificationService.error(err.message || 'Error al eliminar el interés');
+    onError: (err: Error) => {
+      NotificationService.error(err.message || 'Error al inactivar el interés');
     }
   });
 
@@ -71,12 +71,12 @@ export const useInteres = (anioInicial: number = new Date().getFullYear()) => {
     buscar: () => refetch(),
     crearInteres: (datos: CreateInteresDTO) => mutationCrear.mutateAsync(datos),
     actualizarInteres: (datos: UpdateInteresDTO) => mutationActualizar.mutateAsync(datos),
-    eliminarInteres: (datos: UpdateInteresDTO) => mutationEliminar.mutateAsync(datos),
+    inactivarInteres: (datos: InactivarInteresDTO) => mutationInactivar.mutateAsync(datos),
 
     // Estados de carga
     isCreating: mutationCrear.isPending,
     isUpdating: mutationActualizar.isPending,
-    isDeleting: mutationEliminar.isPending
+    isInactivating: mutationInactivar.isPending
   };
 };
 

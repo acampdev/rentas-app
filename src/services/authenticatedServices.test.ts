@@ -37,6 +37,25 @@ describe('servicios operativos autenticados', () => {
     expectAuthenticatedRequest(fetchMock, 'POST');
   });
 
+  it('actualiza una vía con PUT y envía su codVia', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await calleService.update(25, {
+      nombreVia: 'Los Laureles Actualizada',
+      codTipoVia: '0101',
+      codBarrio: 2,
+      codSector: 3
+    });
+
+    expectAuthenticatedRequest(fetchMock, 'PUT');
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/via/actualizarVias');
+    expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toMatchObject({
+      codVia: 25,
+      nombreVia: 'Los Laureles Actualizada'
+    });
+  });
+
   it('crea depreciación mediante el cliente HTTP central', async () => {
     const payload = {
       anio: '2026',

@@ -29,8 +29,7 @@ import {
   Clear as ClearIcon,
   CloudOff as CloudOffIcon,
   Edit as EditIcon,
-  Business as BusinessIcon,
-  Delete as DeleteIcon
+  Business as BusinessIcon
 } from '@mui/icons-material';
 import { Sector } from '../../models/Sector';
 
@@ -39,7 +38,6 @@ interface SectorListProps {
   onSelectSector: (sector: Sector) => void; // Callback al seleccionar un sector
   onEdit?: (sector: Sector) => void; // Callback para editar un sector
   isOfflineMode?: boolean; // Indica si los datos son locales
-  onEliminar?: (id: number) => void; // Callback para eliminar un sector
   loading?: boolean; // Indica si está cargando
   onSearch?: (term: string) => void; // Callback para búsqueda externa
   searchTerm?: string; // Término de búsqueda externo
@@ -68,7 +66,6 @@ const SectorList: React.FC<SectorListProps> = ({
   sectores, 
   onSelectSector,
   onEdit,
-  onEliminar,
   isOfflineMode = false,
   loading = false,
   onSearch,
@@ -560,35 +557,6 @@ const SectorList: React.FC<SectorListProps> = ({
                               </IconButton>
                             </Tooltip>
 
-                            {onEliminar && (
-                              <Tooltip title="Eliminar sector" arrow>
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  disabled={loading}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (window.confirm(`¿Está seguro de eliminar el sector "${sector.nombre}"?`)) {
-                                      onEliminar(sector.id);
-                                    }
-                                  }}
-                                  sx={{
-                                    bgcolor: alpha(theme.palette.error.main, 0.08),
-                                    '&:hover': {
-                                      bgcolor: alpha(theme.palette.error.main, 0.16),
-                                      transform: 'scale(1.1)',
-                                    },
-                                    '&:disabled': {
-                                      bgcolor: alpha(theme.palette.grey[500], 0.08),
-                                    },
-                                    transition: 'all 0.2s ease-in-out'
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
                           </Stack>
                         </TableCell>
                       </TableRow>

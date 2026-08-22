@@ -72,6 +72,13 @@ export interface ArancelResponse {
   totalRegistros: number | null;
 }
 
+interface ArancelMutationResponse {
+  success?: boolean;
+  message?: string;
+  mensaje?: string;
+  data?: ArancelRaw | ArancelRaw[] | string | null;
+}
+
 class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, UpdateArancelDTO, ArancelRaw> {
   private static instance: ArancelService;
   
@@ -118,6 +125,28 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
       ArancelService.instance = new ArancelService();
     }
     return ArancelService.instance;
+  }
+
+  /**
+   * POST y PUT pueden devolver el registro creado/actualizado o solamente una
+   * confirmación de la operación. Solo normalizamos cuando existe un arancel.
+   */
+  private normalizeMutationResult(
+    response: ArancelRaw | ArancelMutationResponse
+  ): ArancelData | null {
+    const payload = 'success' in response ? response.data : response;
+    const candidate = Array.isArray(payload) ? payload[0] : payload;
+
+    if (
+      !candidate ||
+      typeof candidate !== 'object' ||
+      !('anio' in candidate) ||
+      !('codDireccion' in candidate)
+    ) {
+      return null;
+    }
+
+    return this.normalizeData([candidate as ArancelRaw])[0] ?? null;
   }
 
   /**
@@ -385,7 +414,7 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
   /**
    * Crea un nuevo arancel usando POST autenticado con JSON.
    */
-  async crearArancelSinAuth(datos: CrearArancelApiDTO): Promise<ArancelData> {
+  async crearArancelSinAuth(datos: CrearArancelApiDTO): Promise<ArancelData | null> {
     try {
       console.log('➕ [ArancelService] Creando arancel con JSON:', datos);
       
@@ -403,15 +432,14 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
         codUsuario: Number(datos.codUsuario)
       };
 
-      const responseData = await this.makeRequest<ArancelRaw>('', {
+      const responseData = await this.makeRequest<ArancelRaw | ArancelMutationResponse>('', {
         method: 'POST',
         body: JSON.stringify(datosParaEnviar)
       });
       
       console.log('✅ [ArancelService] Arancel creado exitosamente:', responseData);
       
-      // Normalizar la respuesta
-      const arancelCreado = this.normalizeData([responseData])[0];
+      const arancelCreado = this.normalizeMutationResult(responseData);
 
       console.log('✅ [ArancelService] Arancel normalizado:', arancelCreado);
       return arancelCreado;
@@ -430,7 +458,7 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
     codDireccion: number;
     costo: number;
     codUsuario?: number;
-  }): Promise<ArancelData> {
+  }): Promise<ArancelData | null> {
     const arancelCompleto: CrearArancelApiDTO = {
       codArancel: null,
       anio: datos.anio,
@@ -480,7 +508,7 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
   /**
    * Actualiza un arancel usando PUT autenticado con JSON.
    */
-  async actualizarArancelSinAuth(datos: ActualizarArancelApiDTO): Promise<ArancelData> {
+  async actualizarArancelSinAuth(datos: ActualizarArancelApiDTO): Promise<ArancelData | null> {
     try {
       console.log('📝 [ArancelService] Actualizando arancel con JSON:', datos);
       
@@ -503,14 +531,14 @@ class ArancelService extends BaseApiService<ArancelData, CreateArancelDTO, Updat
         codUsuario: Number(datos.codUsuario)
       };
 
-      const responseData = await this.makeRequest<ArancelRaw>('', {
+      const responseData = await this.makeRequest<ArancelRaw | ArancelMutationResponse>('', {
         method: 'PUT',
         body: JSON.stringify(datosParaEnviar)
       });
       
       console.log('✅ [ArancelService] Arancel actualizado exitosamente:', responseData);
 
-      const arancelActualizado = this.normalizeData([responseData])[0];
+      const arancelActualizado = this.normalizeMutationResult(responseData);
 
       console.log('✅ [ArancelService] Arancel actualizado normalizado:', arancelActualizado);
       return arancelActualizado;

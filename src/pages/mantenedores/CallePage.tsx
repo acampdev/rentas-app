@@ -25,6 +25,7 @@ import { useCalles } from '../../hooks/useCalles';
 import { useBarrios } from '../../hooks/useBarrios';
 import { useSectores } from '../../hooks/useSectores';
 import { Calle } from '../../models/Calle';
+import { CalleData } from '../../services/calleApiService';
 
 const TabPanel: React.FC<{ children?: React.ReactNode; index: number; value: number }> = ({ children, value, index }) => (
   <div role="tabpanel" hidden={value !== index}>{value === index && <Box sx={{ py: 3 }}>{children}</Box>}</div>
@@ -40,8 +41,10 @@ const CallePage: React.FC = () => {
     loading,
     error,
     guardarCalle,
-    eliminarCalle,
-    cargarCalles
+    cargarCalles,
+    seleccionarCalle,
+    limpiarSeleccion,
+    setModoEdicion
   } = useCalles();
 
   const { barrios } = useBarrios();
@@ -54,32 +57,41 @@ const CallePage: React.FC = () => {
     { label: 'Vías', active: true }
   ];
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
+  const handleSeleccionar = (calle: Calle) => {
+    const codVia = Number(calle.codVia ?? calle.id);
+    if (!Number.isInteger(codVia) || codVia <= 0) {
+      console.error('[CallePage] La vía seleccionada no tiene un código válido:', calle);
+      return;
+    }
 
-  const handleSeleccionar = (calle: any) => {
     setCalleSeleccionada(calle);
+    seleccionarCalle({ ...calle, codVia, codigo: codVia } as CalleData);
+    setModoEdicion(true);
     setTabValue(0);
   };
 
   const handleNuevo = () => {
     setCalleSeleccionada(null);
+    limpiarSeleccion();
+    setModoEdicion(false);
+  };
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    if (newValue === 0 && tabValue !== 0) {
+      handleNuevo();
+    }
+    setTabValue(newValue);
   };
 
   const handleGuardar = async (data: any) => {
-    await guardarCalle(data);
+    const resultado = await guardarCalle(data);
+    if (!resultado) return;
+    // El PUT solo confirma los códigos y no devuelve las descripciones
+    // (tipo de vía, barrio y sector). Recargar evita reemplazar la fila por
+    // una versión incompleta como "las perdices" en vez de "CALLE las perdices".
+    await cargarCalles();
     setTabValue(1);
     handleNuevo();
-  };
-
-  const handleEliminar = async () => {
-    if (calleSeleccionada) {
-      const id = (calleSeleccionada as any).id || (calleSeleccionada as any).codVia;
-      await eliminarCalle(id);
-      setTabValue(1);
-      handleNuevo();
-    }
   };
 
   return (
@@ -109,7 +121,6 @@ const CallePage: React.FC = () => {
             <CalleForm 
               initialData={calleSeleccionada || undefined}
               onSubmit={handleGuardar}
-              onDelete={calleSeleccionada ? handleEliminar : undefined}
               onNuevo={handleNuevo}
               isSubmitting={loading}
               barrios={barrios}

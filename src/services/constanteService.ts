@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError } from './apiClient';
 import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -9,6 +9,16 @@ export interface ConstanteData {
   codConstante: string;
   nombreCategoria: string;
 }
+
+const toApiList = <T>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) return payload as T[];
+  if (!payload || typeof payload !== 'object') return [];
+
+  const data = (payload as { data?: unknown }).data;
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object') return [data as T];
+  return [payload as T];
+};
 
 /**
  * Interface para los datos de ruta
@@ -215,14 +225,13 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarConstantesPorPadre(codConstante: string): Promise<ConstanteData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarConstantePadre?codConstante=${codConstante}`);
-      const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const res = await response.json();
-      const items = (res.data || (Array.isArray(res) ? res : [res])) as ConstanteRaw[];
+      const res = await apiClient.request<unknown>(url, { headers: { 'Accept': 'application/json' } });
+      const items = toApiList<ConstanteRaw>(res);
       return this.normalizeData(items);
     } catch (error) {
       console.error(`[ConstanteService] Error padre ${codConstante}:`, error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -232,14 +241,13 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async listarConstantesPorHijo(codConstante: string): Promise<ConstanteData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarConstanteHijo?codConstante=${codConstante}`);
-      const response = await apiClient.fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const res = await response.json();
-      const items = (res.data || (Array.isArray(res) ? res : [res])) as ConstanteRaw[];
+      const res = await apiClient.request<unknown>(url, { headers: { 'Accept': 'application/json' } });
+      const items = toApiList<ConstanteRaw>(res);
       return this.normalizeData(items);
     } catch (error) {
       console.error(`[ConstanteService] Error hijo ${codConstante}:`, error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -280,50 +288,47 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
   async obtenerRutas(): Promise<RutaData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarRuta`);
-      const response = await apiClient.fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : data.data || []) as RutaRaw[];
+      const data = await apiClient.request<unknown>(url);
+      const items = toApiList<RutaRaw>(data);
       return items.map((i: RutaRaw) => ({
         codigo: i.codigo || 0,
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
   async listarGrupoUso(): Promise<GrupoUsoData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarGrupoUso`);
-      const response = await apiClient.fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : data.data || []) as GrupoUsoRaw[];
+      const data = await apiClient.request<unknown>(url);
+      const items = toApiList<GrupoUsoRaw>(data);
       return items.map((i: GrupoUsoRaw) => ({
         codigo: i.codigo || 0,
         descripcion: i.descripcion || ''
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
   async listarUbicacionAreaVerde(): Promise<UbicacionAreaVerdeData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarUbicacionAreaVerde`);
-      const response = await apiClient.fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : data.data || []) as UbicacionAreaVerdeRaw[];
+      const data = await apiClient.request<unknown>(url);
+      const items = toApiList<UbicacionAreaVerdeRaw>(data);
       return items.map((i: UbicacionAreaVerdeRaw) => ({
         codigo: i.codigo || 0,
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -343,25 +348,25 @@ class ConstanteService extends BaseApiService<ConstanteData, void, void, Constan
           codGrupoUso: Number(i.codGrupoUso ?? 0)
         }))
         .filter((i) => i.codUso > 0 && i.descripcion !== '');
-    } catch {
-      return [];
+    } catch (error) {
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
   async obtenerZonas(): Promise<ZonaData[]> {
     try {
       const url = buildApiUrl(`${this.endpoint}/listarZona`);
-      const response = await apiClient.fetch(url);
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : data.data || []) as ZonaRaw[];
+      const data = await apiClient.request<unknown>(url);
+      const items = toApiList<ZonaRaw>(data);
       return items.map((i: ZonaRaw) => ({
         codigo: i.codigo || 0,
         descripcion: i.descripcion || '',
         abreviatura: i.abreviatura || ''
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 }

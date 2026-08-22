@@ -30,7 +30,6 @@ import {
 import {
   Search as SearchIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   LocationOn as LocationIcon,
   Add as AddIcon
 } from '@mui/icons-material';
@@ -41,7 +40,6 @@ interface DireccionListProps {
   direccionSeleccionada?: DireccionData | null;
   onSelectDireccion: (direccion: DireccionData) => void;
   onEditDireccion?: (direccion: DireccionData) => void;
-  onDeleteDireccion?: (id: number) => void;
   loading?: boolean;
   onSearch?: (searchTerm: string) => void;
   searchTerm?: string;
@@ -70,7 +68,6 @@ const DireccionListMUI: React.FC<DireccionListProps> = ({
   direccionSeleccionada,
   onSelectDireccion,
   onEditDireccion,
-  onDeleteDireccion,
   loading = false,
   onSearch,
   searchTerm = ''
@@ -184,13 +181,6 @@ const DireccionListMUI: React.FC<DireccionListProps> = ({
   const handleEdit = () => {
     if (selectedDireccion && onEditDireccion) {
       onEditDireccion(selectedDireccion);
-    }
-    handleMenuClose();
-  };
-
-  const handleDelete = () => {
-    if (selectedDireccion && onDeleteDireccion) {
-      onDeleteDireccion(selectedDireccion.id);
     }
     handleMenuClose();
   };
@@ -533,28 +523,6 @@ const DireccionListMUI: React.FC<DireccionListProps> = ({
                             </IconButton>
                           </Tooltip>
 
-                          {onDeleteDireccion && (
-                            <Tooltip title="Eliminar">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteDireccion(direccion.id);
-                                }}
-                                sx={(theme) => ({
-                                  bgcolor: alpha(theme.palette.error.main, 0.08),
-                                  '&:hover': {
-                                    bgcolor: alpha(theme.palette.error.main, 0.16),
-                                    transform: 'scale(1.1)',
-                                  },
-                                  transition: 'all 0.2s ease-in-out'
-                                })}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
                         </Stack>
                         </TableCell>
                       </TableRow>
@@ -609,14 +577,6 @@ const DireccionListMUI: React.FC<DireccionListProps> = ({
                 <EditIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Editar</ListItemText>
-            </MenuItem>
-          )}
-          {onDeleteDireccion && (
-            <MenuItem onClick={handleDelete}>
-              <ListItemIcon>
-                <DeleteIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Eliminar</ListItemText>
             </MenuItem>
           )}
         </Menu>

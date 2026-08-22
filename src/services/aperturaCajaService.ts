@@ -1,7 +1,7 @@
 // src/services/aperturaCajaService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import { AperturaCaja, AperturaCajaDTO, CierreCajaDTO } from '../models';
-import apiClient, { ApiClientError } from './apiClient';
+import apiClient, { ApiClientError, unwrapApiData } from './apiClient';
 
 /**
  * Servicio para gestion de apertura y cierre de caja
@@ -54,34 +54,14 @@ class AperturaCajaService {
 
       const url = buildApiUrl(this.endpoint + '/apertura');
 
-      const token = sessionStorage.getItem('auth_token');
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
-        headers,
         body: JSON.stringify(datos)
       });
-
-      console.log(`[AperturaCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AperturaCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AperturaCajaService] Apertura realizada exitosamente:', responseData);
 
       // Extraer datos del wrapper si existe
-      const aperturaData = responseData.data || responseData;
+      const aperturaData = unwrapApiData<Partial<AperturaCaja> | string>(responseData);
 
       // Fallback: Si el backend devuelve un mensaje de texto en lugar del objeto,
       // realizamos una consulta GET para obtener los detalles reales y completos.
@@ -94,9 +74,13 @@ class AperturaCajaService {
       }
 
       // Normalizar respuesta
+      if (!aperturaData || typeof aperturaData !== 'object') {
+        throw new Error('El servidor no devolvió los datos de la apertura creada');
+      }
+
       const normalized: AperturaCaja = {
         codAperturaCaja: aperturaData.codAperturaCaja,
-        codAsignacionCaja: aperturaData.codAsignacionCaja,
+        codAsignacionCaja: aperturaData.codAsignacionCaja ?? null,
         montoApertura: aperturaData.montoApertura !== undefined && aperturaData.montoApertura !== null ? aperturaData.montoApertura : datos.montoApertura,
         estado: normalizeEstado(aperturaData.estado),
         fechaApertura: aperturaData.fechaApertura,
@@ -134,15 +118,6 @@ class AperturaCajaService {
 
       const url = buildApiUrl(this.endpoint + '/cierre');
 
-      const token = sessionStorage.getItem('auth_token');
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       // Construir el cuerpo exacto según la API modificada del backend (sin codAsignacionCaja)
       const requestBody = {
         codAperturaCaja: datos.codAperturaCaja,
@@ -151,31 +126,23 @@ class AperturaCajaService {
         codUsuario: datos.codUsuario
       };
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
-        headers,
         body: JSON.stringify(requestBody)
       });
-
-      console.log(`[AperturaCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AperturaCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AperturaCajaService] Cierre realizado exitosamente:', responseData);
 
       // Extraer datos del wrapper si existe
-      const cierreData = responseData.data || responseData;
+      const cierreData = unwrapApiData<Partial<AperturaCaja>>(responseData);
+      if (!cierreData || typeof cierreData !== 'object') {
+        throw new Error('El servidor no devolvió los datos del cierre realizado');
+      }
 
       // Normalizar respuesta
       const normalized: AperturaCaja = {
         codAperturaCaja: cierreData.codAperturaCaja !== undefined && cierreData.codAperturaCaja !== null ? cierreData.codAperturaCaja : datos.codAperturaCaja,
-        codAsignacionCaja: cierreData.codAsignacionCaja,
-        montoApertura: cierreData.montoApertura,
+        codAsignacionCaja: cierreData.codAsignacionCaja ?? null,
+        montoApertura: cierreData.montoApertura ?? 0,
         montoCierre: cierreData.montoCierre !== undefined && cierreData.montoCierre !== null ? cierreData.montoCierre : datos.montoCierre,
         estado: normalizeEstado(cierreData.estado || 'CERRADA'),
         fechaApertura: cierreData.fechaApertura,

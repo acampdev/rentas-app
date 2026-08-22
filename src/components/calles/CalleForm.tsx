@@ -12,14 +12,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText,
   IconButton
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Save as SaveIcon,
-  Delete as DeleteIcon
+  Save as SaveIcon
 } from '@mui/icons-material';
 import { Controller } from 'react-hook-form';
 import { CalleFormData } from '../../models/Calle';
@@ -30,7 +28,6 @@ import { Sector } from '../../models/Sector';
 
 interface CalleFormProps {
   onSubmit: (data: any) => void | Promise<void>;
-  onDelete?: () => void | Promise<void>;
   onNew?: () => void;
   onNuevo?: () => void;
   onUpdateSector?: (sectorId: number, nombre: string) => Promise<boolean>;
@@ -44,7 +41,6 @@ const CalleForm: React.FC<CalleFormProps> = ({
   onSubmit,
   onNew,
   onNuevo,
-  onDelete,
   onUpdateSector,
   initialData,
   isSubmitting: externalLoading = false,
@@ -65,8 +61,6 @@ const CalleForm: React.FC<CalleFormProps> = ({
     errorSectores,
     barriosFiltrados,
     errorBarrios,
-    openDeleteDialog,
-    setOpenDeleteDialog,
     openEditSectorDialog,
     setOpenEditSectorDialog,
     editingSector,
@@ -172,7 +166,10 @@ const CalleForm: React.FC<CalleFormProps> = ({
             variant="outlined"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={() => { reset(); onNew?.(); }}
+            onClick={() => {
+              reset({ tipoVia: 0, codSector: 0, codBarrio: 0, nombreCalle: '' });
+              _handleNuevo();
+            }}
             disabled={isSubmitting}
             sx={{
               minWidth: 80,
@@ -229,48 +226,8 @@ const CalleForm: React.FC<CalleFormProps> = ({
             {isSubmitting ? 'Guardando...' : (hasInitialData ? 'Actualizar' : 'Guardar')}
           </Button>
 
-          {/* Boton Eliminar */}
-          {hasInitialData && onDelete && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={() => setOpenDeleteDialog(true)}
-              disabled={isSubmitting}
-              sx={{
-                minWidth: 80,
-                height: 40,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                backgroundColor: 'white !important',
-                color: '#d32f2f !important',
-                border: '1px solid #d32f2f !important',
-                '&:hover': {
-                  backgroundColor: 'rgba(211, 47, 47, 0.04) !important'
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: '#f3f4f6 !important',
-                  color: '#9ca3af !important',
-                  border: '1px solid #e5e7eb !important',
-                  boxShadow: 'none !important'
-                }
-              }}
-            >
-              Eliminar
-            </Button>
-          )}
         </Box>
       </form>
-
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent><DialogContentText>¿Está seguro que desea eliminar esta calle?</DialogContentText></DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Cancelar</Button>
-          <Button onClick={async () => { await onDelete?.(); setOpenDeleteDialog(false); }} variant="contained" color="error">Eliminar</Button>
-        </DialogActions>
-      </Dialog>
 
       <Dialog open={openEditSectorDialog} onClose={() => setOpenEditSectorDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>Editar Sector</DialogTitle>

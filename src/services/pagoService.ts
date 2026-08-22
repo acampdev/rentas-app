@@ -91,35 +91,17 @@ class PagoService {
       console.log('[PagoService] Registrando Pago Ordinario:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoOrdinario`);
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true),
         body: JSON.stringify(datos)
       });
 
-      console.log(`[PagoService] Respuesta pagoOrdinario: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[PagoService] Error del servidor en pagoOrdinario:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoOrdinario:', responseData);
 
-      if (responseData && responseData.success === false) {
-        const operationMessage = extractPagoOperationMessage(
-          responseData,
-          'El servidor rechazó el procesamiento del pago.'
-        );
-        console.error('[PagoService] Error de negocio retornado por el servidor:', operationMessage);
-        throw new Error(operationMessage);
-      }
-
       return {
-        data: responseData.data ?? responseData,
+        data: isRecord(responseData) && 'data' in responseData ? responseData.data : responseData,
         message: extractApiMessage(responseData, 'Pago ordinario registrado correctamente.')
       };
     } catch (error: unknown) {
@@ -141,35 +123,17 @@ class PagoService {
       console.log('[PagoService] Registrando Pago Cuota Fraccionamiento:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoCuotaFraccionamiento`);
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         credentials: 'include',
         headers: getApiHeaders(true),
         body: JSON.stringify(datos)
       });
 
-      console.log(`[PagoService] Respuesta pagoCuotaFraccionamiento: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[PagoService] Error del servidor en pagoCuotaFraccionamiento:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoCuotaFraccionamiento:', responseData);
 
-      if (responseData && responseData.success === false) {
-        const operationMessage = extractPagoOperationMessage(
-          responseData,
-          'El servidor rechazó el procesamiento del pago de fraccionamiento.'
-        );
-        console.error('[PagoService] Error de negocio retornado por el servidor:', operationMessage);
-        throw new Error(operationMessage);
-      }
-
       return {
-        data: responseData.data ?? responseData,
+        data: isRecord(responseData) && 'data' in responseData ? responseData.data : responseData,
         message: extractApiMessage(
           responseData,
           'Pago de fraccionamiento registrado correctamente.'

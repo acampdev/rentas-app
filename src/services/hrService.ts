@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError, unwrapApiList } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -99,21 +99,14 @@ class HRService extends BaseApiService<HRData, void, void> {
         queryParams.append('codContribuyente', params.codContribuyente);
       }
 
-      const response = await apiClient.fetch(`${url}?${queryParams.toString()}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await apiClient.request<unknown>(`${url}?${queryParams.toString()}`);
+      const items = unwrapApiList<Record<string, unknown>>(payload);
       
-      const res = await response.json() as any;
-      const items = res.data || (Array.isArray(res) ? res : [res]);
-      
-      // Si la respuesta no es un array y no tiene data, pero tiene codPredio, es un objeto único
-      if (!Array.isArray(items) && items.codPredio) {
-        return [this.normalizeOptions.normalizeItem(items, 0)];
-      }
-
       return this.normalizeData(Array.isArray(items) ? items : []);
     } catch (error) {
+      if (isApiNotFoundError(error)) return [];
       console.error('[HRService] Error:', error);
-      return [];
+      throw error;
     }
   }
 }

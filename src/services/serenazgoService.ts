@@ -1,5 +1,5 @@
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
 import {  buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -69,34 +69,28 @@ class SerenazgoService extends BaseApiService<SerenazgoData, CrearSerenazgoDTO, 
 
   async listar(anio?: number): Promise<SerenazgoData[]> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(`${url}${anio ? `?anio=${anio}` : ''}`);
-    if (!response.ok) return [];
-    const res = await response.json() as any;
-    return this.normalizeData(res.data || res);
+    const res = await apiClient.request<unknown>(`${url}${anio ? `?anio=${anio}` : ''}`);
+    return this.normalizeData(unwrapApiList<SerenazgoRaw>(res));
   }
 
   async crear(datos: CrearSerenazgoDTO): Promise<SerenazgoData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(url, {
+    const res = await apiClient.request<unknown>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<SerenazgoRaw>(res), 0);
   }
 
   async actualizar(datos: CrearSerenazgoDTO): Promise<SerenazgoData> {
     const url = buildApiUrl(this.endpoint);
-    const response = await apiClient.fetch(url, {
+    const res = await apiClient.request<unknown>(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    if (!response.ok) throw new Error(`Error ${response.status}`);
-    const res = await response.json() as any;
-    return this.normalizeOptions.normalizeItem(res.data || res, 0);
+    return this.normalizeOptions.normalizeItem(unwrapApiData<SerenazgoRaw>(res), 0);
   }
 }
 

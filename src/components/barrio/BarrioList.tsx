@@ -32,15 +32,13 @@ import {
   LocationOn as LocationIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Home as HomeIcon,
-  Delete as DeleteIcon
+  Home as HomeIcon
 } from '@mui/icons-material';
 
 interface BarrioListProps {
   barrios: Barrio[];
   sectores?: Sector[];
   onEdit?: (barrio: Barrio) => void;
-  onEliminar?: (id: number) => void;
   onView?: (barrio: Barrio) => void;
   onSelect?: (barrio: Barrio) => void;
   onSelectBarrio?: (barrio: Barrio) => void;
@@ -81,7 +79,6 @@ const BarrioList: React.FC<BarrioListProps> = ({
   barrios = [],
   sectores = [],
   onEdit,
-  onEliminar,
   onSelect,
   onSelectBarrio,
   loading = false,
@@ -528,32 +525,6 @@ const BarrioList: React.FC<BarrioListProps> = ({
                             </Tooltip>
                           )}
 
-                          {onEliminar && (
-                            <Tooltip title="Eliminar barrio" arrow>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                disabled={loading}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (window.confirm(`¿Está seguro de eliminar el barrio "${barrio.nombre}"?`)) {
-                                    onEliminar(barrio.id);
-                                  }
-                                }}
-                                sx={{
-                                  bgcolor: alpha(theme.palette.error.main, 0.08),
-                                  '&:hover': {
-                                    bgcolor: alpha(theme.palette.error.main, 0.16),
-                                    transform: 'scale(1.1)',
-                                  },
-                                  transition: 'all 0.2s ease-in-out'
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
                         </Stack>
                       </TableCell>
                     </TableRow>

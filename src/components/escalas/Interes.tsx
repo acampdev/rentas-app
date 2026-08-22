@@ -29,7 +29,7 @@ import {
   Add as AddIcon,
   Dashboard as DashboardIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
+  Block as InactivateIcon,
   Percent as PercentIcon
 } from '@mui/icons-material';
 import { useInteres } from '../../hooks/useInteres';
@@ -67,10 +67,10 @@ const Interes: React.FC = () => {
     setAnio,
     crearInteres,
     actualizarInteres,
-    eliminarInteres,
+    inactivarInteres,
     isCreating,
     isUpdating,
-    isDeleting
+    isInactivating
   } = useInteres();
 
   const [searchAnio, setSearchAnio] = useState<number>(anio);
@@ -133,15 +133,12 @@ const Interes: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = async (item: InteresData) => {
-    if (window.confirm(`¿Está seguro de eliminar el interés con código ${item.codInteres} del año ${item.anio}?`)) {
+  const handleInactivateClick = async (item: InteresData) => {
+    if (window.confirm(`¿Está seguro de inactivar el interés con código ${item.codInteres} del año ${item.anio}?`)) {
       try {
-        await eliminarInteres({
+        await inactivarInteres({
           codInteres: item.codInteres,
-          anio: item.anio,
-          tasa: item.tasa,
-          codTipo: item.codTipo,
-          codClase: item.codClase
+          anio: item.anio
         });
       } catch {
         // Errores ya manejados por el hook
@@ -246,7 +243,7 @@ const Interes: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {loading || isDeleting ? (
+                    {loading || isInactivating ? (
                       <TableRow><TableCell colSpan={7} align="center" sx={{ py: 10 }}><CircularProgress /></TableCell></TableRow>
                     ) : intereses.length > 0 ? (
                       intereses.map((item, i) => (
@@ -285,14 +282,15 @@ const Interes: React.FC = () => {
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Eliminar">
+                              <Tooltip title="Inactivar">
                                 <IconButton 
                                   size="small" 
-                                  color="error" 
-                                  onClick={() => handleDeleteClick(item)}
-                                  sx={{ bgcolor: alpha(theme.palette.error.main, 0.05), '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}
+                                  color="warning" 
+                                  onClick={() => handleInactivateClick(item)}
+                                  disabled={isInactivating}
+                                  sx={{ bgcolor: alpha(theme.palette.warning.main, 0.08), '&:hover': { bgcolor: alpha(theme.palette.warning.main, 0.16) } }}
                                 >
-                                  <DeleteIcon fontSize="small" />
+                                  <InactivateIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>

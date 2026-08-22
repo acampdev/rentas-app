@@ -34,7 +34,6 @@ export { default as ReporteAlcabalaPage } from './predio/transferencia/ReporteAl
 // 🎯 NUEVAS PÁGINAS DE CAJA
 export { default as CajaPage } from './caja/CajaPage';
 export { default as ConsultasCaja } from './caja/ConsultasCaja';
-export { default as ReportesCajaPage } from './caja/ReportesCajaPage';
 export { default as AsignacionCajaPage } from './caja/AsignacionCajaPage';
 export { default as CajasPage } from './mantenedores/CajasPage';
 
@@ -53,7 +52,6 @@ export { default as SolicitudFraccionamientoPage } from './fraccionamiento/Solic
 export { default as ConsultaFraccionamientoPage } from './fraccionamiento/ConsultaFraccionamientoPage';
 export { default as AprobacionFraccionamientoPage } from './fraccionamiento/AprobacionFraccionamientoPage';
 export { default as CronogramaPage } from './fraccionamiento/CronogramaPage';
-export { default as ReportesFraccionamientoPage } from './fraccionamiento/ReportesFraccionamientoPage';
 
 // Páginas de Sistema
 export { default as UsuariosPage } from './sistema/UsuariosPage';

@@ -22,6 +22,22 @@ export class ApiClientError extends Error {
   }
 }
 
+export const isApiNotFoundError = (error: unknown): error is ApiClientError =>
+  error instanceof ApiClientError && error.statusCode === 404;
+
+export const unwrapApiData = <T>(payload: unknown): T => {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+};
+
+export const unwrapApiList = <T>(payload: unknown): T[] => {
+  const data = unwrapApiData<unknown>(payload);
+  if (Array.isArray(data)) return data as T[];
+  return data === null || data === undefined ? [] : [data as T];
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -66,14 +82,17 @@ export const extractApiMessage = (
   if (typeof payload === 'string' && payload.trim()) return payload.trim();
   if (!isRecord(payload)) return fallback;
 
+  const dataMessage = typeof payload.data === 'string' ? payload.data.trim() : '';
   for (const key of ['message', 'mensaje', 'detail', 'error'] as const) {
     const value = payload[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'string' && value.trim()) {
+      const message = value.trim();
+      if (dataMessage && /^operation failed[.!]?$/i.test(message)) return dataMessage;
+      return message;
+    }
   }
 
-  if (typeof payload.data === 'string' && payload.data.trim()) {
-    return payload.data.trim();
-  }
+  if (dataMessage) return dataMessage;
 
   return collectErrorMessages(payload.errors)[0] ?? fallback;
 };

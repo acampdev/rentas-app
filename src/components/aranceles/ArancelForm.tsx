@@ -16,8 +16,7 @@ import {
 import { 
   Save as SaveIcon, 
   Add as AddIcon,
-  LocationOn as LocationIcon,
-  Delete as DeleteIcon
+  LocationOn as LocationIcon
 } from '@mui/icons-material';
 import { useAranceles } from '../../hooks/useAranceles';
 import SelectorDirecciones from '../modal/SelectorDirecciones';
@@ -33,7 +32,6 @@ interface AsignacionArancelFormProps {
   onRedirectToList?: (searchParams: { anio: number; codDireccion: number }) => void;
   initialData?: any;
   onSubmit?: (data: any) => Promise<void>;
-  onDelete?: () => Promise<void>;
   onNuevo?: () => void;
   isSubmitting?: boolean;
 }
@@ -42,7 +40,6 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
   onRedirectToList,
   initialData,
   onSubmit,
-  onDelete: _onDelete,
   onNuevo: _onNuevo,
   isSubmitting
 }) => {
@@ -64,13 +61,11 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
   const { 
     crearArancel, 
     actualizarArancel, 
-    eliminarArancel, 
     isCreating, 
-    isUpdating, 
-    isDeleting 
+    isUpdating
   } = useAranceles();
 
-  const submitting = !!(isSubmitting || isCreating || isUpdating || isDeleting);
+  const submitting = !!(isSubmitting || isCreating || isUpdating);
 
   // Efecto para cargar datos iniciales si existen
   useEffect(() => {
@@ -183,18 +178,6 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
     }
   };
 
-  const handleEliminar = async () => {
-    if (!codArancelActual) return;
-    if (!window.confirm('¿Está seguro de que desea eliminar este arancel?')) return;
-
-    try {
-      await eliminarArancel(codArancelActual);
-      handleNuevo();
-    } catch (error) {
-      console.error('Error eliminando arancel:', error);
-    }
-  };
-
   return (
     <>
       <Paper elevation={3} sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(to bottom, #ffffff, #fafafa)', border: '1px solid', borderColor: 'divider' }}>
@@ -253,8 +236,6 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
             </Button>
             {/* Boton Nuevo */}
             <Button variant="outlined" startIcon={<AddIcon />} onClick={handleNuevo} disabled={submitting} sx={{ height: '40px' }}>Nuevo</Button>
-            {/* Boton Eliminar */}
-            {isEditMode && <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleEliminar} disabled={submitting} sx={{ height: '40px' }}>Eliminar</Button>}
           </Box>
         </Box>
 

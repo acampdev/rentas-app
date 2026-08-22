@@ -207,7 +207,6 @@ const menuItems: MenuItem[] = [
       { id: 'nuevo-fraccionamiento', label: 'Nuevo', path: '/fraccionamiento/nuevo' },
       { id: 'consulta-fraccionamiento', label: 'Consulta', path: '/fraccionamiento/consulta' },
       { id: 'cronograma-fraccionamiento', label: 'Cronograma', path: '/fraccionamiento/cronograma' },
-      { id: 'reporte-fraccionamiento', label: 'Reporte Fraccionamiento', path: '/fraccionamiento/reportes' },
     ],
   },
   { /* Caja */
@@ -219,7 +218,6 @@ const menuItems: MenuItem[] = [
       { id: 'asignacion-caja', label: 'Asignacion de Caja', path: '/caja/asignacion' },
       { id: 'caja', label: 'Caja', path: '/caja/apertura' },
       { id: 'consultas', label: 'Consultas', path: '/caja/consultas' },
-      { id: 'Reportes', label: 'Reportes', path: '/caja/reportes' },
     ],
   },
   { /* Reportes */

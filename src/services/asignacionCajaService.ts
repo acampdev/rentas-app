@@ -1,6 +1,6 @@
 // src/services/asignacionCajaService.ts
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiList } from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -53,11 +53,27 @@ const toNullableNumber = (value: unknown): number | null => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const assertMutationAccepted = (payload: unknown, operation: string): void => {
+  if (!isRecord(payload)) {
+    throw new Error(`El servidor no confirmó la operación de ${operation} la asignación.`);
+  }
+
+  if (payload.success === true) return;
+
+  const result = isRecord(payload.data) ? payload.data : payload;
+  if (toNullableNumber(result.codAsignacionCaja)) return;
+
+  throw new Error(`El servidor devolvió una respuesta incompleta al ${operation} la asignación.`);
+};
+
 /**
  * Servicio para gestion de asignacion de caja
  *
  * Todas las operaciones se ejecutan mediante el cliente HTTP autenticado.
- * Todos los metodos (GET, POST, PUT, DELETE) funcionan sin token
+ * Los métodos GET, POST y PUT requieren el Bearer de la sesión activa.
  */
 class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsignacionCajaDTO, UpdateAsignacionCajaDTO> {
   private static instance: AsignacionCajaService;
@@ -132,33 +148,13 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<unknown>(getUrl, {
         method: 'GET',
         headers
       });
 
-      console.log(`[AsignacionCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AsignacionCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AsignacionCajaService] Datos obtenidos:', responseData);
-
-      // Procesar respuesta - puede ser un array directo o wrapped
-      let items = [];
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else {
-        items = [responseData];
-      }
-
-      return this.normalizeData(items);
+      return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
       console.error('[AsignacionCajaService] Error listando asignaciones:', error);
@@ -172,7 +168,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Body: {codUsuario, codCaja, codTurno, fecha, usuario}
    * Requiere autenticación Bearer.
    */
-  async insertar(datos: CreateAsignacionCajaDTO): Promise<AsignacionCajaData> {
+  async insertar(datos: CreateAsignacionCajaDTO): Promise<void> {
     try {
       console.log('[AsignacionCajaService] Insertando asignacion:', datos);
 
@@ -187,44 +183,14 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[AsignacionCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AsignacionCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AsignacionCajaService] Asignacion creada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      let created = responseData.data || responseData;
-      if (typeof created === 'string' || !created || typeof created !== 'object') {
-        created = {
-          codAsignacionCaja: 999, // ID ficticio no-cero para pasar la validación
-          codUsuario: datos.codUsuario,
-          codCaja: datos.codCaja,
-          codTurno: datos.codTurno,
-          fecha: datos.fecha || null,
-          terminoBusqueda: null,
-          numCaja: `CAJA ${datos.codCaja}`, // Nombre ficticio para pasar la validación (item.numCaja)
-          nombreUsuario: '',
-          turno: '',
-          estado: 'ACTIVO',
-          fechaStr: datos.fecha || ''
-        };
-      }
-      
-      const normalized = this.normalizeData([created])[0];
-
-      return normalized;
+      assertMutationAccepted(responseData, 'crear');
 
     } catch (error: unknown) {
       console.error('[AsignacionCajaService] Error al insertar asignacion:', error);
@@ -238,7 +204,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Body: {codAsignacionCaja, codUsuario, codCaja, codTurno, usuario}
    * Requiere autenticación Bearer.
    */
-  async actualizar(datos: UpdateAsignacionCajaDTO): Promise<AsignacionCajaData> {
+  async actualizar(datos: UpdateAsignacionCajaDTO): Promise<void> {
     try {
       console.log('[AsignacionCajaService] Actualizando asignacion:', datos);
 
@@ -253,44 +219,14 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[AsignacionCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AsignacionCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[AsignacionCajaService] Asignacion actualizada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      let updated = responseData.data || responseData;
-      if (typeof updated === 'string' || !updated || typeof updated !== 'object') {
-        updated = {
-          codAsignacionCaja: datos.codAsignacionCaja,
-          codUsuario: datos.codUsuario,
-          codCaja: datos.codCaja,
-          codTurno: datos.codTurno,
-          fecha: null,
-          terminoBusqueda: null,
-          numCaja: `CAJA ${datos.codCaja}`, // Nombre ficticio para pasar la validación (item.numCaja)
-          nombreUsuario: '',
-          turno: '',
-          estado: 'ACTIVO',
-          fechaStr: ''
-        };
-      }
-      
-      const normalized = this.normalizeData([updated])[0];
-
-      return normalized;
+      assertMutationAccepted(responseData, 'actualizar');
 
     } catch (error: unknown) {
       console.error('[AsignacionCajaService] Error al actualizar asignacion:', error);
@@ -319,20 +255,13 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[AsignacionCajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[AsignacionCajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
+      assertMutationAccepted(responseData, 'eliminar');
       console.log('[AsignacionCajaService] Asignacion eliminada exitosamente');
 
     } catch (error: unknown) {

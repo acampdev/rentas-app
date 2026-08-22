@@ -7,18 +7,12 @@ import {
   Paper,
   CircularProgress,
   Autocomplete,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Alert,
   AlertTitle
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon
+  Add as AddIcon
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,7 +46,6 @@ interface DireccionFormProps {
   onSubmit: (data: CreateDireccionDTO) => Promise<void>;
   onNuevo: () => void;
   onEditar: () => void;
-  onDelete?: (id: number) => Promise<void>;
   loading?: boolean;
   isEditMode?: boolean;
 }
@@ -62,7 +55,6 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
   onSubmit,
   onNuevo,
   onEditar: _onEditar,
-  onDelete,
   loading = false,
   isEditMode = false
 }) => {
@@ -75,7 +67,6 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
   const { options: zonaOptions, loading: loadingZonas } = useZonasOptions();
   const { options: areasVerdesOptions, loading: loadingAreasVerdes } = useUbicacionAreaVerdeOptions();
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loteInicialFocused, setLoteInicialFocused] = useState(false);
   const [loteFinalFocused, setLoteFinalFocused] = useState(false);
   const isLoadingEditDataRef = useRef(false);
@@ -510,21 +501,9 @@ const DireccionFormMUI: React.FC<DireccionFormProps> = ({
           </Button>
           {/* Boton Nuevo */}
           <Button variant="outlined" onClick={() => { reset(); onNuevo(); }} startIcon={<AddIcon />}>Nuevo</Button>
-          {/* Boton Eliminar */}
-          {isEditMode && onDelete && (
-            <Button variant="outlined" color="error" onClick={() => setDeleteModalOpen(true)} startIcon={<DeleteIcon />}>Eliminar</Button>
-          )}
         </Box>
       </Box>
 
-      <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <DialogTitle sx={{ color: 'error.main' }}>Confirmar Eliminación</DialogTitle>
-        <DialogContent><DialogContentText>¿Está seguro que desea eliminar esta dirección?</DialogContentText></DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteModalOpen(false)}>Cancelar</Button>
-          <Button onClick={async () => { if (direccionSeleccionada && onDelete) await onDelete(direccionSeleccionada.id); setDeleteModalOpen(false); }} variant="contained" color="error">Eliminar</Button>
-        </DialogActions>
-      </Dialog>
     </Paper>
   );
 };

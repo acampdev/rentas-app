@@ -32,13 +32,11 @@ export const TransferenciaAlcabalaPage = lazy(() => import('./predio/transferenc
 export const ReporteAlcabalaPage = lazy(() => import('./predio/transferencia/ReporteAlcabalaPage'));
 export const CajaPage = lazy(() => import('./caja/CajaPage'));
 export const ConsultasCaja = lazy(() => import('./caja/ConsultasCaja'));
-export const ReportesCajaPage = lazy(() => import('./caja/ReportesCajaPage'));
 export const ReportesPage = lazy(() => import('./reportes/ReportesPage'));
 export const SolicitudFraccionamientoPage = lazy(() => import('./fraccionamiento/SolicitudFraccionamientoPage'));
 export const ConsultaFraccionamientoPage = lazy(() => import('./fraccionamiento/ConsultaFraccionamientoPage'));
 export const AprobacionFraccionamientoPage = lazy(() => import('./fraccionamiento/AprobacionFraccionamientoPage'));
 export const CronogramaPage = lazy(() => import('./fraccionamiento/CronogramaPage'));
-export const ReportesFraccionamientoPage = lazy(() => import('./fraccionamiento/ReportesFraccionamientoPage'));
 export const UsuariosPage = lazy(() => import('./sistema/UsuariosPage'));
 export const RolesPage = lazy(() => import('./sistema/RolesPage'));
 export const PermisosPage = lazy(() => import('./sistema/PermisosPage'));

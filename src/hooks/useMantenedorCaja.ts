@@ -22,7 +22,7 @@ export interface MantenedorCajaListItem {
 
 /**
  * Hook para gestionar mantenedor de cajas
- * NO requiere autenticacion para ninguna operacion
+ * Las operaciones requieren una sesión autenticada.
  */
 export const useMantenedorCaja = () => {
   const [cajas, setCajas] = useState<MantenedorCajaData[]>([]);
@@ -120,28 +120,28 @@ export const useMantenedorCaja = () => {
   /**
    * Crea una nueva caja
    */
-  const crearCaja = useCallback(async (datos: CreateMantenedorCajaDTO): Promise<MantenedorCajaData | null> => {
+  const crearCaja = useCallback(async (datos: CreateMantenedorCajaDTO): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('[useMantenedorCaja] Creando caja:', datos);
 
-      const nuevaCaja = await mantenedorCajaService.insertar(datos);
+      await mantenedorCajaService.insertar(datos);
 
       NotificationService.success('Caja creada correctamente');
 
       // Recargar lista
       await cargarCajas();
 
-      return nuevaCaja;
+      return true;
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
       console.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }
@@ -150,28 +150,28 @@ export const useMantenedorCaja = () => {
   /**
    * Actualiza una caja existente
    */
-  const actualizarCaja = useCallback(async (datos: UpdateMantenedorCajaDTO): Promise<MantenedorCajaData | null> => {
+  const actualizarCaja = useCallback(async (datos: UpdateMantenedorCajaDTO): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('[useMantenedorCaja] Actualizando caja:', datos);
 
-      const cajaActualizada = await mantenedorCajaService.actualizar(datos);
+      await mantenedorCajaService.actualizar(datos);
 
       NotificationService.success('Caja actualizada correctamente');
 
       // Recargar lista
       await cargarCajas();
 
-      return cajaActualizada;
+      return true;
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
       console.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }

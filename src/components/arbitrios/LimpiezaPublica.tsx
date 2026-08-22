@@ -30,7 +30,6 @@ import {
   Home as HomeIcon,
   Business as BusinessIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
   Calculate as CalculateIcon
 } from '@mui/icons-material';
@@ -61,7 +60,6 @@ const LimpiezaPublica: React.FC = () => {
     actualizarLimpiezaPublica,
     crearLimpiezaPublicaOtros,
     actualizarLimpiezaPublicaOtros,
-    eliminarLimpiezaPublica,
     recargar
   } = useLimpiezaPublica();
 
@@ -190,7 +188,20 @@ const LimpiezaPublica: React.FC = () => {
     setAnioRegistro(row.anio || anioBusqueda);
     setTasaVal(row.tasaMensual.toString());
     if (tabValue === 0) {
-      setZonaSel(zonas.find(z => z.id === row.codZona) || null);
+      const codigoZona = Number(row.codZona);
+      let zonaEncontrada = Number.isFinite(codigoZona)
+        ? zonas.find(z => z.id === codigoZona)
+        : undefined;
+
+      // Algunos listados devuelven solamente el nombre de la zona.
+      if (!zonaEncontrada && row.nombreZona) {
+        const numeroZona = Number(row.nombreZona.match(/\d+/)?.[0]);
+        if (Number.isFinite(numeroZona)) {
+          zonaEncontrada = zonas.find(z => z.id === numeroZona);
+        }
+      }
+
+      setZonaSel(zonaEncontrada ?? null);
       setCriterioSel(null);
     } else {
       setZonaSel(null);
@@ -225,20 +236,6 @@ const LimpiezaPublica: React.FC = () => {
     
     // Scroll suave hacia arriba para facilitar la edición
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  /**
-   * Elimina una tasa previa confirmación
-   */
-  const handleEliminar = async (id: number) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta tasa?')) {
-      try {
-        await eliminarLimpiezaPublica(id);
-        recargar();
-      } catch (error) {
-        console.error('❌ [LimpiezaPublica] Error al eliminar tasa:', error);
-      }
-    }
   };
 
   const currentList = tabValue === 0 ? limpiezaPublica : limpiezaPublicaOtros;
@@ -301,7 +298,7 @@ const LimpiezaPublica: React.FC = () => {
               </Box>
               {/* Campo para seleccionar zona de servicio */}
               {tabValue === 0 && (
-                <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: '200px' } }}>
+                <Box sx={{ width: { xs: '100%', sm: '120px' }, flexShrink: 0 }}>
                   <Autocomplete 
                     fullWidth
                     size="small" 
@@ -309,13 +306,13 @@ const LimpiezaPublica: React.FC = () => {
                     value={zonaSel} 
                     onChange={(_, v) => setZonaSel(v)} 
                     isOptionEqualToValue={(option, value) => option.id === value?.id}
-                    renderInput={(p) => <TextField {...p} label="Zona de Servicio" />} 
+                    renderInput={(p) => <TextField {...p} label="Zona " />} 
                   />
                 </Box>
               )}
               {/* Campo para seleccionar criterio de uso */}
               {tabValue !== 0 && (
-                <Box sx={{ flexGrow: 1.5, minWidth: { xs: '100%', sm: '250px' } }}>
+                <Box sx={{ width: { xs: '100%', sm: '220px' }, flexShrink: 0 }}>
                   <Autocomplete 
                     fullWidth
                     size="small" 
@@ -479,16 +476,6 @@ const LimpiezaPublica: React.FC = () => {
                                 sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05), '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) } }}
                               >
                                 <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Eliminar">
-                              <IconButton 
-                                size="small" 
-                                color="error" 
-                                onClick={() => row.codigo && handleEliminar(row.codigo)}
-                                sx={{ bgcolor: alpha(theme.palette.error.main, 0.05), '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}
-                              >
-                                <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </Stack>

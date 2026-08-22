@@ -179,7 +179,7 @@ const ParquesJardines: React.FC = () => {
         <Divider sx={{ mb: 3 }} />
 
         {/* FILA 1: Campos con Flexbox para forzar expansión horizontal */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'flex-start' }}>
           <Box sx={{ width: '100px', flexShrink: 0 }}>
             <TextField 
               fullWidth 
@@ -202,7 +202,7 @@ const ParquesJardines: React.FC = () => {
               InputProps={{ startAdornment: <Typography sx={{ mr: 1, fontWeight: 700, fontSize: '0.85rem' }}>S/</Typography> }} 
             />
           </Box>
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Box sx={{ width: { xs: '100%', sm: '100px' }, flexShrink: 0 }}>
             <Autocomplete 
               fullWidth
               size="small" 
@@ -214,7 +214,7 @@ const ParquesJardines: React.FC = () => {
             />
           </Box>
           {/* Box Ubicación de Área Verde */}
-          <Box sx={{ flexGrow: 1.2, minWidth: 0 }}>
+          <Box sx={{ width: { xs: '100%', sm: '200px' }, flexShrink: 0 }}>
             <Autocomplete 
               fullWidth
               size="small" 

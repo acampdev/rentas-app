@@ -40,7 +40,6 @@ const BarriosPage: React.FC = () => {
     error,
     crearBarrio,
     actualizarBarrio,
-    eliminarBarrio,
     cargarBarrios
   } = useBarrios();
 
@@ -81,19 +80,6 @@ const BarriosPage: React.FC = () => {
     }
   };
 
-  const handleEliminar = async () => {
-    try {
-      if (barrioSeleccionado) {
-        await eliminarBarrio(barrioSeleccionado.id);
-        setTabValue(1);
-        handleNuevo();
-        cargarBarrios();
-      }
-    } catch (err) {
-      console.error('Error al eliminar barrio:', err);
-    }
-  };
-
   return (
     <MainLayout title="Gestión de Barrios">
       <Box sx={{ p: 3 }}>
@@ -121,7 +107,6 @@ const BarriosPage: React.FC = () => {
             <BarrioForm 
               initialData={barrioSeleccionado || undefined}
               onSubmit={handleGuardar}
-              onDelete={barrioSeleccionado ? handleEliminar : undefined}
               onNew={handleNuevo}
               isSubmitting={loading}
             />
@@ -133,7 +118,6 @@ const BarriosPage: React.FC = () => {
               selectedBarrio={barrioSeleccionado || undefined}
               onSelectBarrio={handleSeleccionar}
               onEdit={handleSeleccionar}
-              onEliminar={handleEliminar}
               loading={loading}
               sectores={sectores}
             />

@@ -27,3 +27,8 @@ export interface UpdateInteresDTO {
   codTipo: string;
   codClase: string;
 }
+
+export interface InactivarInteresDTO {
+  codInteres: number;
+  anio: number;
+}

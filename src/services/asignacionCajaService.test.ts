@@ -13,7 +13,7 @@ describe('AsignacionCajaService supervisor authorization', () => {
   });
 
   it('normaliza como números los códigos usados para editar', async () => {
-    vi.spyOn(apiClient, 'fetch').mockResolvedValue(Response.json({
+    vi.spyOn(apiClient, 'request').mockResolvedValue({
       success: true,
       data: [{
         codAsignacionCaja: '9',
@@ -27,7 +27,7 @@ describe('AsignacionCajaService supervisor authorization', () => {
         turno: 'MAÑANA',
         estado: 'ACTIVO'
       }]
-    }));
+    });
 
     const [asignacion] = await asignacionCajaService.listar();
 
@@ -71,9 +71,10 @@ describe('AsignacionCajaService supervisor authorization', () => {
       }
     }
   ])('envía usuario en $operation', async ({ operation, method, payload }) => {
-    const fetchSpy = vi.spyOn(apiClient, 'fetch').mockResolvedValue(
-      Response.json({ success: true, data: 'Operation Success!' })
-    );
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValue({
+      success: true,
+      data: 'Operation Success!'
+    });
 
     if (operation === 'insertar') {
       await asignacionCajaService.insertar(payload as Parameters<typeof asignacionCajaService.insertar>[0]);
@@ -83,13 +84,25 @@ describe('AsignacionCajaService supervisor authorization', () => {
       await asignacionCajaService.eliminar(payload as Parameters<typeof asignacionCajaService.eliminar>[0]);
     }
 
-    expect(fetchSpy).toHaveBeenCalledWith(
+    expect(requestSpy).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         method,
         body: JSON.stringify(payload)
       })
     );
-    expect(JSON.parse(String(fetchSpy.mock.calls[0][1]?.body)).usuario).toBe('26');
+    expect(JSON.parse(String(requestSpy.mock.calls[0][1]?.body)).usuario).toBe('26');
+  });
+
+  it('rechaza una respuesta incompleta en lugar de fabricar una asignación', async () => {
+    vi.spyOn(apiClient, 'request').mockResolvedValue({});
+
+    await expect(asignacionCajaService.insertar({
+      codUsuario: 17,
+      codCaja: 2,
+      codTurno: 1,
+      fecha: '2026-08-20',
+      usuario: '26'
+    })).rejects.toThrow('respuesta incompleta');
   });
 });

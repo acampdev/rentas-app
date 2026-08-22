@@ -3,7 +3,6 @@ import type { UserRole } from './constants';
 export const ADMIN_ROLES = ['ADMINISTRADOR'] as const satisfies readonly UserRole[];
 export const CASH_OPERATION_ROLES = ['CAJERO', 'SUPERVISOR'] as const satisfies readonly UserRole[];
 export const CASH_MANAGEMENT_ROLES = ['SUPERVISOR'] as const satisfies readonly UserRole[];
-export const CASH_REPORT_ROLES = ['CAJERO', 'SUPERVISOR', 'GERENTE'] as const satisfies readonly UserRole[];
 export const AUDIT_ROLES = ['AUDITOR', 'GERENTE'] as const satisfies readonly UserRole[];
 export const AUTHENTICATED_ROLES = ['USER', 'CAJERO', 'SUPERVISOR', 'GERENTE', 'AUDITOR'] as const satisfies readonly UserRole[];
 export const TAX_READ_ROLES = ['USER', 'CAJERO', 'SUPERVISOR', 'GERENTE', 'AUDITOR'] as const satisfies readonly UserRole[];
@@ -58,7 +57,6 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/reportes/cuentas',
     '/reportes/recaudacion',
     '/fraccionamiento/consulta',
-    '/fraccionamiento/reportes',
     '/persona/consulta'
   ]),
   ...rules(CASH_OPERATION_ROLES, [
@@ -69,7 +67,6 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/caja/consultas'
   ]),
   ...rules(CASH_MANAGEMENT_ROLES, ['/caja/asignacion']),
-  ...rules(CASH_REPORT_ROLES, ['/caja/reportes']),
   ...rules(TAX_MANAGEMENT_ROLES, [
     '/fraccionamiento/aprobacion',
     '/fraccionamiento/cronograma',

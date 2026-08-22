@@ -1,6 +1,6 @@
 // src/services/turnoService.ts
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
 
 /**
@@ -84,7 +84,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
       const getUrl = queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
       console.log('[TurnoService] GET URL:', getUrl);
 
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<unknown>(getUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -92,28 +92,8 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         }
       });
 
-      console.log(`[TurnoService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[TurnoService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[TurnoService] Datos obtenidos:', responseData);
-
-      // Procesar respuesta - puede ser un array directo o wrapped
-      let items = [];
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else {
-        items = [responseData];
-      }
-
-      return this.normalizeData(items);
+      return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
       console.error('[TurnoService] Error listando turnos:', error);
@@ -133,7 +113,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -142,19 +122,8 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         body: JSON.stringify(datos)
       });
 
-      console.log(`[TurnoService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[TurnoService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[TurnoService] Turno creado:', responseData);
-
-      // Extraer datos del wrapper si existe
-      const created = responseData.data || responseData;
+      const created = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([created])[0];
 
       return normalized;
@@ -177,7 +146,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -186,19 +155,8 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         body: JSON.stringify(datos)
       });
 
-      console.log(`[TurnoService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[TurnoService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[TurnoService] Turno actualizado:', responseData);
-
-      // Extraer datos del wrapper si existe
-      const updated = responseData.data || responseData;
+      const updated = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([updated])[0];
 
       return normalized;
@@ -221,7 +179,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
-      const response = await apiClient.fetch(url, {
+      await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -229,14 +187,6 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         },
         body: JSON.stringify(datos)
       });
-
-      console.log(`[TurnoService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[TurnoService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
 
       console.log('[TurnoService] Turno eliminado exitosamente');
 

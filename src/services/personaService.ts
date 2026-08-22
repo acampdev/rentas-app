@@ -6,7 +6,7 @@ import {
   getAuthenticatedUserCode
 } from '../config/api.unified.config';
 import { ContribuyenteData } from './contribuyenteService';
-import apiClient from './apiClient';
+import apiClient, { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Persona
@@ -197,7 +197,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       return await this.getById(id);
     } catch (error) {
       console.error(`❌ [PersonaService] Error obteniendo persona ${id}:`, error);
-      return null;
+      if (isApiNotFoundError(error)) return null;
+      throw error;
     }
   }
 
@@ -220,23 +221,22 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       
       console.log('📡 [PersonaService] GET URL:', fullUrl);
       
-      const response = await apiClient.fetch(fullUrl, {
+      const result = await apiClient.request<unknown>(fullUrl, {
         method: 'GET'
       });
-      
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-      
-      const result = await response.json() as any;
       let items: PersonaRaw[] = [];
       
       if (Array.isArray(result)) {
-        items = result;
-      } else if (result.data && Array.isArray(result.data)) {
-        items = result.data;
-      } else if (result.data) {
-        items = [result.data];
-      } else if (result && typeof result === 'object' && result.codPersona) {
-        items = [result];
+        items = result as PersonaRaw[];
+      } else if (result && typeof result === 'object') {
+        const responseRecord = result as { data?: unknown; codPersona?: unknown };
+        if (Array.isArray(responseRecord.data)) {
+          items = responseRecord.data as PersonaRaw[];
+        } else if (responseRecord.data && typeof responseRecord.data === 'object') {
+          items = [responseRecord.data as PersonaRaw];
+        } else if (responseRecord.codPersona) {
+          items = [responseRecord as PersonaRaw];
+        }
       }
       
       return this.normalizeData(items);
@@ -268,7 +268,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       return null;
     } catch (error) {
       console.error(`❌ [PersonaService] Error obteniendo persona por documento ${dni}:`, error);
-      return null;
+      if (isApiNotFoundError(error)) return null;
+      throw error;
     }
   }
 
@@ -287,7 +288,8 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       return await this.listarPersona(codTipoDoc, numDoc);
     } catch (error) {
       console.error('❌ [PersonaService] Error en listarPorTipoYNombre:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -338,20 +340,10 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       console.log('📡 [PersonaService] POST URL:', API_URL);
       console.log('📦 [PersonaService] Payload:', bodyPayload);
       
-      const response = await apiClient.fetch(API_URL, {
+      const responseData = await apiClient.request<unknown>(API_URL, {
         method: 'POST',
         body: JSON.stringify(bodyPayload)
       });
-      
-      console.log(`📥 [PersonaService] Respuesta POST: ${response.status} ${response.statusText}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [PersonaService] Error del servidor POST:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
-      }
-      
-      const responseData = await response.json() as any;
       console.log('✅ [PersonaService] Persona creada (raw response):', responseData);
 
       const isNumeric = (val: any) => val !== null && val !== undefined && !isNaN(val) && !isNaN(parseFloat(val));
@@ -360,10 +352,10 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       let itemToNormalize: any = null;
 
       if (responseData && typeof responseData === 'object') {
-        const dataVal = responseData.data;
+        const dataVal = (responseData as Record<string, unknown>).data;
         if (dataVal !== undefined && dataVal !== null) {
           if (isNumeric(dataVal)) {
-            codPersona = parseInt(dataVal, 10);
+            codPersona = parseInt(String(dataVal), 10);
           } else {
             itemToNormalize = dataVal;
           }
@@ -371,7 +363,7 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
           itemToNormalize = responseData;
         }
       } else if (isNumeric(responseData)) {
-        codPersona = parseInt(responseData, 10);
+        codPersona = parseInt(String(responseData), 10);
       }
 
       if (codPersona > 0) {
@@ -465,23 +457,16 @@ class PersonaService extends BaseApiService<PersonaData, CreatePersonaDTO, Updat
       console.log('📡 [PersonaService] PUT URL:', API_URL);
       console.log('📦 [PersonaService] Payload:', bodyPayload);
       
-      const response = await apiClient.fetch(API_URL, {
+      const responseData = await apiClient.request<unknown>(API_URL, {
         method: 'PUT',
         body: JSON.stringify(bodyPayload)
       });
-      
-      console.log(`📥 [PersonaService] Respuesta PUT: ${response.status} ${response.statusText}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [PersonaService] Error del servidor PUT:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
-      }
-      
-      const responseData = await response.json() as any;
       console.log('✅ [PersonaService] Persona actualizada (raw response):', responseData);
       
-      const rawItem = responseData.data || responseData;
+      const responseRecord = responseData && typeof responseData === 'object'
+        ? responseData as Record<string, unknown>
+        : null;
+      const rawItem = responseRecord?.data ?? responseData;
       const normalized = this.normalizeOptions.normalizeItem(
         Array.isArray(rawItem) ? rawItem[0] : (rawItem || bodyPayload),
         0

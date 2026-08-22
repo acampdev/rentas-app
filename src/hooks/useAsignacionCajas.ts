@@ -21,7 +21,8 @@ export interface AsignacionCajaListItem {
 
 /**
  * Hook para gestionar asignaciones de caja
- * NO requiere autenticacion para ninguna operacion
+ * Las operaciones requieren una sesión autenticada y, para las mutaciones,
+ * el código temporal del supervisor autorizado.
  */
 export const useAsignacionCajas = () => {
   const [asignaciones, setAsignaciones] = useState<AsignacionCaja[]>([]);
@@ -127,28 +128,28 @@ export const useAsignacionCajas = () => {
   /**
    * Crea una nueva asignacion de caja
    */
-  const crearAsignacion = useCallback(async (datos: CreateAsignacionCajaDTO): Promise<AsignacionCaja | null> => {
+  const crearAsignacion = useCallback(async (datos: CreateAsignacionCajaDTO): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('[useAsignacionCajas] Creando asignacion (incluye usuario logeado):', datos);
 
-      const nuevaAsignacion = await asignacionCajaService.insertar(datos);
+      await asignacionCajaService.insertar(datos);
 
       NotificationService.success('Asignacion de caja creada correctamente');
 
       // Recargar lista
       await cargarAsignaciones();
 
-      return nuevaAsignacion;
+      return true;
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al crear asignacion';
       console.error('[useAsignacionCajas] Error al crear:', error);
       setError(message);
       NotificationService.error(message);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }
@@ -157,28 +158,28 @@ export const useAsignacionCajas = () => {
   /**
    * Actualiza una asignacion de caja existente
    */
-  const actualizarAsignacion = useCallback(async (datos: UpdateAsignacionCajaDTO): Promise<AsignacionCaja | null> => {
+  const actualizarAsignacion = useCallback(async (datos: UpdateAsignacionCajaDTO): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('[useAsignacionCajas] Actualizando asignacion:', datos);
 
-      const asignacionActualizada = await asignacionCajaService.actualizar(datos);
+      await asignacionCajaService.actualizar(datos);
 
       NotificationService.success('Asignacion de caja actualizada correctamente');
 
       // Recargar lista
       await cargarAsignaciones();
 
-      return asignacionActualizada;
+      return true;
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al actualizar asignacion';
       console.error('[useAsignacionCajas] Error al actualizar:', error);
       setError(message);
       NotificationService.error(message);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }

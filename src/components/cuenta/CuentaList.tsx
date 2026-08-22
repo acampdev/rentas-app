@@ -239,32 +239,29 @@ const CuentaList: React.FC<CuentaListProps> = ({
 
           <Box
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 3,
-              alignItems: "center",
-              p: 2.5,
+              p: 2,
               bgcolor: alpha(theme.palette.primary.main, 0.01),
               borderRadius: 3,
               border: "1px solid",
               borderColor: alpha(theme.palette.primary.main, 0.05),
             }}
           >
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center" }}>
             {/* Seleccionar Contribuyente*/}
-            <Box sx={{ flex: "1 1 280px", minWidth: "280px" }}>
+            <Box sx={{ width: { xs: "100%", sm: 250 }, flexShrink: 0 }}>
               <Button
                 variant="outlined"
                 fullWidth
                 startIcon={<PersonSearchIcon sx={{ fontSize: "1.3rem" }} />}
                 onClick={handleSelectorContribuyente}
                 sx={{
-                  height: 56,
-                  borderRadius: 2.5,
+                  height: 40,
+                  borderRadius: 2,
                   borderWidth: 1.5,
                   borderColor: "primary.main",
                   color: "primary.main",
                   fontWeight: 600,
-                  fontSize: "0.95rem",
+                  fontSize: "0.85rem",
                   textTransform: "none",
                   background: alpha(theme.palette.primary.main, 0.03),
                   transition: "all 0.2s ease-in-out",
@@ -284,8 +281,8 @@ const CuentaList: React.FC<CuentaListProps> = ({
             {/* Información del Contribuyente Seleccionado */}
             <Box
               sx={{
-                flex: "1 1 350px",
-                minWidth: "300px",
+                flex: "1 1 320px",
+                minWidth: { xs: "100%", sm: "300px" },
                 display: "flex",
                 flexDirection: "column",
                 gap: 1,
@@ -294,8 +291,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
               {contribuyenteSeleccionado ? (
                 <Box
                   sx={{
-                    p: 2,
-                    borderRadius: 2.5,
+                    px: 1.5,
+                    py: 0.75,
+                    minHeight: 40,
+                    borderRadius: 2,
                     bgcolor: alpha(theme.palette.success.main, 0.04),
                     border: `1px solid ${alpha(theme.palette.success.main, 0.12)}`,
                     boxShadow: `0 2px 8px ${alpha(theme.palette.success.main, 0.03)}`,
@@ -307,8 +306,8 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 >
                   <Box
                     sx={{
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       borderRadius: "50%",
                       bgcolor: alpha(theme.palette.success.main, 0.1),
                       display: "flex",
@@ -384,7 +383,7 @@ const CuentaList: React.FC<CuentaListProps> = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    minHeight: 62,
+                    minHeight: 40,
                   }}
                 >
                   <Typography
@@ -405,9 +404,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
               )}
             </Box>
 
-            <Box sx={{ flex: "0 1 140px", minWidth: "120px" }}>
+            <Box sx={{ width: { xs: "100%", sm: 100 }, flexShrink: 0 }}>
               <TextField
                 fullWidth
+                size="small"
                 label="Año"
                 type="number"
                 value={anioFiltro}
@@ -417,9 +417,10 @@ const CuentaList: React.FC<CuentaListProps> = ({
               />
             </Box>
 
-            <Box sx={{ flex: "0 1 180px", minWidth: "150px" }}>
+            <Box sx={{ width: { xs: "100%", sm: 160 }, flexShrink: 0 }}>
               <TextField
                 fullWidth
+                size="small"
                 label="Código de predio"
                 type="number"
                 value={codigoPredio}
@@ -428,9 +429,11 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 inputProps={{ min: 1 }}
               />
             </Box>
+            </Box>
 
             {/* Botón de Buscar */}
-            <Box sx={{ flex: "0 1 180px", minWidth: "180px" }}>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+            <Box sx={{ width: { xs: "100%", sm: 160 }, flexShrink: 0 }}>
               <Button
                 variant="contained"
                 fullWidth
@@ -444,12 +447,12 @@ const CuentaList: React.FC<CuentaListProps> = ({
                 onClick={handleBuscarCuenta}
                 disabled={!codigoContribuyente || loadingEstadoCuenta}
                 sx={{
-                  height: 56,
-                  borderRadius: 2.5,
+                  height: 40,
+                  borderRadius: 2,
                   backgroundColor: "#10b981 !important",
                   color: "white !important",
                   fontWeight: 700,
-                  fontSize: "1rem",
+                  fontSize: "0.9rem",
                   textTransform: "none",
                   boxShadow: "0 4px 14px rgba(16, 185, 129, 0.3)",
                   transition: "all 0.2s ease-in-out",
@@ -473,6 +476,7 @@ const CuentaList: React.FC<CuentaListProps> = ({
               >
                 {loadingEstadoCuenta ? "Buscando..." : "Buscar"}
               </Button>
+            </Box>
             </Box>
           </Box>
         </CardContent>

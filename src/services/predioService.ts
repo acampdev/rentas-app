@@ -1,5 +1,6 @@
 // src/services/predioService.ts
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 import { getAuthenticatedUserCode } from '../config/api.unified.config';
 
 
@@ -309,7 +310,8 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
       return [];
     } catch (error: unknown) {
       console.error('❌ [PredioService] Error:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -336,7 +338,8 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
       return [];
     } catch (error: unknown) {
       console.error('❌ [PredioService] Error en buscarPredios:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -505,7 +508,8 @@ class PredioService extends BaseApiService<PredioData, CreatePredioDTO, Partial<
 
     } catch (error: unknown) {
       console.error('❌ [PredioService] Error al obtener usos de predios:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

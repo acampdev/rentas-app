@@ -24,7 +24,6 @@ import {
 import {
   Search as SearchIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon
 } from '@mui/icons-material';
 import { ArancelData } from '../../services/arancelService';
@@ -35,7 +34,6 @@ interface ArancelListProps {
   loading?: boolean;
   onSearch?: (searchParams: { anio: number; parametroBusqueda?: string }) => void;
   onNuevo?: () => void;
-  onEliminar?: (id: number) => void;
   onRefresh?: () => void;
 }
 
@@ -44,8 +42,7 @@ export const ArancelList: React.FC<ArancelListProps> = ({
   onEditArancel,
   loading = false,
   onSearch,
-  onNuevo,
-  onEliminar
+  onNuevo
 }) => {
   const theme = useTheme();
   const [anioFiltro, setAnioFiltro] = useState<number>(new Date().getFullYear());
@@ -143,7 +140,15 @@ export const ArancelList: React.FC<ArancelListProps> = ({
         )}
       </Box>
 
-      <TableContainer sx={{ maxHeight: 500 }}>
+      <TableContainer
+        sx={{
+          maxHeight: { xs: 360, sm: 440, md: 'calc(100vh - 430px)' },
+          minHeight: { md: 300 },
+          overflowY: 'auto',
+          overflowX: 'auto',
+          scrollbarGutter: 'stable'
+        }}
+      >
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -188,21 +193,6 @@ export const ArancelList: React.FC<ArancelListProps> = ({
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      {onEliminar && row.codArancel && (
-                        <Tooltip title="Eliminar">
-                          <IconButton 
-                            size="small" 
-                            color="error" 
-                            onClick={() => onEliminar(row.codArancel!)}
-                            sx={{
-                              bgcolor: alpha(theme.palette.error.main, 0.08),
-                              '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.16) }
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
                     </Stack>
                   </TableCell>
                 </TableRow>

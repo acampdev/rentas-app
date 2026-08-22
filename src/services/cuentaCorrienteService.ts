@@ -274,17 +274,13 @@ class CuentaCorrienteService extends BaseApiService<
       });
       const getUrl = `${url}?${queryParams.toString()}`;
 
-      const response = await apiClient.fetch(getUrl, {
+      const payload = await apiClient.request<unknown>(getUrl, {
         method: "GET",
         credentials: "include",
         headers: getApiHeaders(true),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const items = extraerItemsEstadoCuenta(await response.json());
+      const items = extraerItemsEstadoCuenta(payload);
 
       return this.normalizeData(items);
     } catch (error) {
@@ -319,17 +315,13 @@ class CuentaCorrienteService extends BaseApiService<
       });
       const getUrl = `${url}?${queryParams.toString()}`;
 
-      const response = await apiClient.fetch(getUrl, {
+      const payload = await apiClient.request<unknown>(getUrl, {
         method: "GET",
         credentials: "include",
         headers: getApiHeaders(true),
       });
 
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const items = extraerItemsEstadoCuenta(await response.json());
+      const items = extraerItemsEstadoCuenta(payload);
 
       // Normalizar detalles
       return items.map((item) => ({

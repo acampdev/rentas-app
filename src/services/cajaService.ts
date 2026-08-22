@@ -1,6 +1,6 @@
 // src/services/cajaService.ts
 import BaseApiService from './BaseApiService';
-import apiClient from './apiClient';
+import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
 import { buildApiUrl, getAuthenticatedUserCode } from '../config/api.unified.config';
 
 /**
@@ -102,33 +102,12 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(getUrl, {
+      const responseData = await apiClient.request<unknown>(getUrl, {
         method: 'GET',
         headers
       });
-
-      console.log(`[CajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[CajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[CajaService] Datos obtenidos:', responseData);
-
-      // Procesar respuesta - puede ser un array directo o wrapped
-      let items = [];
-      if (Array.isArray(responseData)) {
-        items = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        items = responseData.data;
-      } else {
-        items = [responseData];
-      }
-
-      return this.normalizeData(items);
+      return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
       console.error('[CajaService] Error listando cajas:', error);
@@ -157,25 +136,14 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[CajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[CajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[CajaService] Caja creada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      const created = responseData.data || responseData;
+      const created = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([created])[0];
 
       return normalized;
@@ -207,25 +175,14 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      const responseData = await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
 
-      console.log(`[CajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[CajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       console.log('[CajaService] Caja actualizada:', responseData);
-
-      // Extraer datos del wrapper si existe
-      const updated = responseData.data || responseData;
+      const updated = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([updated])[0];
 
       return normalized;
@@ -257,19 +214,11 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await apiClient.fetch(url, {
+      await apiClient.request<unknown>(url, {
         method: 'PUT',
         headers,
         body: JSON.stringify(datos)
       });
-
-      console.log(`[CajaService] Respuesta: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[CajaService] Error del servidor:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
 
       console.log('[CajaService] Caja eliminada exitosamente');
 
