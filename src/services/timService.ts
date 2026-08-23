@@ -1,5 +1,6 @@
 // src/services/timService.ts
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 export interface TimData {
   codTIM: number;
@@ -92,7 +93,8 @@ class TimService extends BaseApiService<TimData, any, UpdateTimDTO, any> {
       return this.normalizeData(rawData);
     } catch (error) {
       console.error('Error in obtenerTim:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

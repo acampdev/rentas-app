@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 import { 
   ExpedienteCoactivo, 
   NotificacionCoactiva, 
@@ -64,7 +65,8 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
       }));
     } catch (error: unknown) {
       console.error('[CoactivaService] Error notificaciones:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 
@@ -89,7 +91,8 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
       }));
     } catch (error: unknown) {
       console.error('[CoactivaService] Error resoluciones:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 }

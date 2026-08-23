@@ -1,4 +1,5 @@
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Barrio
@@ -135,7 +136,8 @@ class BarrioService extends BaseApiService<BarrioData, CreateBarrioDTO, UpdateBa
       return this.normalizeData(data);
     } catch (error) {
       console.error('[BarrioService] Error obteniendo por sector:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

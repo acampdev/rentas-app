@@ -10,17 +10,30 @@ import { uitService } from './uitService';
 import { sectorService } from './SectorService';
 import { constanteService } from './constanteService';
 import { interesService } from './interesService';
+import barrioService from './barrioService';
+import { timService } from './timService';
+import { resolucionInteresService } from './resolucionInteresService';
+import tipoViaService from './viaService';
+import { alcabalaService } from './alcabalaService';
+import { coactivaService } from './coactivaService';
 import type { ApiClientError } from './apiClient';
+import { API_CONFIG } from '../config/api.unified.config';
+
+const configuredRetries = API_CONFIG.retries;
 
 const errorResponse = (status: number, message: string) =>
   Response.json({ message }, { status });
 
 describe('propagación de errores en servicios operativos', () => {
   beforeEach(() => {
+    // Estas pruebas validan propagación, no la política de reintentos. Evitar
+    // esperas exponenciales permite comprobar los errores 500 directamente.
+    API_CONFIG.retries = 0;
     window.sessionStorage.setItem('auth_user', JSON.stringify({ codUsuario: 17 }));
   });
 
   afterEach(() => {
+    API_CONFIG.retries = configuredRetries;
     window.sessionStorage.clear();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -59,6 +72,23 @@ describe('propagación de errores en servicios operativos', () => {
   });
 
   it.each([
+    [401, () => barrioService.obtenerPorSector(3), 'Barrios no autorizados'],
+    [403, () => timService.obtenerTim({ anio: 2026 }), 'TIM restringido'],
+    [500, () => resolucionInteresService.obtenerTodas(), 'Resoluciones no disponibles'],
+    [401, () => tipoViaService.listarTiposVia(), 'Vías no autorizadas'],
+    [403, () => alcabalaService.obtenerPorAnio(2026), 'Alcabala restringida'],
+    [500, () => coactivaService.listarNotificaciones(), 'Coactiva no disponible'],
+    [500, () => coactivaService.listarResoluciones(), 'Resoluciones coactivas no disponibles'],
+  ])('propaga HTTP %s desde los servicios que antes ocultaban el error', async (status, operation, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(errorResponse(status, message)));
+
+    await expect(operation()).rejects.toMatchObject<ApiClientError>({
+      statusCode: status,
+      message,
+    });
+  });
+
+  it.each([
     [() => personaService.listarPersona('4101', '12345678')],
     [() => constanteService.listarConstantesPorPadre('4100')],
     [() => interesService.obtenerPorAnio(2026)],
@@ -71,6 +101,26 @@ describe('propagación de errores en servicios operativos', () => {
     await expect(operation()).rejects.toMatchObject<ApiClientError>({
       statusCode: 200,
       message: 'La operación de consulta fue rechazada',
+    });
+  });
+
+  it.each([
+    [() => barrioService.obtenerPorSector(3)],
+    [() => timService.obtenerTim({ anio: 2026 })],
+    [() => resolucionInteresService.obtenerTodas()],
+    [() => tipoViaService.listarTiposVia()],
+    [() => alcabalaService.obtenerPorAnio(2026)],
+    [() => coactivaService.listarNotificaciones()],
+    [() => coactivaService.listarResoluciones()],
+  ])('propaga success false desde los servicios corregidos', async (operation) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+      success: false,
+      data: 'El servidor rechazó la consulta',
+    })));
+
+    await expect(operation()).rejects.toMatchObject<ApiClientError>({
+      statusCode: 200,
+      message: 'El servidor rechazó la consulta',
     });
   });
 
@@ -95,6 +145,13 @@ describe('propagación de errores en servicios operativos', () => {
     [() => sectorService.obtenerTodos(), []],
     [() => constanteService.listarConstantesPorPadre('4100'), []],
     [() => interesService.obtenerPorAnio(2026), []],
+    [() => barrioService.obtenerPorSector(3), []],
+    [() => timService.obtenerTim({ anio: 2026 }), []],
+    [() => resolucionInteresService.obtenerTodas(), []],
+    [() => tipoViaService.listarTiposVia(), []],
+    [() => alcabalaService.obtenerPorAnio(2026), null],
+    [() => coactivaService.listarNotificaciones(), []],
+    [() => coactivaService.listarResoluciones(), []],
   ])('mantiene 404 como ausencia válida en la consulta', async (operation, expected) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(errorResponse(404, 'No existen registros')));
 

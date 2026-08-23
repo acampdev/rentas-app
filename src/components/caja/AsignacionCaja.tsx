@@ -114,6 +114,8 @@ const AsignacionCaja: React.FC<AsignacionCajaProps> = ({ codigoSupervisor }) => 
   const {
     asignaciones,
     loading: loadingAsignaciones,
+    error: errorAsignacion,
+    limpiarError,
     crearAsignacion,
     actualizarAsignacion,
     eliminarAsignacion,
@@ -233,6 +235,7 @@ const AsignacionCaja: React.FC<AsignacionCajaProps> = ({ codigoSupervisor }) => 
   };
 
   const handleLimpiarFormulario = () => {
+    limpiarError();
     setSelectedCajero('');
     setSelectedCaja('');
     setSelectedTurno('');
@@ -280,6 +283,7 @@ const AsignacionCaja: React.FC<AsignacionCajaProps> = ({ codigoSupervisor }) => 
   };
 
   const handleEditClick = (asignacion: AsignacionCajaData) => {
+    limpiarError();
     const codUsuario = Number(asignacion.codUsuario);
     const codCaja = Number(asignacion.codCaja);
     const codTurno = Number(asignacion.codTurno);
@@ -378,6 +382,16 @@ const AsignacionCaja: React.FC<AsignacionCajaProps> = ({ codigoSupervisor }) => 
 
           {/* Nueva Asignacion / Edición de Cajero */}
           <TabPanel value={value} index={0}>
+            {errorAsignacion && (
+              <Alert
+                severity="error"
+                variant="outlined"
+                onClose={limpiarError}
+                sx={{ mb: 2 }}
+              >
+                {errorAsignacion}
+              </Alert>
+            )}
             <Paper elevation={0} sx={{ p: 3, bgcolor: alpha(theme.palette.grey[100], 0.3), borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
               <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ mb: 3 }}>
                 {editandoAsignacion ? "Modificar Datos de Asignación" : "Detalles de la Nueva Asignación"}

@@ -7,6 +7,7 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
   const apiTarget = env.VITE_API_URL
+  const enableDebugLogs = env.VITE_ENABLE_DEBUG_LOGS === 'true'
 
   if (!apiTarget) {
     throw new Error('VITE_API_URL debe estar configurada para iniciar Vite')
@@ -32,7 +33,9 @@ export default defineConfig(({ mode }) => {
       ]
     }
   },
-  esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : undefined,
+  // Los logs del navegador quedan desactivados por defecto también en desarrollo.
+  // Para una sesión de diagnóstico explícita use VITE_ENABLE_DEBUG_LOGS=true.
+  esbuild: enableDebugLogs ? undefined : { drop: ['console', 'debugger'] },
   
   // Resolver alias para importaciones
   resolve: {
@@ -64,13 +67,9 @@ export default defineConfig(({ mode }) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('❌ Proxy error:', err);
           });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
+          proxy.on('proxyReq', (proxyReq) => {
             proxyReq.removeHeader('origin');
             proxyReq.removeHeader('referer');
-            console.log('➡️ Proxying:', req.method, req.url, '→', proxyReq.path);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('⬅️ Proxy response:', proxyRes.statusCode, 'for', req.url);
           });
         }
       },

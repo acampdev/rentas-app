@@ -9,7 +9,7 @@ const DeduccionBeneficioPage: React.FC = () => {
     <MainLayout>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-          Gestion de Deducciones y Beneficios
+          Gestión de Deducciones y Beneficios
         </Typography>
         <DeduccionBeneficio />
       </Box>

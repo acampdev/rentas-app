@@ -3,7 +3,7 @@
  * Página principal de Gestión de Caja, que coordina la apertura/cierre
  * y delega las operaciones de cobro al componente Pagos.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Container,
@@ -73,6 +73,17 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+const createClosedCajaState = (): EstadoCaja => ({
+  numeroCaja: '',
+  fechaApertura: '',
+  montoInicial: 0,
+  montoActual: 0,
+  totalIngresos: 0,
+  totalEgresos: 0,
+  abierta: false,
+  ultimaTransaccion: undefined
+});
+
 // Interface para el estado de la caja
 interface EstadoCaja {
   numeroCaja: string;
@@ -89,63 +100,42 @@ interface EstadoCaja {
 }
 
 const CajaPage: React.FC = () => {
-  // Estado de la caja
-  const [estadoCaja, setEstadoCaja] = useState<EstadoCaja>(() => {
-    const saved = localStorage.getItem('estado_caja');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('[CajaPage] Error parsing saved state:', e);
-      }
-    }
-    return {
-      numeroCaja: '00013',
-      fechaApertura: '',
-      montoInicial: 0,
-      montoActual: 0,
-      totalIngresos: 0,
-      totalEgresos: 0,
-      abierta: false,
-      ultimaTransaccion: undefined
-    };
-  });
-
-  // Guardar estado de la caja en localStorage
-  useEffect(() => {
-    localStorage.setItem('estado_caja', JSON.stringify(estadoCaja));
-  }, [estadoCaja]);
+  // El estado local es únicamente visual. La apertura operativa siempre se
+  // vuelve a obtener y verificar contra el backend antes de pagar o cerrar.
+  const [estadoCaja, setEstadoCaja] = useState<EstadoCaja>(createClosedCajaState);
 
   // Estados de modales
   const [aperturaModalOpen, setAperturaModalOpen] = useState(false);
   const [movimientosModalOpen, setMovimientosModalOpen] = useState(false);
   const [listarAperturaModalOpen, setListarAperturaModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const aperturaSyncVersionRef = useRef(0);
 
   // Sincronizar apertura de caja activa con el servidor
-  const syncActiveApertura = useCallback(async () => {
+  const syncActiveApertura = useCallback(async (codUsuarioOverride?: number) => {
+    const syncVersion = ++aperturaSyncVersionRef.current;
+
     try {
-      let currentCodUsuario = getAuthenticatedUserCode();
-      
-      // Si hay un cajero operando en el estado de localStorage, priorizar ese cajero (administradores o supervisores)
-      const savedEstado = localStorage.getItem('estado_caja');
-      const parsedEstado = savedEstado ? JSON.parse(savedEstado) : null;
-      if (parsedEstado && parsedEstado.codUsuarioOperando) {
-        currentCodUsuario = Number(parsedEstado.codUsuarioOperando);
-        console.log('[CajaPage] Operando caja de cajero ID:', currentCodUsuario);
-      }
+      const currentCodUsuario = codUsuarioOverride ?? getAuthenticatedUserCode();
 
       console.log('[CajaPage] currentCodUsuario resuelto para buscar apertura:', currentCodUsuario);
-      if (!currentCodUsuario) return;
+      if (!currentCodUsuario) {
+        if (syncVersion === aperturaSyncVersionRef.current) {
+          setEstadoCaja(createClosedCajaState());
+        }
+        return;
+      }
 
       console.log('[CajaPage] Sincronizando apertura activa con servidor para usuario:', currentCodUsuario);
       const apertura = await aperturaCajaService.obtenerPorUsuario(currentCodUsuario);
       console.log('[CajaPage] Apertura obtenida del servidor:', apertura);
 
+      if (syncVersion !== aperturaSyncVersionRef.current) return;
+
       if (apertura) {
         console.log('[CajaPage] Apertura activa encontrada en servidor:', apertura);
         
-        let numCaja = apertura.caja || '00013';
+        let numCaja = apertura.caja?.trim() ?? '';
         if (!apertura.caja && apertura.codAsignacionCaja) {
           try {
             const asignaciones = await asignacionCajaService.listar({ codUsuario: currentCodUsuario });
@@ -156,11 +146,13 @@ const CajaPage: React.FC = () => {
           }
         }
 
+        if (syncVersion !== aperturaSyncVersionRef.current) return;
+
         setEstadoCaja({
           numeroCaja: numCaja,
           fechaApertura: apertura.fechaApertura || '',
-          montoInicial: apertura.montoApertura || 0,
-          montoActual: apertura.montoCierre || apertura.montoApertura || 0,
+          montoInicial: apertura.montoApertura,
+          montoActual: apertura.montoCierre ?? apertura.montoApertura,
           totalIngresos: 0,
           totalEgresos: 0,
           abierta: apertura.estado === 'ABIERTO' || apertura.estado === 'ABIERTA',
@@ -171,20 +163,14 @@ const CajaPage: React.FC = () => {
         });
       } else {
         console.log('[CajaPage] No se encontró apertura activa en el servidor.');
-        setEstadoCaja(prev => {
-          if (prev.abierta) {
-            return {
-              ...prev,
-              abierta: false,
-              codAperturaCaja: undefined,
-              codUsuarioOperando: undefined
-            };
-          }
-          return prev;
-        });
+        setEstadoCaja(createClosedCajaState());
       }
     } catch (err) {
       console.error('[CajaPage] Error al sincronizar apertura con servidor:', err);
+      if (syncVersion !== aperturaSyncVersionRef.current) return;
+      setEstadoCaja(createClosedCajaState());
+      const message = err instanceof Error ? err.message : 'No se pudo verificar la apertura activa.';
+      NotificationService.error(message);
     }
   }, []);
 
@@ -204,6 +190,10 @@ const CajaPage: React.FC = () => {
       
       const codAsignacionCaja = data.codAsignacionCaja;
       const selectedCajeroId = data.codUsuario || currentCodUsuario;
+
+      if (!Number.isInteger(selectedCajeroId) || selectedCajeroId <= 0) {
+        throw new Error('Debe seleccionar un cajero válido para abrir la caja.');
+      }
       
       // Registrar la apertura en la base de datos
       console.log('[CajaPage] Registrando apertura en la base de datos');
@@ -215,8 +205,11 @@ const CajaPage: React.FC = () => {
       
       console.log('[CajaPage] Apertura de caja registrada con éxito:', resultadoApertura);
 
+      // Una sincronización anterior no debe sobrescribir esta nueva apertura.
+      aperturaSyncVersionRef.current += 1;
+
       // Actualizar estado de la caja
-      const nombreCaja = data.numeroCaja || '00013';
+      const nombreCaja = resultadoApertura.caja?.trim() || data.numeroCaja?.trim() || '';
       setEstadoCaja({
         numeroCaja: nombreCaja,
         fechaApertura: data.fechaApertura,
@@ -236,7 +229,7 @@ const CajaPage: React.FC = () => {
       
       // Mostrar notificación
       NotificationService.success(
-        `¡Caja abierta exitosamente! ${nombreCaja} iniciada con S/. ${data.montoInicial.toFixed(2)}`
+        `¡Caja abierta exitosamente!${nombreCaja ? ` ${nombreCaja}` : ''} iniciada con S/. ${data.montoInicial.toFixed(2)}`
       );
       
     } catch (error: any) {
@@ -250,22 +243,38 @@ const CajaPage: React.FC = () => {
   };
 
   // Manejar operación de caja (para administrador)
-  const handleOperarCaja = useCallback((codAperturaCaja: number, codUsuario: number, caja: string, montoApertura: number, fechaApertura: string) => {
-    setEstadoCaja({
-      numeroCaja: caja,
-      fechaApertura: fechaApertura,
-      montoInicial: montoApertura,
-      montoActual: montoApertura,
-      totalIngresos: 0,
-      totalEgresos: 0,
-      abierta: true,
-      ultimaTransaccion: new Date().toLocaleTimeString('es-PE'),
-      codAperturaCaja: codAperturaCaja,
-      codAsignacionCaja: null,
-      codUsuarioOperando: codUsuario
-    });
-    setListarAperturaModalOpen(false);
-    NotificationService.success(`Operando caja activa de cajero seleccionada`);
+  const handleOperarCaja = useCallback(async (codAperturaCaja: number, codUsuario: number, caja: string, _montoApertura: number, _fechaApertura: string) => {
+    setLoading(true);
+    try {
+      const apertura = await aperturaCajaService.verificarAperturaActiva(codUsuario, codAperturaCaja);
+      const montoActual = apertura.montoCierre ?? apertura.montoApertura;
+      if (!Number.isFinite(montoActual) || montoActual < 0) {
+        throw new Error('El servidor no informó un monto válido para la apertura seleccionada.');
+      }
+
+      setEstadoCaja({
+        numeroCaja: apertura.caja?.trim() || caja.trim(),
+        fechaApertura: apertura.fechaApertura || '',
+        montoInicial: apertura.montoApertura,
+        montoActual,
+        totalIngresos: 0,
+        totalEgresos: 0,
+        abierta: true,
+        ultimaTransaccion: new Date().toLocaleTimeString('es-PE'),
+        codAperturaCaja: apertura.codAperturaCaja,
+        codAsignacionCaja: apertura.codAsignacionCaja,
+        codUsuarioOperando: codUsuario
+      });
+      // Una consulta iniciada antes de seleccionar esta apertura ya no es vigente.
+      aperturaSyncVersionRef.current += 1;
+      setListarAperturaModalOpen(false);
+      NotificationService.success('Operando la apertura activa verificada del cajero seleccionado.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'No se pudo verificar la caja seleccionada.';
+      NotificationService.error(message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   // Manejar cierre de caja
@@ -273,30 +282,41 @@ const CajaPage: React.FC = () => {
     if (window.confirm('¿Está seguro que desea cerrar la caja?')) {
       setLoading(true);
       try {
-        const currentCodUsuario = estadoCaja.codUsuarioOperando || getAuthenticatedUserCode();
+        const currentCodUsuario = estadoCaja.codUsuarioOperando ?? getAuthenticatedUserCode();
+        const aperturaActiva = await aperturaCajaService.verificarAperturaActiva(
+          currentCodUsuario,
+          estadoCaja.codAperturaCaja
+        );
+        const codAperturaCaja = aperturaActiva.codAperturaCaja;
+        const codAsignacionCaja = aperturaActiva.codAsignacionCaja ?? null;
+        const montoCierre = aperturaActiva.montoCierre ?? aperturaActiva.montoApertura;
 
-        const codAperturaCaja = estadoCaja.codAperturaCaja || 1;
-        const codAsignacionCaja = estadoCaja.codAsignacionCaja || null;
+        if (!codAperturaCaja) {
+          throw new Error('El servidor no informó el código de la apertura activa.');
+        }
+        if (!Number.isFinite(montoCierre) || montoCierre < 0) {
+          throw new Error('El servidor no informó un monto válido para cerrar la caja.');
+        }
         
         console.log('[CajaPage] Registrando cierre de caja en la base de datos (PUT /api/aperturaCaja/cierre):', {
           codAperturaCaja,
-          observacion: 'Aperturar caja',
-          montoCierre: estadoCaja.montoActual || 5000,
+          observacion: 'Cerrar caja',
+          montoCierre,
           codUsuario: currentCodUsuario
         });
 
         await aperturaCajaService.cierre({
           codAperturaCaja,
           codAsignacionCaja,
-          observacion: 'Aperturar caja',
-          montoCierre: estadoCaja.montoActual || 5000,
+          observacion: 'Cerrar caja',
+          montoCierre,
           codUsuario: currentCodUsuario
         });
-        
-        setEstadoCaja(prev => ({
-          ...prev,
-          abierta: false
-        }));
+
+        // Invalida verificaciones pendientes que todavía pudieran devolver la
+        // apertura como activa y volver a mostrar la sección de cobros.
+        aperturaSyncVersionRef.current += 1;
+        setEstadoCaja(createClosedCajaState());
         
         NotificationService.info(
           `Caja cerrada: Caja N° ${estadoCaja.numeroCaja} cerrada exitosamente en la base de datos`
@@ -316,6 +336,13 @@ const CajaPage: React.FC = () => {
   const handleVerMovimientos = () => {
     setMovimientosModalOpen(true);
   };
+
+  const puedeOperarCaja =
+    estadoCaja.abierta === true &&
+    Number.isInteger(estadoCaja.codAperturaCaja) &&
+    Number(estadoCaja.codAperturaCaja) > 0 &&
+    Number.isInteger(estadoCaja.codUsuarioOperando) &&
+    Number(estadoCaja.codUsuarioOperando) > 0;
 
   return (
     <MainLayout title="Gestión de Caja">
@@ -452,9 +479,13 @@ const CajaPage: React.FC = () => {
       </Paper>
 
       {/* Sección de Pagos/Ingresos */}
-      {estadoCaja.abierta ? (
+      {puedeOperarCaja ? (
         <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
-          <Pagos onPagoExitoso={syncActiveApertura} />
+          <Pagos
+            codAperturaCaja={Number(estadoCaja.codAperturaCaja)}
+            codUsuarioOperando={Number(estadoCaja.codUsuarioOperando)}
+            onPagoExitoso={() => void syncActiveApertura(Number(estadoCaja.codUsuarioOperando))}
+          />
         </Paper>
       ) : (
         <Alert severity="warning" sx={{ borderRadius: 2 }}>

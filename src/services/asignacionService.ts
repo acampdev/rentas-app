@@ -1,6 +1,13 @@
 // src/services/asignacionService.ts
 import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
 import apiClient from './apiClient';
+import {
+  extraerAsignaciones,
+  getAsignacionErrorMessage,
+  normalizarAsignacion,
+  toAsignacionRecord,
+  toAsignacionWritePayload
+} from './asignacion.adapters';
 
 export interface AsignacionPredio {
   id: number | string;
@@ -62,87 +69,8 @@ export interface ApiAsignacionResponse<T = unknown> {
 
 export type PrevalidacionBeneficio = ApiAsignacionResponse<string>;
 
-const formatPercentage = (value: number): string =>
-  value.toLocaleString('es-PE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-
-const toRecord = (value: unknown): Record<string, unknown> => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
-
-const getErrorMessage = (payload: unknown, fallback: string): string => {
-  const response = toRecord(payload);
-  if (typeof response.data === 'string' && response.data.trim()) {
-    return response.data.trim();
-  }
-  if (typeof response.message === 'string' && response.message.trim()) {
-    return response.message.trim();
-  }
-  return fallback;
-};
-
-const toWritePayload = (datos: CreateAsignacionAPIDTO): CreateAsignacionAPIDTO => ({
-  codPredio: String(datos.codPredio).trim(),
-  codContribuyente: Number(datos.codContribuyente),
-  codAsignacion: datos.codAsignacion ?? null,
-  porcentajeCondomino: datos.porcentajeCondomino ?? null,
-  fechaDeclaracion: datos.fechaDeclaracion,
-  fechaVenta: datos.fechaVenta,
-  codModoDeclaracion: String(datos.codModoDeclaracion).trim()
-});
-
 class AsignacionService {
   private readonly endpoint = '/api/asignacionpredio';
-
-  private normalizeItem(item: unknown, index = 0): AsignacionPredio {
-    const raw = toRecord(item);
-    const porcentajeRaw = raw.porcentajeCondomino;
-    const porcentaje = porcentajeRaw === null || porcentajeRaw === undefined ? null : Number(porcentajeRaw);
-    const pensionistaRaw = raw.pensionista;
-    const pensionista = pensionistaRaw === null || pensionistaRaw === undefined ? null : Number(pensionistaRaw);
-    const codEstado = String(raw.codEstado || '0201').trim();
-    const codPredio = String(raw.codPredio || '').trim();
-    const codPredioContribuyente = raw.codPredioContribuyente === null || raw.codPredioContribuyente === undefined ? null : Number(raw.codPredioContribuyente);
-    const codAsignacion = raw.codAsignacion === null || raw.codAsignacion === undefined ? null : (raw.codAsignacion as number | string);
-
-    return {
-      id: codAsignacion ?? codPredioContribuyente ?? `${codPredio}-${index}`,
-      anio: Number(raw.anio) || new Date().getFullYear(),
-      codPredio,
-      codPredioBase: raw.codPredioBase === null || raw.codPredioBase === undefined ? null : Number(raw.codPredioBase),
-      codContribuyente: String(raw.codContribuyente || '').trim(),
-      codAsignacion,
-      porcentajeCondomino: porcentaje,
-      porcentajeCondominoDesc: String(raw.porcentajeCondominoDesc || '').trim() || `${formatPercentage(porcentaje ?? 100)} %`,
-      fechaDeclaracion: String(raw.fechaDeclaracion || '').trim(),
-      fechaVenta: String(raw.fechaVenta || '').trim(),
-      fechaDeclaracionStr: String(raw.fechaDeclaracionStr || raw.fechaDeclaracion || '').trim(),
-      fechaVentaStr: String(raw.fechaVentaStr || raw.fechaVenta || '').trim(),
-      codModoDeclaracion: String(raw.codModoDeclaracion || '').trim(),
-      modoDeclaracion: String(raw.modoDeclaracion || '').trim(),
-      pensionista,
-      pensionistaDesc:
-        raw.pensionistaDesc === null || raw.pensionistaDesc === undefined
-          ? pensionista === null
-            ? null
-            : pensionista === 1
-              ? 'Sí'
-              : 'No'
-          : String(raw.pensionistaDesc).trim(),
-      codEstado,
-      estado: String(raw.estado || '').trim() || (codEstado === '0201' ? 'ACTIVO' : 'INACTIVO'),
-      codUsuario: raw.codUsuario === null || raw.codUsuario === undefined ? null : Number(raw.codUsuario),
-      nombreContribuyente: String(raw.nombreContribuyente || raw.contribuyente || '').trim(),
-      codPredioContribuyente,
-      direccionCompleta: String(raw.direccionCompleta || '').trim(),
-      autoavaluo: Number(raw.autoavaluo) || 0,
-      baseImponible: Number(raw.baseImponible) || 0,
-      impuestoAnual: Number(raw.impuestoAnual) || 0,
-      porcentajeCondominio: porcentaje ?? 100,
-      esPensionista: pensionista === 1,
-      porcentajeLibre: 100 - (porcentaje ?? 100)
-    };
-  }
 
   private async request(path: string, init: RequestInit): Promise<unknown> {
     return apiClient.request<unknown>(buildApiUrl(path), {
@@ -165,24 +93,11 @@ class AsignacionService {
     const payload = await this.request(`${this.endpoint}${suffix}`, {
       method: 'GET'
     });
-    const response = toRecord(payload);
+    const response = toAsignacionRecord(payload);
     if (response.success === false) {
-      throw new Error(getErrorMessage(payload, 'No se pudieron listar las asignaciones'));
+      throw new Error(getAsignacionErrorMessage(payload, 'No se pudieron listar las asignaciones'));
     }
-
-    const rawData = 'data' in response ? response.data : payload;
-    const items = Array.isArray(rawData) ? rawData : rawData && typeof rawData === 'object' ? [rawData] : [];
-    const seen = new Set<string>();
-
-    return items
-      .filter((item) => {
-        const raw = toRecord(item);
-        const key = `${raw.anio || ''}-${String(raw.codPredio || '').trim()}-${String(raw.codContribuyente || '').trim()}`;
-        if (!String(raw.codPredio || '').trim() || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item, index) => this.normalizeItem(item, index));
+    return extraerAsignaciones(payload);
   }
 
   async crearAsignacionAPI(datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
@@ -194,27 +109,27 @@ class AsignacionService {
   }
 
   private async guardarAsignacion(method: 'POST' | 'PUT', datos: CreateAsignacionAPIDTO): Promise<AsignacionPredio> {
-    const writePayload = toWritePayload(datos);
+    const writePayload = toAsignacionWritePayload(datos);
     const payload = await this.request(this.endpoint, {
       method,
       body: JSON.stringify(writePayload)
     });
-    const response = toRecord(payload);
+    const response = toAsignacionRecord(payload);
     if (response.success === false) {
-      throw new Error(getErrorMessage(payload, 'No se pudo guardar la asignación'));
+      throw new Error(getAsignacionErrorMessage(payload, 'No se pudo guardar la asignación'));
     }
-    const responseData = toRecord(response.data || payload);
-    return this.normalizeItem({ ...writePayload, ...responseData });
+    const responseData = toAsignacionRecord(response.data || payload);
+    return normalizarAsignacion({ ...writePayload, ...responseData });
   }
 
   async desasignarAPI(datos: CreateAsignacionAPIDTO): Promise<ApiAsignacionResponse> {
     const payload = await this.request(`${this.endpoint}/desasignar`, {
       method: 'POST',
-      body: JSON.stringify(toWritePayload(datos))
+      body: JSON.stringify(toAsignacionWritePayload(datos))
     });
-    const response = toRecord(payload);
+    const response = toAsignacionRecord(payload);
     if (response.success === false) {
-      throw new Error(getErrorMessage(payload, 'No se pudo desasignar el predio'));
+      throw new Error(getAsignacionErrorMessage(payload, 'No se pudo desasignar el predio'));
     }
     return {
       success: response.success !== false,
@@ -236,11 +151,11 @@ class AsignacionService {
       codContribuyente: String(codContribuyente)
     });
     const payload = await this.request(`${this.endpoint}/${endpoint}?${query.toString()}`, { method: 'GET' });
-    const response = toRecord(payload);
+    const response = toAsignacionRecord(payload);
     return {
       success: response.success === true,
       message: String(response.message || ''),
-      data: typeof response.data === 'string' ? response.data : getErrorMessage(payload, 'Sin información de prevalidación'),
+      data: typeof response.data === 'string' ? response.data : getAsignacionErrorMessage(payload, 'Sin información de prevalidación'),
       pagina: typeof response.pagina === 'number' ? response.pagina : null,
       limite: typeof response.limite === 'number' ? response.limite : null,
       totalPaginas: typeof response.totalPaginas === 'number' ? response.totalPaginas : null,

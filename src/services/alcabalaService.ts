@@ -1,5 +1,6 @@
 // src/services/alcabalaService.ts
 import BaseApiService from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Alcabala API
@@ -87,7 +88,8 @@ class AlcabalaService extends BaseApiService<AlcabalaData, CreateAlcabalaDTO, Up
       return items.length > 0 ? this.normalizeOptions.normalizeItem(items[0], 0) : null;
     } catch (error) {
       console.error('[AlcabalaService] Error:', error);
-      return null;
+      if (isApiNotFoundError(error)) return null;
+      throw error;
     }
   }
 

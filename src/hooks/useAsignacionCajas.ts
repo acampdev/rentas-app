@@ -32,6 +32,10 @@ export const useAsignacionCajas = () => {
   // Ref para controlar si ya se esta cargando
   const isLoadingRef = useRef(false);
 
+  const limpiarError = useCallback(() => {
+    setError(null);
+  }, []);
+
   /**
    * Convierte datos de la API al formato de lista
    */
@@ -243,6 +247,7 @@ export const useAsignacionCajas = () => {
     asignaciones,
     loading,
     error,
+    limpiarError,
 
     // Metodos de carga y busqueda
     cargarAsignaciones,

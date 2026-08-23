@@ -20,7 +20,12 @@ export interface PagoFeedback {
   message: string;
 }
 
-export const usePagos = (onPagoExitoso?: () => void) => {
+export interface CajaOperativa {
+  codUsuario: number;
+  codAperturaCaja: number;
+}
+
+export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => void) => {
   const [pagoData, setPagoData] = useState<Pago>({
     codigo: '',
     rucDni: '',
@@ -58,45 +63,13 @@ export const usePagos = (onPagoExitoso?: () => void) => {
     setLoading(true);
     try {
       const mensajesApi: string[] = [];
-      // 1. Obtener la caja activa de localStorage
-      const savedEstado = localStorage.getItem('estado_caja');
-      console.log('[usePagos] savedEstado de localStorage:', savedEstado);
-      const estadoCaja = savedEstado ? JSON.parse(savedEstado) : null;
-      let codAperturaCaja = estadoCaja?.codAperturaCaja;
-      console.log('[usePagos] codAperturaCaja extraído de localStorage:', codAperturaCaja);
-      
-      // Fallback: Si no está en local storage, consultar directamente al servidor
-      if (!codAperturaCaja) {
-        console.log('[usePagos] codAperturaCaja no encontrado en localStorage, consultando servidor...');
-        const userStr = sessionStorage.getItem('auth_user');
-        const userObj = userStr ? JSON.parse(userStr) : null;
-        const currentCodUsuario = userObj ? Number(userObj.id) : null;
-        
-        if (currentCodUsuario) {
-          const aperturaServer = await aperturaCajaService.obtenerPorUsuario(currentCodUsuario);
-          console.log('[usePagos] Apertura recuperada del servidor como fallback:', aperturaServer);
-          if (aperturaServer && aperturaServer.codAperturaCaja) {
-            codAperturaCaja = aperturaServer.codAperturaCaja;
-            // Sincronizar en localStorage para futuras operaciones
-            const newEstado = {
-              ...(estadoCaja || {}),
-              numeroCaja: aperturaServer.caja || '00013',
-              fechaApertura: aperturaServer.fechaApertura || '',
-              montoInicial: aperturaServer.montoApertura || 0,
-              montoActual: aperturaServer.montoCierre || aperturaServer.montoApertura || 0,
-              abierta: true,
-              codAperturaCaja: aperturaServer.codAperturaCaja,
-              codAsignacionCaja: aperturaServer.codAsignacionCaja,
-              codUsuarioOperando: currentCodUsuario
-            };
-            localStorage.setItem('estado_caja', JSON.stringify(newEstado));
-          }
-        }
-      }
-
-      if (!codAperturaCaja) {
-        throw new Error('No existe una apertura de caja activa. Primero debe abrir la caja.');
-      }
+      // La apertura usada para cobrar siempre se vuelve a consultar y verificar
+      // en el servidor. El estado del navegador no constituye autorización.
+      const aperturaActiva = await aperturaCajaService.verificarAperturaActiva(
+        cajaOperativa.codUsuario,
+        cajaOperativa.codAperturaCaja
+      );
+      const codAperturaCaja = aperturaActiva.codAperturaCaja;
 
       console.log('[usePagos] Registrando pago de conceptos...');
       
@@ -190,7 +163,14 @@ export const usePagos = (onPagoExitoso?: () => void) => {
     } finally {
       setLoading(false);
     }
-  }, [pagoData, contribuyenteSeleccionado, handleNuevo, onPagoExitoso]);
+  }, [
+    pagoData,
+    contribuyenteSeleccionado,
+    handleNuevo,
+    onPagoExitoso,
+    cajaOperativa.codUsuario,
+    cajaOperativa.codAperturaCaja
+  ]);
 
   const handleImprimirRecibo = useCallback(() => {
     if (pagoData.conceptos.length === 0) return;

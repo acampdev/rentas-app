@@ -49,10 +49,12 @@ const formasPago = [
 ];
 
 interface PagosProps {
+  codUsuarioOperando: number;
+  codAperturaCaja: number;
   onPagoExitoso?: () => void;
 }
 
-const Pagos: React.FC<PagosProps> = ({ onPagoExitoso }) => {
+const Pagos: React.FC<PagosProps> = ({ codUsuarioOperando, codAperturaCaja, onPagoExitoso }) => {
   const {
     pagoData,
     setPagoData,
@@ -72,7 +74,10 @@ const Pagos: React.FC<PagosProps> = ({ onPagoExitoso }) => {
     calcularTotal,
     loading,
     pagoFeedback
-  } = usePagos(onPagoExitoso);
+  } = usePagos(
+    { codUsuario: codUsuarioOperando, codAperturaCaja },
+    onPagoExitoso
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>

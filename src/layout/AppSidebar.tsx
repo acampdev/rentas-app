@@ -165,7 +165,7 @@ const menuItems: MenuItem[] = [
     subMenuItems: [
       { id: 'nuevo-contribuyente', label: 'Registro Contribuyente', path: '/contribuyente/nuevo' },
       { id: 'consulta-contribuyente', label: 'Consulta Contribuyente', path: '/contribuyente/consulta' },
-      { id: 'deduccion-beneficio', label: 'Deduccion Beneficio', path: '/contribuyente/deduccion-beneficio' },
+      { id: 'deduccion-beneficio', label: 'Deducción y Beneficio', path: '/contribuyente/deduccion-beneficio' },
      
     ],
   },

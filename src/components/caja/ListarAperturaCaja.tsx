@@ -30,6 +30,7 @@ import { styled } from '@mui/material/styles';
 import { useAperturaCajas } from '../../hooks/useAperturaCajas';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { AperturaCaja } from '../../models';
+import { getAuthenticatedUserCode } from '../../config/api.unified.config';
 
 // Styled Components
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -74,11 +75,16 @@ const ListarAperturaCaja: React.FC<ListarAperturaCajaProps> = ({ open, onClose, 
   // Inicializar el usuario seleccionado con el usuario logeado al abrir
   useEffect(() => {
     if (open && cajeros.length > 0 && !selectedUsuario) {
-      const userStr = sessionStorage.getItem('auth_user');
-      const userObj = userStr ? JSON.parse(userStr) : null;
-      const currentCodUsuario = userObj ? Number(userObj.id) : 16;
+      let currentCodUsuario: number | null = null;
+      try {
+        currentCodUsuario = getAuthenticatedUserCode();
+      } catch {
+        currentCodUsuario = null;
+      }
       
-      const matched = cajeros.find(u => u.codUsuario === currentCodUsuario);
+      const matched = currentCodUsuario
+        ? cajeros.find(u => u.codUsuario === currentCodUsuario)
+        : undefined;
       if (matched) {
         setSelectedUsuario(matched);
       } else {
@@ -289,9 +295,11 @@ const ListarAperturaCaja: React.FC<ListarAperturaCajaProps> = ({ open, onClose, 
                     sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: '#fdfdfd' } }}
                   >
                     <TableCell component="th" scope="row" sx={{ fontWeight: 500 }}>
-                      {row.numeroApertura || String(row.codAperturaCaja).padStart(10, '0')}
+                      {row.numeroApertura || (row.codAperturaCaja
+                        ? String(row.codAperturaCaja).padStart(10, '0')
+                        : 'Sin identificar')}
                     </TableCell>
-                    <TableCell>{row.caja || 'CAJA 1'}</TableCell>
+                    <TableCell>{row.caja?.trim() || 'Sin identificar'}</TableCell>
                     <TableCell>{row.turno || '---'}</TableCell>
                     <TableCell>{formatFecha(row.fechaApertura)}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600, color: '#1b5e20' }}>
@@ -308,11 +316,12 @@ const ListarAperturaCaja: React.FC<ListarAperturaCajaProps> = ({ open, onClose, 
                           variant="contained"
                           color="secondary"
                           size="small"
+                          disabled={!row.codAperturaCaja || !selectedUsuario?.codUsuario}
                           onClick={() => onOperarCaja(
-                            row.codAperturaCaja || 0,
+                            row.codAperturaCaja!,
                             selectedUsuario.codUsuario,
-                            row.caja || 'CAJA 1',
-                            row.montoApertura || 0,
+                            row.caja?.trim() || '',
+                            row.montoApertura,
                             row.fechaApertura || ''
                           )}
                           sx={{

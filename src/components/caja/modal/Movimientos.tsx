@@ -1,3 +1,4 @@
+// src/components/caja/modal/Movimientos.tsx
 import type { FC } from 'react';
 import { Close as CloseIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
 import {

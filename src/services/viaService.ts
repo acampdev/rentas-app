@@ -1,5 +1,6 @@
 // src/services/viaService.ts
 import BaseApiService, { ApiResponse, QueryParams } from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interfaces para Tipo de Vía
@@ -122,7 +123,8 @@ class TipoViaService extends BaseApiService<TipoViaData, CreateTipoViaDTO, Updat
       
     } catch (error: unknown) {
       console.error('❌ [TipoViaService] Error listando tipos de vía:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

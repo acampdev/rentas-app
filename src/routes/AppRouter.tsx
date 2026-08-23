@@ -1,5 +1,5 @@
 // src/routes/AppRouter.tsx - Versión actualizada con Material-UI
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -57,12 +57,13 @@ import {
   CajasPage,
   PersonaPage,
 } from '../pages/lazy';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
 // Importar página de cuenta corriente
-const CuentaConsultaPage = lazy(() => import('../pages/cuenta/CuentaConsultaPage'));
+const CuentaConsultaPage = lazyWithRetry('cuenta-corriente', () => import('../pages/cuenta/CuentaConsultaPage'));
 
 // Importar página de asignación de caja
-const AsignacionCajaPage = lazy(() => import('../pages/caja/AsignacionCajaPage'));
+const AsignacionCajaPage = lazyWithRetry('asignacion-caja', () => import('../pages/caja/AsignacionCajaPage'));
 
 // Providers y contextos
 import { AuthProvider } from '../context/AuthContext';
@@ -73,8 +74,8 @@ import MuiThemeProviderWrapper from '../providers/MuiThemeProvider';
 
 
 // Componentes de autenticación
-const LoginPage = lazy(() => import('../pages/Login/LoginPage'));
-const ModuleUnavailablePage = lazy(() => import('../pages/ModuleUnavailablePage'));
+const LoginPage = lazyWithRetry('login', () => import('../pages/Login/LoginPage'));
+const ModuleUnavailablePage = lazyWithRetry('modulo-no-disponible', () => import('../pages/ModuleUnavailablePage'));
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import AuthHandler from '../components/auth/AuthHandler';
 import RouteErrorBoundary from '../components/utils/RouteErrorBoundary';

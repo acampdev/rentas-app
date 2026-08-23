@@ -20,6 +20,17 @@ const normalizeEstado = (estado?: string): string => {
   return estado;
 };
 
+const isEstadoAbierto = (estado?: string): boolean =>
+  typeof estado === 'string' && estado.trim() !== '' && normalizeEstado(estado) === 'ABIERTA';
+
+const isValidIdentifier = (value: unknown): value is number =>
+  Number.isInteger(value) && Number(value) > 0;
+
+export type AperturaCajaActiva = AperturaCaja & {
+  codAperturaCaja: number;
+  montoApertura: number;
+};
+
 class AperturaCajaService {
   private static instance: AperturaCajaService;
   private endpoint = '/api/aperturaCaja';
@@ -48,7 +59,11 @@ class AperturaCajaService {
       console.log('[AperturaCajaService] Realizando apertura de caja:', datos);
 
       // Validar datos requeridos
-      if (datos.montoApertura === undefined || datos.montoApertura === null || !datos.codUsuario) {
+      if (
+        datos.montoApertura === undefined ||
+        datos.montoApertura === null ||
+        !isValidIdentifier(datos.codUsuario)
+      ) {
         throw new Error('El monto de apertura y el código de usuario son requeridos');
       }
 
@@ -60,34 +75,17 @@ class AperturaCajaService {
       });
       console.log('[AperturaCajaService] Apertura realizada exitosamente:', responseData);
 
-      // Extraer datos del wrapper si existe
+      // El POST puede devolver solamente un mensaje. La fuente de verdad es la
+      // consulta autenticada de la apertura activa del usuario.
       const aperturaData = unwrapApiData<Partial<AperturaCaja> | string>(responseData);
+      const returnedCode = typeof aperturaData === 'object' && aperturaData !== null
+        ? aperturaData.codAperturaCaja
+        : undefined;
 
-      // Fallback: Si el backend devuelve un mensaje de texto en lugar del objeto,
-      // realizamos una consulta GET para obtener los detalles reales y completos.
-      if (typeof aperturaData === 'string') {
-        console.log('[AperturaCajaService] El servidor retornó un string en data. Consultando detalles del objeto creado...');
-        const realApertura = await this.obtenerPorUsuario(datos.codUsuario);
-        if (realApertura) {
-          return realApertura;
-        }
-      }
-
-      // Normalizar respuesta
-      if (!aperturaData || typeof aperturaData !== 'object') {
-        throw new Error('El servidor no devolvió los datos de la apertura creada');
-      }
-
-      const normalized: AperturaCaja = {
-        codAperturaCaja: aperturaData.codAperturaCaja,
-        codAsignacionCaja: aperturaData.codAsignacionCaja ?? null,
-        montoApertura: aperturaData.montoApertura !== undefined && aperturaData.montoApertura !== null ? aperturaData.montoApertura : datos.montoApertura,
-        estado: normalizeEstado(aperturaData.estado),
-        fechaApertura: aperturaData.fechaApertura,
-        observacion: aperturaData.observacion
-      };
-
-      return normalized;
+      return this.verificarAperturaActiva(
+        datos.codUsuario,
+        isValidIdentifier(returnedCode) ? returnedCode : undefined
+      );
 
     } catch (error: unknown) {
       console.error('[AperturaCajaService] Error en apertura de caja:', error);
@@ -116,12 +114,23 @@ class AperturaCajaService {
         throw new Error('Todos los campos son requeridos para el cierre');
       }
 
+      if (!Number.isFinite(datos.montoCierre) || datos.montoCierre < 0) {
+        throw new Error('El monto de cierre no es válido');
+      }
+
+      // Impide cerrar con un identificador recuperado del navegador o asociado
+      // a otro usuario. El backend debe confirmar que sigue siendo la apertura activa.
+      const aperturaVerificada = await this.verificarAperturaActiva(
+        datos.codUsuario,
+        datos.codAperturaCaja
+      );
+
       const url = buildApiUrl(this.endpoint + '/cierre');
 
       // Construir el cuerpo exacto según la API modificada del backend (sin codAsignacionCaja)
       const requestBody = {
         codAperturaCaja: datos.codAperturaCaja,
-        observacion: datos.observacion || 'Aperturar caja',
+        observacion: datos.observacion || 'Cerrar caja',
         montoCierre: datos.montoCierre,
         codUsuario: datos.codUsuario
       };
@@ -133,21 +142,21 @@ class AperturaCajaService {
       console.log('[AperturaCajaService] Cierre realizado exitosamente:', responseData);
 
       // Extraer datos del wrapper si existe
-      const cierreData = unwrapApiData<Partial<AperturaCaja>>(responseData);
-      if (!cierreData || typeof cierreData !== 'object') {
-        throw new Error('El servidor no devolvió los datos del cierre realizado');
-      }
+      const cierreData = unwrapApiData<Partial<AperturaCaja> | string>(responseData);
+      const cierreObject = cierreData && typeof cierreData === 'object'
+        ? cierreData
+        : {};
 
       // Normalizar respuesta
       const normalized: AperturaCaja = {
-        codAperturaCaja: cierreData.codAperturaCaja !== undefined && cierreData.codAperturaCaja !== null ? cierreData.codAperturaCaja : datos.codAperturaCaja,
-        codAsignacionCaja: cierreData.codAsignacionCaja ?? null,
-        montoApertura: cierreData.montoApertura ?? 0,
-        montoCierre: cierreData.montoCierre !== undefined && cierreData.montoCierre !== null ? cierreData.montoCierre : datos.montoCierre,
-        estado: normalizeEstado(cierreData.estado || 'CERRADA'),
-        fechaApertura: cierreData.fechaApertura,
-        fechaCierre: cierreData.fechaCierre,
-        observacion: cierreData.observacion
+        codAperturaCaja: cierreObject.codAperturaCaja ?? aperturaVerificada.codAperturaCaja,
+        codAsignacionCaja: cierreObject.codAsignacionCaja ?? aperturaVerificada.codAsignacionCaja ?? null,
+        montoApertura: cierreObject.montoApertura ?? aperturaVerificada.montoApertura,
+        montoCierre: cierreObject.montoCierre ?? datos.montoCierre,
+        estado: normalizeEstado(cierreObject.estado || 'CERRADA'),
+        fechaApertura: cierreObject.fechaApertura ?? aperturaVerificada.fechaApertura,
+        fechaCierre: cierreObject.fechaCierre,
+        observacion: cierreObject.observacion ?? datos.observacion
       };
 
       return normalized;
@@ -164,49 +173,38 @@ class AperturaCajaService {
    */
   async obtenerPorUsuario(codUsuario: number): Promise<AperturaCaja | null> {
     try {
+      if (!isValidIdentifier(codUsuario)) {
+        throw new Error('El código de usuario para consultar la apertura no es válido');
+      }
+
       console.log('[AperturaCajaService] Obteniendo apertura para usuario:', codUsuario);
       
       const url = buildApiUrl(`${this.endpoint}?codUsuario=${codUsuario}`);
       
-      const token = sessionStorage.getItem('auth_token');
-      const headers: Record<string, string> = {
-        'Accept': 'application/json'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const responseData = await apiClient.request<any>(url, {
-        method: 'GET',
-        headers
-      });
+      const responseData = await apiClient.request<unknown>(url, { method: 'GET' });
       console.log('[AperturaCajaService] Datos de apertura obtenidos:', responseData);
 
-      if (!responseData) return null;
-      let data = responseData.data || responseData;
-      if (Array.isArray(data)) {
-        if (data.length === 0) return null;
-        const activa = data.find((x: any) => {
-          const s = (x.estado || '').toUpperCase();
-          return s === 'ABIERTO' || s === 'ABIERTA' || s === 'APERTURADO' || s === 'APERTURADA';
-        });
-        if (!activa) return null;
-        data = activa;
-      } else {
-        const s = (data.estado || '').toUpperCase();
-        const isActive = s === 'ABIERTO' || s === 'ABIERTA' || s === 'APERTURADO' || s === 'APERTURADA';
-        if (!isActive) return null;
-      }
+      const unwrapped = unwrapApiData<Partial<AperturaCaja> | Partial<AperturaCaja>[]>(responseData);
+      const candidates = Array.isArray(unwrapped) ? unwrapped : unwrapped ? [unwrapped] : [];
+      const data = candidates.find(item =>
+        isEstadoAbierto(item.estado) &&
+        (item.codUsuario === undefined || item.codUsuario === null || Number(item.codUsuario) === codUsuario)
+      );
 
-      if (!data || !data.codAperturaCaja) {
+      if (
+        !data ||
+        !isValidIdentifier(data.codAperturaCaja) ||
+        !Number.isFinite(data.montoApertura) ||
+        Number(data.montoApertura) < 0
+      ) {
         return null;
       }
 
       return {
         codAperturaCaja: data.codAperturaCaja,
-        codAsignacionCaja: data.codAsignacionCaja,
+        codAsignacionCaja: data.codAsignacionCaja ?? null,
         fechaApertura: data.fechaApertura,
-        montoApertura: data.montoApertura,
+        montoApertura: Number(data.montoApertura),
         montoCierre: data.montoCierre,
         observacion: data.observacion,
         estado: normalizeEstado(data.estado),
@@ -223,6 +221,35 @@ class AperturaCajaService {
       if (error instanceof ApiClientError && error.statusCode === 404) return null;
       throw error;
     }
+  }
+
+  /**
+   * Obtiene del servidor y verifica la apertura que se usará en una operación.
+   * Nunca acepta localStorage ni sustituye identificadores ausentes.
+   */
+  async verificarAperturaActiva(
+    codUsuario: number,
+    codAperturaEsperada?: number
+  ): Promise<AperturaCajaActiva> {
+    if (!isValidIdentifier(codUsuario)) {
+      throw new Error('No se pudo identificar al usuario que opera la caja');
+    }
+    if (codAperturaEsperada !== undefined && !isValidIdentifier(codAperturaEsperada)) {
+      throw new Error('El código de apertura de caja no es válido');
+    }
+
+    const apertura = await this.obtenerPorUsuario(codUsuario);
+    if (!apertura || !isValidIdentifier(apertura.codAperturaCaja)) {
+      throw new Error('No existe una apertura de caja activa para el usuario indicado');
+    }
+    if (
+      codAperturaEsperada !== undefined &&
+      apertura.codAperturaCaja !== codAperturaEsperada
+    ) {
+      throw new Error('La apertura seleccionada ya no coincide con la apertura activa del usuario');
+    }
+
+    return apertura as AperturaCajaActiva;
   }
 
   /**
@@ -287,8 +314,9 @@ class AperturaCajaService {
   /**
    * Valida si una caja puede ser cerrada
    */
-  async validarCierre(codAperturaCaja: number): Promise<boolean> {
-    console.log('[AperturaCajaService] Validando cierre para:', codAperturaCaja);
+  async validarCierre(codAperturaCaja: number, codUsuario: number): Promise<boolean> {
+    console.log('[AperturaCajaService] Validando cierre para:', { codAperturaCaja, codUsuario });
+    await this.verificarAperturaActiva(codUsuario, codAperturaCaja);
     return true;
   }
 }

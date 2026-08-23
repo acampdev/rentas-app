@@ -84,7 +84,7 @@ const AperturaCaja: React.FC<AperturaCajaProps> = ({
   const [formData, setFormData] = useState<AperturaCajaData>(() => {
     const currentCodUsuario = getAuthenticatedUserCode();
     return {
-      numeroCaja: '00013',
+      numeroCaja: '',
       fechaApertura: new Date().toLocaleDateString('es-PE'),
       montoInicial: 1000.0000,
       observacion: 'Aperturar caja',
@@ -104,6 +104,10 @@ const AperturaCaja: React.FC<AperturaCajaProps> = ({
 
     if (formData.montoInicial === undefined || formData.montoInicial === null || isNaN(formData.montoInicial) || formData.montoInicial < 0) {
       newErrors.montoInicial = 'El monto inicial debe ser mayor o igual a 0';
+    }
+
+    if (!selectedUsuario || !Number.isInteger(formData.codUsuario) || formData.codUsuario <= 0) {
+      newErrors.codUsuario = 'Debe seleccionar un cajero válido';
     }
 
     setErrors(newErrors);
@@ -234,7 +238,7 @@ const AperturaCaja: React.FC<AperturaCajaProps> = ({
                 loading={loadingUsuarios}
                 value={selectedUsuario}
                 onChange={(_event, newValue) => {
-                  handleInputChange('codUsuario', newValue ? newValue.codUsuario : getAuthenticatedUserCode());
+                  handleInputChange('codUsuario', newValue ? newValue.codUsuario : 0);
                 }}
                 getOptionLabel={(option) => `${option.nombrePersona} (${option.username?.trim()})`}
                 isOptionEqualToValue={(option, value) => option.codUsuario === value.codUsuario}
@@ -245,6 +249,8 @@ const AperturaCaja: React.FC<AperturaCajaProps> = ({
                     {...params}
                     label="Usuario"
                     placeholder="Seleccionar usuario..."
+                    error={!!errors.codUsuario}
+                    helperText={errors.codUsuario}
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (

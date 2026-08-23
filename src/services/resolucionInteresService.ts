@@ -1,4 +1,5 @@
 import BaseApiService, { ApiResponse } from './BaseApiService';
+import { isApiNotFoundError } from './apiClient';
 
 /**
  * Interface para los datos de Resolución de Interés
@@ -87,7 +88,8 @@ class ResolucionInteresService extends BaseApiService<ResolucionInteresData, Cre
       return this.normalizeData(rawData);
     } catch (error) {
       console.error('Error in obtenerTodas:', error);
-      return [];
+      if (isApiNotFoundError(error)) return [];
+      throw error;
     }
   }
 

@@ -8,7 +8,7 @@ import { AperturaCaja, AperturaCajaDTO, CierreCajaDTO } from '../models';
 
 /**
  * Hook para gestionar apertura y cierre de cajas
- * NO requiere autenticacion para ninguna operacion
+ * Todas las operaciones requieren la sesión autenticada del cliente HTTP.
  */
 export const useAperturaCajas = () => {
   const [aperturaActual, setAperturaActual] = useState<AperturaCaja | null>(null);
@@ -169,7 +169,7 @@ export const useAperturaCajas = () => {
   /**
    * Valida si se puede realizar un cierre
    */
-  const validarCierre = useCallback(async (codAperturaCaja: number): Promise<boolean> => {
+  const validarCierre = useCallback(async (codAperturaCaja: number, codUsuario: number): Promise<boolean> => {
     try {
       console.log('[useAperturaCajas] Validando cierre...');
 
@@ -179,7 +179,7 @@ export const useAperturaCajas = () => {
         return false;
       }
 
-      const esValido = await aperturaCajaService.validarCierre(codAperturaCaja);
+      const esValido = await aperturaCajaService.validarCierre(codAperturaCaja, codUsuario);
 
       if (!esValido) {
         NotificationService.warning('No se puede realizar el cierre de caja en este momento');
