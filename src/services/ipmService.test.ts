@@ -27,7 +27,7 @@ describe('IPMService API contracts', () => {
 
     const result = await ipmService.listarPorAnio(2026);
 
-    expect(String(fetchMock.mock.calls[0][0])).toBe('http://26.161.18.122:8085/api/ipm?anio=2026');
+    expect(String(fetchMock.mock.calls[0][0])).toBe('/api/ipm?anio=2026');
     expect(result[0]).toEqual({
       anio: 2026,
       codMes: '2401',
@@ -48,7 +48,7 @@ describe('IPMService API contracts', () => {
 
     await execute();
 
-    expect(String(fetchMock.mock.calls[0][0])).toBe('http://26.161.18.122:8085/api/ipm');
+    expect(String(fetchMock.mock.calls[0][0])).toBe('/api/ipm');
     const options = fetchMock.mock.calls[0][1] as RequestInit;
     expect(options.method).toBe(method);
     expect(JSON.parse(String(options.body))).toEqual(payload);

@@ -1,8 +1,14 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { getAuthToken, getStoredAuthUser } from '../config/api.unified.config';
 import { RegisterData, RegisterResponse, AuthUserStored } from '../models/Auth';
 import { AuthCredentials, AuthUser, AuthResult } from '../models/Auth';
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  AuthSessionExpiredDetail
+} from '../services/authSession';
+import { NotificationService } from '../components/utils/Notification';
 
 /**
  * Hook para gestionar la autenticación del usuario
@@ -33,7 +39,7 @@ export const useAuth = () => {
         setAuthToken(storedToken);
         setIsAuthenticated(true);
       } catch (e) {
-        console.error('Error restoring session:', e);
+        logger.error('Error restoring session:', e);
         void authService.logout();
       }
     } else if (authService.isTokenExpired()) {
@@ -46,6 +52,22 @@ export const useAuth = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    const handleSessionExpired = (event: Event) => {
+      const detail = (event as CustomEvent<AuthSessionExpiredDetail>).detail;
+
+      setUser(null);
+      setAuthToken(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+      setError(detail?.message || 'La sesión ha expirado.');
+      NotificationService.error('Su sesión ha expirado. Inicie sesión nuevamente.');
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
 
   const login = useCallback(async (credentials: AuthCredentials): Promise<AuthResult> => {
     try {

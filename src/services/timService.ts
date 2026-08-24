@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/timService.ts
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
@@ -92,7 +93,7 @@ class TimService extends BaseApiService<TimData, any, UpdateTimDTO, any> {
       const rawData = Array.isArray(result) ? result : (result.data || [result]);
       return this.normalizeData(rawData);
     } catch (error) {
-      console.error('Error in obtenerTim:', error);
+      logger.error('Error in obtenerTim:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

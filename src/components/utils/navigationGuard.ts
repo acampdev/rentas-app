@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/utils/navigationGuard.ts
 // Sistema simple para manejar cambios sin guardar en formularios
 
@@ -25,7 +26,7 @@ export const navigationGuard = {
     
     // Debug en desarrollo
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Navigation Guard State:', { 
+      logger.log('🔄 Navigation Guard State:', {
         hasChanges, 
         formId,
         timestamp: new Date().toISOString()
@@ -55,7 +56,7 @@ export const navigationGuard = {
     navigationState.formId = undefined;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Navigation Guard: Estado limpiado');
+      logger.log('✅ Navigation Guard: Estado limpiado');
     }
   },
 
@@ -74,7 +75,7 @@ export const navigationGuard = {
     const confirmed = window.confirm(confirmMessage);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`❓ Navigation Guard: Confirmación ${confirmed ? 'aceptada' : 'cancelada'}`);
+      logger.log(`❓ Navigation Guard: Confirmación ${confirmed ? 'aceptada' : 'cancelada'}`);
     }
     
     return confirmed;

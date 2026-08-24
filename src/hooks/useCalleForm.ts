@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm, Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -101,7 +102,7 @@ export const useCalleForm = (initialData?: Partial<CalleFormData>, onSubmit?: (d
           })));
         }
       } catch (error) {
-        console.error('Error al cargar tipos de vía:', error);
+        logger.error('Error al cargar tipos de vía:', error);
         setErrorTiposVia('Error al cargar tipos de vía');
       } finally {
         setLoadingTiposVia(false);

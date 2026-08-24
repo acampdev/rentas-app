@@ -68,7 +68,6 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
   ]),
   ...rules(CASH_MANAGEMENT_ROLES, ['/caja/asignacion']),
   ...rules(TAX_MANAGEMENT_ROLES, [
-    '/fraccionamiento/aprobacion',
     '/fraccionamiento/cronograma',
     '/fraccionamiento/cronograma/:id',
     '/mantenedores/sectores',

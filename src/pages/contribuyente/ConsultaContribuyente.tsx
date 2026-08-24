@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/contribuyente/ConsultaContribuyente.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +38,7 @@ const ConsultaContribuyente: React.FC = () => {
 
   // Manejar la búsqueda de contribuyentes con nueva API general
   const handleBuscar = (filtro: any) => {
-    console.log('🔍 Buscando con filtros usando API general:', filtro);
+    logger.log('🔍 Buscando con filtros usando API general:', filtro);
 
     // El componente de consulta ya construye los parámetros esperados por
     // /api/contribuyente/general. No los reduzcas a un campo inexistente
@@ -52,7 +53,7 @@ const ConsultaContribuyente: React.FC = () => {
 
   // Manejar la edición de un contribuyente
   const handleEditar = (codigo: string | number) => {
-    console.log('Editar contribuyente:', codigo);
+    logger.log('Editar contribuyente:', codigo);
     navigate(`/contribuyente/editar/${codigo}`);
   };
 

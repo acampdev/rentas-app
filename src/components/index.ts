@@ -121,5 +121,4 @@ export { default as SectorComponent } from './sector/SectorForm';
 // Exportación de componentes de Fraccionamiento
 export { default as SolicitudFraccionamiento } from './fraccionamiento/SolicitudFraccionamiento';
 export { default as ConsultaFraccionamiento } from './fraccionamiento/ConsultaFraccionamiento';
-export { default as AprobacionFraccionamiento } from './fraccionamiento/AprobacionFraccionamiento';
 export { default as Cronograma } from './fraccionamiento/Cronograma';

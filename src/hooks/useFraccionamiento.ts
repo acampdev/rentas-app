@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useFraccionamiento.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
@@ -43,12 +44,12 @@ export const useFraccionamiento = (
   const mutationCrear = useMutation({
     mutationFn: (datos: CreateFraccionamientoDTO) => fraccionamientoService.create(datos),
     onSuccess: (data) => {
-      console.log('🎉 [useFraccionamiento] Mutation onSuccess recibida del API:', data);
+      logger.log('🎉 [useFraccionamiento] Mutation onSuccess recibida del API:', data);
       queryClient.invalidateQueries({ queryKey: ['fraccionamientos'] });
       NotificationService.success('Solicitud de fraccionamiento registrada');
     },
     onError: (err: any) => {
-      console.error('💥 [useFraccionamiento] Mutation onError recibida del API:', err);
+      logger.error('💥 [useFraccionamiento] Mutation onError recibida del API:', err);
       NotificationService.error(err.message || 'Error al registrar solicitud');
     }
   });

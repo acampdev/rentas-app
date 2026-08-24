@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/ResolucionInteresPage.tsx
 import React, { useState } from 'react';
 import {
@@ -83,7 +84,7 @@ const ResolucionInteresPage: React.FC = () => {
       setTabValue(1);
       handleNuevo();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 
@@ -91,7 +92,7 @@ const ResolucionInteresPage: React.FC = () => {
     try {
       await eliminarResolucion(id);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/mantenedorCajaService.ts
 import BaseApiService from './BaseApiService';
 import apiClient, { unwrapApiList } from './apiClient';
@@ -95,7 +96,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    */
   async listar(params?: ListarMantenedorCajaParams): Promise<MantenedorCajaData[]> {
     try {
-      console.log('[MantenedorCajaService] Listando cajas con parametros:', params);
+      logger.log('[MantenedorCajaService] Listando cajas con parametros:', params);
 
       const url = buildApiUrl(this.endpoint + '/listar');
 
@@ -109,7 +110,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
       queryParams.append('codUsuario', String(params?.codUsuario !== undefined ? params.codUsuario : defaultCodUsuario));
 
       const getUrl = `${url}?${queryParams.toString()}`;
-      console.log('[MantenedorCajaService] GET URL:', getUrl);
+      logger.log('[MantenedorCajaService] GET URL:', getUrl);
 
       const token = sessionStorage.getItem('auth_token');
       const headers: Record<string, string> = {
@@ -125,11 +126,11 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         headers
       });
 
-      console.log('[MantenedorCajaService] Datos obtenidos:', responseData);
+      logger.log('[MantenedorCajaService] Datos obtenidos:', responseData);
       return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
-      console.error('[MantenedorCajaService] Error listando cajas:', error);
+      logger.error('[MantenedorCajaService] Error listando cajas:', error);
       throw error;
     }
   }
@@ -142,7 +143,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    */
   async insertar(datos: CreateMantenedorCajaDTO): Promise<void> {
     try {
-      console.log('[MantenedorCajaService] Insertando caja:', datos);
+      logger.log('[MantenedorCajaService] Insertando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
@@ -161,11 +162,11 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         body: JSON.stringify(datos)
       });
 
-      console.log('[MantenedorCajaService] Caja creada:', responseData);
+      logger.log('[MantenedorCajaService] Caja creada:', responseData);
       assertMutationAccepted(responseData, 'crear');
 
     } catch (error: unknown) {
-      console.error('[MantenedorCajaService] Error al insertar caja:', error);
+      logger.error('[MantenedorCajaService] Error al insertar caja:', error);
       throw error;
     }
   }
@@ -178,7 +179,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    */
   async actualizar(datos: UpdateMantenedorCajaDTO): Promise<void> {
     try {
-      console.log('[MantenedorCajaService] Actualizando caja:', datos);
+      logger.log('[MantenedorCajaService] Actualizando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
@@ -197,11 +198,11 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
         body: JSON.stringify(datos)
       });
 
-      console.log('[MantenedorCajaService] Caja actualizada:', responseData);
+      logger.log('[MantenedorCajaService] Caja actualizada:', responseData);
       assertMutationAccepted(responseData, 'actualizar');
 
     } catch (error: unknown) {
-      console.error('[MantenedorCajaService] Error al actualizar caja:', error);
+      logger.error('[MantenedorCajaService] Error al actualizar caja:', error);
       throw error;
     }
   }
@@ -214,7 +215,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    */
   async eliminar(datos: DeleteMantenedorCajaDTO): Promise<void> {
     try {
-      console.log('[MantenedorCajaService] Eliminando caja:', datos);
+      logger.log('[MantenedorCajaService] Eliminando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
@@ -234,10 +235,10 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
       });
 
       assertMutationAccepted(responseData, 'eliminar');
-      console.log('[MantenedorCajaService] Caja eliminada exitosamente');
+      logger.log('[MantenedorCajaService] Caja eliminada exitosamente');
 
     } catch (error: unknown) {
-      console.error('[MantenedorCajaService] Error al eliminar caja:', error);
+      logger.error('[MantenedorCajaService] Error al eliminar caja:', error);
       throw error;
     }
   }
@@ -246,7 +247,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Obtiene todas las cajas (alias para listar sin parametros)
    */
   async obtenerTodas(): Promise<MantenedorCajaData[]> {
-    console.log('[MantenedorCajaService] Obteniendo todas las cajas');
+    logger.log('[MantenedorCajaService] Obteniendo todas las cajas');
     return this.listar();
   }
 
@@ -254,7 +255,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Busca cajas por descripcion
    */
   async buscarPorDescripcion(descripcion: string): Promise<MantenedorCajaData[]> {
-    console.log('[MantenedorCajaService] Buscando por descripcion:', descripcion);
+    logger.log('[MantenedorCajaService] Buscando por descripcion:', descripcion);
     return this.listar({ descripcion });
   }
 
@@ -262,7 +263,7 @@ class MantenedorCajaService extends BaseApiService<MantenedorCajaData, CreateMan
    * Busca cajas por usuario
    */
   async buscarPorUsuario(codUsuario: number): Promise<MantenedorCajaData[]> {
-    console.log('[MantenedorCajaService] Buscando por usuario:', codUsuario);
+    logger.log('[MantenedorCajaService] Buscando por usuario:', codUsuario);
     return this.listar({ codUsuario });
   }
 }

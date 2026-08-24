@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/context/AuthContext.tsx
 import { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { AuthUser, AuthCredentials, AuthResult } from '../models/Auth';
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Para depuración
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('AuthProvider state:', {
+      logger.log('AuthProvider state:', {
         isAuthenticated: auth.isAuthenticated,
         user: auth.user?.username || 'none',
         loading: auth.loading,
@@ -72,7 +73,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (error) {
-      console.error('Error al verificar sesión:', error);
+      logger.error('Error al verificar sesión:', error);
       return false;
     }
   }, [authToken, renewToken]);
@@ -82,7 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       return await auth.login(credentials);
     } catch (error) {
-      console.error('Error en login desde AuthContext:', error);
+      logger.error('Error en login desde AuthContext:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido en login'

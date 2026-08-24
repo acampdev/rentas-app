@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import apiClient, { ApiClientError } from './apiClient';
+import { AUTH_SESSION_EXPIRED_EVENT } from './authSession';
 
 const stubAuthenticatedWindow = () => {
   vi.stubGlobal('window', {
@@ -13,6 +14,8 @@ describe('ApiClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('adds Bearer, cookies and serializes JSON bodies', async () => {
@@ -120,5 +123,44 @@ describe('ApiClient', () => {
       message: 'No existe deuda pendiente para el periodo indicado.',
       data: payload
     });
+  });
+
+  it('invalidates the stored session and emits a global event on an authenticated 401', async () => {
+    sessionStorage.setItem('auth_token', 'token-expirado');
+    sessionStorage.setItem('auth_user', JSON.stringify({ id: '17' }));
+    const sessionExpiredListener = vi.fn();
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, sessionExpiredListener);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ data: 'Token expirado' }, { status: 401 }))
+    );
+
+    await expect(apiClient.request('/api/protegida')).rejects.toMatchObject<ApiClientError>({
+      statusCode: 401,
+      message: 'Token expirado'
+    });
+
+    expect(sessionStorage.getItem('auth_token')).toBeNull();
+    expect(sessionStorage.getItem('auth_user')).toBeNull();
+    expect(sessionExpiredListener).toHaveBeenCalledTimes(1);
+    window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, sessionExpiredListener);
+  });
+
+  it('does not invalidate an existing session when an unauthenticated request returns 401', async () => {
+    sessionStorage.setItem('auth_token', 'token-vigente');
+    const sessionExpiredListener = vi.fn();
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, sessionExpiredListener);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ message: 'Credenciales inválidas' }, { status: 401 }))
+    );
+
+    await expect(apiClient.request('/auth/login', { auth: false })).rejects.toMatchObject<ApiClientError>({
+      statusCode: 401
+    });
+
+    expect(sessionStorage.getItem('auth_token')).toBe('token-vigente');
+    expect(sessionExpiredListener).not.toHaveBeenCalled();
+    window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, sessionExpiredListener);
   });
 });

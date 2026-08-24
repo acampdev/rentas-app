@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/tim/ActualizarTim.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -64,7 +65,7 @@ export const ActualizarTim: React.FC<ActualizarTimProps> = ({
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   };
 

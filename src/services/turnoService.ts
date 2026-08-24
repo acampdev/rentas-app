@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/turnoService.ts
 import BaseApiService from './BaseApiService';
 import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
@@ -71,7 +72,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    */
   async listar(params?: ListarTurnoParams): Promise<TurnoData[]> {
     try {
-      console.log('[TurnoService] Listando turnos con parametros:', params);
+      logger.log('[TurnoService] Listando turnos con parametros:', params);
 
       const url = buildApiUrl(this.endpoint);
 
@@ -82,7 +83,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
       }
 
       const getUrl = queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
-      console.log('[TurnoService] GET URL:', getUrl);
+      logger.log('[TurnoService] GET URL:', getUrl);
 
       const responseData = await apiClient.request<unknown>(getUrl, {
         method: 'GET',
@@ -92,11 +93,11 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         }
       });
 
-      console.log('[TurnoService] Datos obtenidos:', responseData);
+      logger.log('[TurnoService] Datos obtenidos:', responseData);
       return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
-      console.error('[TurnoService] Error listando turnos:', error);
+      logger.error('[TurnoService] Error listando turnos:', error);
       throw error;
     }
   }
@@ -109,7 +110,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    */
   async insertar(datos: CreateTurnoDTO): Promise<TurnoData> {
     try {
-      console.log('[TurnoService] Insertando turno:', datos);
+      logger.log('[TurnoService] Insertando turno:', datos);
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
@@ -122,14 +123,14 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         body: JSON.stringify(datos)
       });
 
-      console.log('[TurnoService] Turno creado:', responseData);
+      logger.log('[TurnoService] Turno creado:', responseData);
       const created = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([created])[0];
 
       return normalized;
 
     } catch (error: unknown) {
-      console.error('[TurnoService] Error al insertar turno:', error);
+      logger.error('[TurnoService] Error al insertar turno:', error);
       throw error;
     }
   }
@@ -142,7 +143,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    */
   async actualizar(datos: UpdateTurnoDTO): Promise<TurnoData> {
     try {
-      console.log('[TurnoService] Actualizando turno:', datos);
+      logger.log('[TurnoService] Actualizando turno:', datos);
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
@@ -155,14 +156,14 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         body: JSON.stringify(datos)
       });
 
-      console.log('[TurnoService] Turno actualizado:', responseData);
+      logger.log('[TurnoService] Turno actualizado:', responseData);
       const updated = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([updated])[0];
 
       return normalized;
 
     } catch (error: unknown) {
-      console.error('[TurnoService] Error al actualizar turno:', error);
+      logger.error('[TurnoService] Error al actualizar turno:', error);
       throw error;
     }
   }
@@ -175,7 +176,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    */
   async eliminar(datos: DeleteTurnoDTO): Promise<void> {
     try {
-      console.log('[TurnoService] Eliminando turno:', datos);
+      logger.log('[TurnoService] Eliminando turno:', datos);
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
@@ -188,10 +189,10 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
         body: JSON.stringify(datos)
       });
 
-      console.log('[TurnoService] Turno eliminado exitosamente');
+      logger.log('[TurnoService] Turno eliminado exitosamente');
 
     } catch (error: unknown) {
-      console.error('[TurnoService] Error al eliminar turno:', error);
+      logger.error('[TurnoService] Error al eliminar turno:', error);
       throw error;
     }
   }
@@ -200,7 +201,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    * Obtiene todos los turnos (alias para listar sin parametros)
    */
   async obtenerTodos(): Promise<TurnoData[]> {
-    console.log('[TurnoService] Obteniendo todos los turnos');
+    logger.log('[TurnoService] Obteniendo todos los turnos');
     return this.listar();
   }
 
@@ -208,7 +209,7 @@ class TurnoService extends BaseApiService<TurnoData, CreateTurnoDTO, UpdateTurno
    * Busca turnos por nombre
    */
   async buscarPorNombre(nombreTurno: string): Promise<TurnoData[]> {
-    console.log('[TurnoService] Buscando por nombre:', nombreTurno);
+    logger.log('[TurnoService] Buscando por nombre:', nombreTurno);
     return this.listar({ nombreTurno });
   }
 }

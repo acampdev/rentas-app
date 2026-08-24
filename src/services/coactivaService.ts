@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
 import { 
@@ -64,7 +65,7 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
         estado: (n.estado as NotificacionCoactiva['estado']) || 'Pendiente'
       }));
     } catch (error: unknown) {
-      console.error('[CoactivaService] Error notificaciones:', error);
+      logger.error('[CoactivaService] Error notificaciones:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }
@@ -90,7 +91,7 @@ class CoactivaService extends BaseApiService<ExpedienteCoactivo, CreateExpedient
         detalle: (r.detalle as string) || ''
       }));
     } catch (error: unknown) {
-      console.error('[CoactivaService] Error resoluciones:', error);
+      logger.error('[CoactivaService] Error resoluciones:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

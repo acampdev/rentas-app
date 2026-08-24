@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/SectoresPage.tsx
 import React, { useState } from 'react';
 import {
@@ -75,7 +76,7 @@ const SectoresPage: React.FC = () => {
       // Forzar recarga en segundo plano
       cargarSectores();
     } catch (err) {
-      console.error('Error al guardar sector:', err);
+      logger.error('Error al guardar sector:', err);
     }
   };
 

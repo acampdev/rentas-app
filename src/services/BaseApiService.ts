@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/BaseApiService.ts
 
 import { API_CONFIG } from '../config/api.unified.config';
@@ -81,9 +82,9 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
     this.endpoint = endpoint;
     this.normalizeOptions = normalizeOptions;
     
-    console.log(`🔧 [${this.constructor.name}] Inicializado:`);
-    console.log(`  - Endpoint: "${this.endpoint}"`);
-    console.log(`  - Autenticación: Bearer`);
+    logger.log(`🔧 [${this.constructor.name}] Inicializado:`);
+    logger.log(`  - Endpoint: "${this.endpoint}"`);
+    logger.log(`  - Autenticación: Bearer`);
   }
 
   /**
@@ -112,7 +113,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       try {
         return await apiClient.request<R>(this.endpoint + path, finalOptions);
       } catch (error: unknown) {
-        console.error(`❌ [${this.constructor.name}] Error en intento ${attempt + 1}:`, error);
+        logger.error(`❌ [${this.constructor.name}] Error en intento ${attempt + 1}:`, error);
 
         const canRetry = attempt < maxRetries && isRetryableError(error, method, options.signal);
         if (!canRetry) {
@@ -120,7 +121,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
         }
 
         const retryDelay = Math.min(1000 * 2 ** attempt, 5000);
-        console.warn(
+        logger.warn(
           `⚠️ [${this.constructor.name}] Error transitorio en ${method}. ` +
           `Reintentando en ${retryDelay} ms (${attempt + 1}/${maxRetries})`
         );
@@ -136,7 +137,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
    */
   protected normalizeData(data: RawT[]): T[] {
     if (!Array.isArray(data)) {
-      console.warn(`⚠️ [${this.constructor.name}] Datos no son un array:`, data);
+      logger.warn(`⚠️ [${this.constructor.name}] Datos no son un array:`, data);
       return [];
     }
 
@@ -148,12 +149,12 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       const validItems = normalized.filter((item, index) => {
         const isValid = this.normalizeOptions.validateItem!(item, index);
         if (!isValid) {
-          console.warn(`⚠️ [${this.constructor.name}] Item ${index} no válido`);
+          logger.warn(`⚠️ [${this.constructor.name}] Item ${index} no válido`);
         }
         return isValid;
       });
       
-      console.log(`✅ [${this.constructor.name}] ${validItems.length}/${normalized.length} items válidos`);
+      logger.log(`✅ [${this.constructor.name}] ${validItems.length}/${normalized.length} items válidos`);
       return validItems;
     }
 
@@ -179,7 +180,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       
       return normalized;
     } catch (error) {
-      console.error(`❌ [${this.constructor.name}] Error obteniendo todos:`, error);
+      logger.error(`❌ [${this.constructor.name}] Error obteniendo todos:`, error);
       throw error;
     }
   }
@@ -200,7 +201,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       if ((error as ApiError).statusCode === 404) {
         return null;
       }
-      console.error(`❌ [${this.constructor.name}] Error obteniendo por ID:`, error);
+      logger.error(`❌ [${this.constructor.name}] Error obteniendo por ID:`, error);
       throw error;
     }
   }
@@ -210,7 +211,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
    */
   public async create(data: CreateDTO): Promise<T> {
     try {
-      console.log('➕ [BaseApiService] Creando:', data);
+      logger.log('➕ [BaseApiService] Creando:', data);
       
       const response = await this.makeRequest<ApiResponse<RawT> | RawT>('', {
         method: 'POST',
@@ -224,7 +225,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       
       return normalized;
     } catch (error: unknown) {
-      console.error('❌ [BaseApiService] Error al crear:', error);
+      logger.error('❌ [BaseApiService] Error al crear:', error);
       NotificationService.error(getApiErrorMessage(error, 'Error al crear el registro'));
       throw error;
     }
@@ -235,7 +236,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
    */
   public async update(id: string | number, data: UpdateDTO): Promise<T> {
     try {
-      console.log('📝 [BaseApiService] Actualizando:', id, data);
+      logger.log('📝 [BaseApiService] Actualizando:', id, data);
       
       const response = await this.makeRequest<ApiResponse<RawT> | RawT>(`/${id}`, {
         method: 'PUT',
@@ -249,7 +250,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       
       return normalized;
     } catch (error: unknown) {
-      console.error('❌ [BaseApiService] Error al actualizar:', error);
+      logger.error('❌ [BaseApiService] Error al actualizar:', error);
       NotificationService.error(getApiErrorMessage(error, 'Error al actualizar el registro'));
       throw error;
     }
@@ -260,7 +261,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
    */
   public async delete(id: string | number): Promise<void> {
     try {
-      console.log('🗑️ [BaseApiService] Eliminando:', id);
+      logger.log('🗑️ [BaseApiService] Eliminando:', id);
       
       await this.makeRequest(`/${id}`, {
         method: 'PUT'
@@ -269,7 +270,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       NotificationService.success('Registro eliminado exitosamente');
       
     } catch (error: unknown) {
-      console.error('❌ [BaseApiService] Error al eliminar:', error);
+      logger.error('❌ [BaseApiService] Error al eliminar:', error);
       NotificationService.error(getApiErrorMessage(error, 'Error al eliminar el registro'));
       throw error;
     }
@@ -289,7 +290,7 @@ export default abstract class BaseApiService<T, CreateDTO = unknown, UpdateDTO =
       return this.normalizeData(data);
       
     } catch (error) {
-      console.error(`❌ [${this.constructor.name}] Error en búsqueda:`, error);
+      logger.error(`❌ [${this.constructor.name}] Error en búsqueda:`, error);
       throw error;
     }
   }

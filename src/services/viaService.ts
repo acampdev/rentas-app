@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/viaService.ts
 import BaseApiService, { ApiResponse, QueryParams } from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
@@ -108,7 +109,7 @@ class TipoViaService extends BaseApiService<TipoViaData, CreateTipoViaDTO, Updat
    */
   async listarTiposVia(): Promise<TipoViaData[]> {
     try {
-      console.log('🔍 [TipoViaService] Listando tipos de vía');
+      logger.log('🔍 [TipoViaService] Listando tipos de vía');
       
       // Usar endpoint específico
       const response = await this.makeRequest<ApiResponse<Record<string, unknown>[]>>('/listarVia', {
@@ -122,7 +123,7 @@ class TipoViaService extends BaseApiService<TipoViaData, CreateTipoViaDTO, Updat
       return normalized;
       
     } catch (error: unknown) {
-      console.error('❌ [TipoViaService] Error listando tipos de vía:', error);
+      logger.error('❌ [TipoViaService] Error listando tipos de vía:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

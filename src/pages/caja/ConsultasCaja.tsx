@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/caja/ConsultasCaja.tsx
 import React, { useState } from 'react';
 import {
@@ -101,7 +102,7 @@ const ConsultasCaja: React.FC = () => {
 
   // Funcion para exportar a PDF
   const handleExportPdf = () => {
-    console.log('Exportando a PDF...');
+    logger.log('Exportando a PDF...');
     // Aqui se implementara la logica de exportacion a PDF
   };
 

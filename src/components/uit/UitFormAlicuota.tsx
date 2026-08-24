@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/uit/UitFormAlicuota.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -65,7 +66,7 @@ const UitFormAlicuota: React.FC<UitFormAlicuotaProps> = ({
   // Cargar UITs del año seleccionado
   useEffect(() => {
     if (anioSeleccionado && anioSeleccionado > 0) {
-      console.log('🔄 [UitFormAlicuota] Cargando para año:', anioSeleccionado);
+      logger.log('🔄 [UitFormAlicuota] Cargando para año:', anioSeleccionado);
       cargarUITs();
     }
   }, [anioSeleccionado, cargarUITs]);
@@ -150,7 +151,7 @@ const UitFormAlicuota: React.FC<UitFormAlicuotaProps> = ({
         });
       }
     } catch (error) {
-      console.error('Error al guardar:', error);
+      logger.error('Error al guardar:', error);
     }
   };
 
@@ -281,7 +282,7 @@ const UitFormAlicuota: React.FC<UitFormAlicuotaProps> = ({
 
               {/* Botón Eliminar - Solo visible en modo edición */}
               {(() => {
-                console.log('🔍 [UitFormAlicuota] Debug botón Eliminar:', {
+                logger.log('🔍 [UitFormAlicuota] Debug botón Eliminar:', {
                   modoEdicion,
                   onEliminar: !!onEliminar,
                   uitSeleccionada: !!uitSeleccionada,

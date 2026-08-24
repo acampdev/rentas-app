@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/usuarios/RePassword.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -72,7 +73,7 @@ const RePassword: React.FC = () => {
 
   const onSubmit = async (data: ChangePasswordFormData) => {
     try {
-      console.log('[RePassword] Cambiando contrasena para usuario:', data.codUsuario);
+      logger.log('[RePassword] Cambiando contrasena para usuario:', data.codUsuario);
 
       const codUsuario = parseInt(data.codUsuario);
       await cambiarClave({ codUsuario, password: data.newPassword });
@@ -81,7 +82,7 @@ const RePassword: React.FC = () => {
       reset();
 
     } catch (error: any) {
-      console.error('[RePassword] Error:', error);
+      logger.error('[RePassword] Error:', error);
     }
   };
 

@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/aranceles/ArancelForm.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -174,7 +175,7 @@ export const AsignacionArancelForm: React.FC<AsignacionArancelFormProps> = ({
       if (!onSubmit) handleNuevo();
       
     } catch (error) {
-      console.error('Error al guardar arancel:', error);
+      logger.error('Error al guardar arancel:', error);
     }
   };
 

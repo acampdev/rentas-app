@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import apiClient, { isApiNotFoundError, unwrapApiList } from './apiClient';
 import { buildApiUrl } from '../config/api.unified.config';
@@ -105,7 +106,7 @@ class HRService extends BaseApiService<HRData, void, void> {
       return this.normalizeData(Array.isArray(items) ? items : []);
     } catch (error) {
       if (isApiNotFoundError(error)) return [];
-      console.error('[HRService] Error:', error);
+      logger.error('[HRService] Error:', error);
       throw error;
     }
   }

@@ -35,7 +35,6 @@ export const ConsultasCaja = lazyWithRetry('consultas-caja', () => import('./caj
 export const ReportesPage = lazyWithRetry('reportes', () => import('./reportes/ReportesPage'));
 export const SolicitudFraccionamientoPage = lazyWithRetry('solicitud-fraccionamiento', () => import('./fraccionamiento/SolicitudFraccionamientoPage'));
 export const ConsultaFraccionamientoPage = lazyWithRetry('consulta-fraccionamiento', () => import('./fraccionamiento/ConsultaFraccionamientoPage'));
-export const AprobacionFraccionamientoPage = lazyWithRetry('aprobacion-fraccionamiento', () => import('./fraccionamiento/AprobacionFraccionamientoPage'));
 export const CronogramaPage = lazyWithRetry('cronograma', () => import('./fraccionamiento/CronogramaPage'));
 export const UsuariosPage = lazyWithRetry('usuarios', () => import('./sistema/UsuariosPage'));
 export const RolesPage = lazyWithRetry('roles', () => import('./sistema/RolesPage'));

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // hooks/usePagos.ts
 import { useState, useCallback } from 'react';
 import { useModuleHotkeys } from './useModuleHotkeys';
@@ -71,7 +72,7 @@ export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => voi
       );
       const codAperturaCaja = aperturaActiva.codAperturaCaja;
 
-      console.log('[usePagos] Registrando pago de conceptos...');
+      logger.log('[usePagos] Registrando pago de conceptos...');
       
       // Mapeo del medio de pago
       let codMedioPago = '123';
@@ -89,7 +90,7 @@ export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => voi
         const detalleMeses = (c as any).detalleMeses || {};
         const tributoNombre = (c as any).tributoNombre || c.descripcion.split(' - ')[0] || '';
         const codTributo = mapTributoNameToCode(tributoNombre);
-        console.log(`[usePagos] Mapeando concepto: "${c.descripcion}", tributoNombre: "${tributoNombre}" -> codTributo: ${codTributo}`);
+        logger.log(`[usePagos] Mapeando concepto: "${c.descripcion}", tributoNombre: "${tributoNombre}" -> codTributo: ${codTributo}`);
 
         for (const anio of años) {
           for (const mes of meses) {
@@ -109,7 +110,7 @@ export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => voi
 
       // Enviar deudas ordinarias en un solo API request
       if (saldosDeuda.length > 0) {
-        console.log('[usePagos] Enviando PagoOrdinario unificado:', saldosDeuda);
+        logger.log('[usePagos] Enviando PagoOrdinario unificado:', saldosDeuda);
         const totalOrdinario = ordinarioConceptos.reduce((sum, c) => sum + c.total, 0);
 
         const resultadoOrdinario = await pagoService.registrarPagoOrdinario({
@@ -135,7 +136,7 @@ export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => voi
       }
 
       if (saldosDeudaFracc.length > 0) {
-        console.log('[usePagos] Enviando PagoCuotaFraccionamiento unificado:', saldosDeudaFracc);
+        logger.log('[usePagos] Enviando PagoCuotaFraccionamiento unificado:', saldosDeudaFracc);
         const resultadoFraccionamiento = await pagoService.registrarPagoCuotaFraccionamiento({
           codAperturaCaja,
           codContribuyente: Number(contribuyenteSeleccionado.id || contribuyenteSeleccionado.codigo),
@@ -157,7 +158,7 @@ export const usePagos = (cajaOperativa: CajaOperativa, onPagoExitoso?: () => voi
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Intente de nuevo.';
-      console.error('[usePagos] Error al registrar pago:', error);
+      logger.error('[usePagos] Error al registrar pago:', error);
       NotificationService.error(`Error al registrar pago: ${message}`);
       setPagoFeedback({ severity: 'error', message });
     } finally {

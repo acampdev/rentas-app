@@ -1,368 +1,124 @@
-// src/services/calleApiService.ts - CORREGIDO CON ENDPOINTS CORRECTOS
+import { logger } from "../utils/logger";
+import BaseApiService, { type QueryParams } from "./BaseApiService";
+import { isApiNotFoundError } from "./apiClient";
+import {
+  isValidCalle,
+  normalizeCalle,
+  toCreatedCalle,
+  toCreateViaPayload,
+  toUpdatedCalle,
+  toUpdateViaPayload,
+} from "./calleApi/calleApi.adapters";
+import {
+  requestCreateVia,
+  requestUpdateSector,
+  requestUpdateVia,
+  requestVias,
+  requestViasByName,
+} from "./calleApi/calleApi.requests";
+import type {
+  BusquedaCalleParams,
+  CalleData,
+  CreateCalleDTO,
+  RawCalle,
+  UpdateCalleDTO,
+  UpdateSectorDTO,
+} from "./calleApi/calleApi.types";
 
-import BaseApiService, { QueryParams } from './BaseApiService';
-import apiClient, { isApiNotFoundError, unwrapApiData, unwrapApiList } from './apiClient';
-import { buildApiUrl } from '../config/api.unified.config';
+export type {
+  BusquedaCalleParams,
+  CalleData,
+  CreateCalleDTO,
+  RawCalle,
+  UpdateCalleDTO,
+  UpdateSectorDTO,
+} from "./calleApi/calleApi.types";
 
-/**
- * Interfaces for Calle/Via
- */
-export interface CalleData {
-  // Main API fields
-  codVia: number;
-  codTipoVia: number | string;
-  codBarrio: number;
-  codSector?: number;
-  nombreVia: string;
-  descTipoVia: string;
-  nombreBarrio: string;
-  nombreSector?: string;
-  
-  // Compatibility fields
-  codigo?: number;
-  nombre?: string;
-  codigoVia?: number | string;
-  codigoBarrio?: number;
-  tipo?: string;
-  descripcion?: string;
-  estado?: string;
-  fechaRegistro?: string;
-  fechaModificacion?: string;
-  codUsuario?: number;
-}
-
-export interface CreateCalleDTO {
-  nombreVia: string;
-  codTipoVia: string;
-  codBarrio: number;
-  codSector: number;
-}
-
-export interface UpdateCalleDTO {
-  nombreVia?: string;
-  codTipoVia?: string;
-  codBarrio?: number;
-  codSector?: number;
-  estado?: string;
-  fechaModificacion?: string;
-}
-
-export interface BusquedaCalleParams extends QueryParams {
-  nombre?: string;
-  tipo?: string;
-  estado?: string;
-  codUsuario?: number;
-  parametrosBusqueda?: string;
-  nombreVia?: string;
-}
-
-export interface UpdateSectorDTO {
-  nombreSector: string;
-}
-
-/**
- * Interfaces para Calle/Via cruda del API
- */
-export interface RawCalle {
-  codVia?: number;
-  id?: number;
-  codTipoVia?: number | string;
-  codBarrio?: number;
-  codSector?: number;
-  nombreVia?: string;
-  descTipoVia?: string;
-  nombreBarrio?: string;
-  nombreSector?: string;
-  codigo?: number;
-  nombre?: string;
-  codigoVia?: number | string;
-  codigoBarrio?: number;
-  tipoVia?: string;
-  tipo?: string;
-  descripcion?: string;
-  estado?: string;
-  fechaRegistro?: string;
-  fechaModificacion?: string;
-  codUsuario?: number;
-}
-
-/**
- * Servicio para gestión de calles/vías
- * GET: /api/via/listarVia
- * POST: /api/via
- * NO REQUIERE AUTENTICACIÓN
- */
-class CalleApiService extends BaseApiService<CalleData, CreateCalleDTO, UpdateCalleDTO, RawCalle> {
+class CalleApiService extends BaseApiService<
+  CalleData,
+  CreateCalleDTO,
+  UpdateCalleDTO,
+  RawCalle
+> {
   private static instance: CalleApiService;
-  
+
   private constructor() {
     super(
-      '/api/via', // Endpoint base para CRUD
-      {
-        normalizeItem: (item: RawCalle) => ({
-          // Campos principales del API
-          codVia: item.codVia || 0,
-          codTipoVia: item.codTipoVia || '',
-          codBarrio: item.codBarrio || 0,
-          codSector: item.codSector || 0,
-          nombreVia: item.nombreVia || '',
-          descTipoVia: item.descTipoVia || '',
-          nombreBarrio: item.nombreBarrio || '',
-          nombreSector: item.nombreSector || '',
-          
-          // Campos para compatibilidad
-          codigo: item.codVia || item.codigo || 0,
-          nombre: item.nombreVia || item.nombre || '',
-          codigoVia: item.codTipoVia || item.codigoVia,
-          codigoBarrio: item.codBarrio || item.codigoBarrio,
-          tipo: item.descTipoVia || item.tipoVia || item.tipo || 'CALLE',
-          descripcion: item.descripcion || '',
-          estado: item.estado || 'ACTIVO',
-          fechaRegistro: item.fechaRegistro,
-          fechaModificacion: item.fechaModificacion,
-          codUsuario: item.codUsuario
-        }),
-        
-        validateItem: (item: CalleData) => {
-          return !!item.codigo && !!item.nombre && item.nombre.trim().length > 0;
-        }
-      },
-      'calle_cache'
+      "/api/via",
+      { normalizeItem: normalizeCalle, validateItem: isValidCalle },
+      "calle_cache",
     );
   }
-  
+
   static getInstance(): CalleApiService {
-    if (!CalleApiService.instance) {
+    if (!CalleApiService.instance)
       CalleApiService.instance = new CalleApiService();
-    }
     return CalleApiService.instance;
   }
-  
-  /**
-   * Sobrescribir getAll para usar el endpoint de listado
-   */
-  async getAll<P extends QueryParams = QueryParams>(params?: P): Promise<CalleData[]> {
+
+  async getAll<P extends QueryParams = QueryParams>(
+    params?: P,
+  ): Promise<CalleData[]> {
     try {
-      console.log('📋 [CalleApiService] Obteniendo todas las vías');
-      
-      const searchParams = params as BusquedaCalleParams | undefined;
-      // Usar el endpoint específico para listar
-      const url = buildApiUrl('/api/via/listarVia');
-      const queryParams = new URLSearchParams(searchParams as Record<string, string> || {});
-      
-      const data = await apiClient.request<unknown>(`${url}?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('📋 [CalleApiService] Raw API response:', data);
-      const items = unwrapApiList<RawCalle>(data);
-      console.log('📋 [CalleApiService] Items to normalize:', items);
-      
-      const normalized = this.normalizeData(items);
-      console.log('📋 [CalleApiService] Normalized data:', normalized);
-      
-      return normalized;
-    } catch (error) {
-      console.error('❌ [CalleApiService] Error obteniendo vías:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Crear nueva vía/calle
-   */
-  async create(data: CreateCalleDTO): Promise<CalleData> {
-    try {
-      console.log('📝 [CalleApiService] Creando vía con datos:', data);
-
-      // Preparar payload en el orden correcto
-      // Si codBarrio es 0 o undefined, enviar string vacío como en Postman
-      const payload = {
-        nombreVia: data.nombreVia,
-        codTipoVia: data.codTipoVia,
-        codBarrio: data.codBarrio && data.codBarrio > 0 ? data.codBarrio : "",
-        codSector: data.codSector
-      };
-
-      console.log('📤 [CalleApiService] Payload a enviar:', payload);
-
-      // Usar endpoint insertarVias
-      const url = buildApiUrl('/api/via/insertarVias');
-
-      const rawResponse = await apiClient.request<unknown>(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseData = unwrapApiData<RawCalle>(rawResponse);
-      console.log('✅ Respuesta del servidor:', responseData);
-
-      // Crear objeto de respuesta
-      const created: CalleData = {
-        codVia: responseData.codVia || responseData.id || 0,
-        codTipoVia: data.codTipoVia,
-        codBarrio: data.codBarrio,
-        codSector: data.codSector,
-        nombreVia: data.nombreVia,
-        descTipoVia: '',
-        nombreBarrio: '',
-        nombreSector: '',
-        codigo: responseData.codVia || responseData.id || 0,
-        nombre: data.nombreVia,
-        codigoVia: data.codTipoVia,
-        codigoBarrio: data.codBarrio,
-        estado: 'ACTIVO',
-        fechaRegistro: new Date().toISOString()
-      };
-
-      return created;
-
-    } catch (error: unknown) {
-      console.error('❌ [CalleApiService] Error creando vía:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Actualizar vía usando el endpoint /api/via/actualizarVias
-   */
-  async update(id: number, data: UpdateCalleDTO): Promise<CalleData> {
-    try {
-      console.log('📝 [CalleApiService] Actualizando vía con ID:', id);
-      console.log('📝 [CalleApiService] Datos a actualizar:', data);
-
-      // Preparar payload según la estructura del API
-      const payload = {
-        codVia: id,
-        nombreVia: data.nombreVia || '',
-        codTipoVia: data.codTipoVia ? String(data.codTipoVia) : '',
-        codBarrio: data.codBarrio || 0,
-        codSector: data.codSector || 0
-      };
-
-      console.log('📤 [CalleApiService] Payload a enviar:', payload);
-
-      // Usar endpoint actualizarVias
-      const url = buildApiUrl('/api/via/actualizarVias');
-
-      await apiClient.request<unknown>(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      // const responseData = await response.json();
-      // console.log('✅ Respuesta del servidor:', responseData);
-
-      // Crear objeto de respuesta normalizado
-      const updated: CalleData = {
-        codVia: id,
-        codTipoVia: payload.codTipoVia,
-        codBarrio: payload.codBarrio,
-        codSector: payload.codSector,
-        nombreVia: payload.nombreVia,
-        descTipoVia: '',
-        nombreBarrio: '',
-        nombreSector: '',
-        codigo: id,
-        nombre: payload.nombreVia,
-        codigoVia: payload.codTipoVia,
-        codigoBarrio: payload.codBarrio,
-        estado: 'ACTIVO',
-        fechaModificacion: new Date().toISOString()
-      };
-
-      return updated;
-
-    } catch (error) {
-      console.error('❌ [CalleApiService] Error actualizando vía:', error);
-      throw error;
-    }
-  }
-  
-
-  /**
-   * Buscar vías por nombre
-   */
-  async buscarPorNombreVia(nombre: string): Promise<CalleData[]> {
-    try {
-      const url = buildApiUrl(`${this.endpoint}/buscar`);
-      const res = await apiClient.request<unknown>(`${url}?nombre=${encodeURIComponent(nombre)}`);
-      const items = unwrapApiList<RawCalle>(res);
+      logger.log("[CalleApiService] Obteniendo vías");
+      const items = await requestVias(
+        params as BusquedaCalleParams | undefined,
+      );
       return this.normalizeData(items);
     } catch (error) {
+      logger.error("[CalleApiService] Error obteniendo vías:", error);
+      throw error;
+    }
+  }
+
+  async create(data: CreateCalleDTO): Promise<CalleData> {
+    try {
+      const response = await requestCreateVia(toCreateViaPayload(data));
+      return toCreatedCalle(data, response);
+    } catch (error) {
+      logger.error("[CalleApiService] Error creando vía:", error);
+      throw error;
+    }
+  }
+
+  async update(id: number, data: UpdateCalleDTO): Promise<CalleData> {
+    try {
+      const payload = toUpdateViaPayload(id, data);
+      await requestUpdateVia(payload);
+      return toUpdatedCalle(payload);
+    } catch (error) {
+      logger.error("[CalleApiService] Error actualizando vía:", error);
+      throw error;
+    }
+  }
+
+  async buscarPorNombreVia(nombre: string): Promise<CalleData[]> {
+    try {
+      return this.normalizeData(await requestViasByName(this.endpoint, nombre));
+    } catch (error) {
       if (isApiNotFoundError(error)) return [];
-      console.error('❌ [CalleApiService] Error buscando vías por nombre:', error);
+      logger.error("[CalleApiService] Error buscando vías por nombre:", error);
       throw error;
     }
   }
 
-  /**
-   * Buscar vías por nombre (método legacy)
-   */
   async buscarPorNombre(nombre: string): Promise<CalleData[]> {
-    try {
-      // Usar la nueva API para búsquedas
-      return await this.buscarPorNombreVia(nombre);
-      
-    } catch (error: unknown) {
-      console.error('❌ [CalleApiService] Error buscando vías:', error);
-      throw error;
-    }
+    return this.buscarPorNombreVia(nombre);
   }
 
-  /**
-   * Actualizar sector
-   */
-  async actualizarSector(sectorId: number, data: UpdateSectorDTO): Promise<{ success: boolean; message?: string }> {
+  async actualizarSector(
+    sectorId: number,
+    data: UpdateSectorDTO,
+  ): Promise<{ success: boolean; message?: string }> {
     try {
-      console.log('📝 [CalleApiService] Actualizando sector:', sectorId, data);
-      
-      // En desarrollo, usar ruta relativa para que el proxy de Vite funcione
-      const url = import.meta.env.DEV 
-        ? `/api/sector/${sectorId}` 
-        : buildApiUrl(`/api/sector/${sectorId}`);
-      
-      console.log('📡 URL para actualizar sector:', url);
-      
-      const rawResponse = await apiClient.request<unknown>(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-          // apiClient agrega Authorization de forma centralizada.
-        },
-        body: JSON.stringify(data)
-      });
-      
-      const responseData = rawResponse && typeof rawResponse === 'object'
-        ? rawResponse as { success: boolean; message?: string }
-        : { success: true, message: typeof rawResponse === 'string' ? rawResponse : undefined };
-      
-      console.log('✅ Sector actualizado exitosamente');
-      return responseData;
-      
-    } catch (error: unknown) {
-      console.error('❌ [CalleApiService] Error actualizando sector:', error);
+      return await requestUpdateSector(sectorId, data);
+    } catch (error) {
+      logger.error("[CalleApiService] Error actualizando sector:", error);
       throw error;
     }
   }
 }
 
-// Exportar instancia singleton
 const calleService = CalleApiService.getInstance();
 export default calleService;
-
-// Exportar también la clase
 export { CalleApiService };

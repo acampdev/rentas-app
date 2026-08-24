@@ -18,7 +18,34 @@ export const formatPredioDireccion = (direccion: string | Direccion | null | und
   return parts.join(', ') || direccion.descripcion || 'Sin dirección';
 };
 
-const getPredioCode = (predio: Predio) => predio.codPredioBase || predio.codigoPredio || predio.codPredio || '';
+export const getPredioCode = (predio: Predio): string | number =>
+  predio.codPredioBase || predio.codigoPredio || predio.codPredio || predio.id || '';
+
+export const getPredioAddress = (predio: Predio): string => {
+  const direccion = predio.direccion as string | Direccion | null | undefined;
+  if (direccion) return formatPredioDireccion(direccion);
+  return predio.direccionCompleta || `Dirección del predio ${getPredioCode(predio)}`;
+};
+
+export const getPredioKey = (predio: Predio | null): string | null => {
+  if (!predio) return null;
+  const direccion = predio.direccion as string | Direccion | null | undefined;
+  const direccionId = typeof direccion === 'object' && direccion !== null
+    ? direccion.id || predio.direccionId
+    : predio.direccionId;
+
+  return `${getPredioCode(predio)}-${getPredioAddress(predio)}-${direccionId || ''}-${predio.anio || ''}`.trim();
+};
+
+export const prepareSelectedPredio = (predio: Predio): Predio => {
+  const code = String(getPredioCode(predio)).trim();
+  return {
+    ...predio,
+    codigoPredio: code,
+    codPredio: code,
+    codPredioBase: predio.codPredioBase,
+  };
+};
 
 export const sortPrediosByCode = (predios: Predio[], order: 'asc' | 'desc'): Predio[] => {
   const direction = order === 'asc' ? 1 : -1;

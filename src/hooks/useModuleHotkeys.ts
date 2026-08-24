@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useModuleHotkeys.ts
 import { useEffect, useRef } from 'react';
 import { useCommands, Command } from '../context/CommandContext';
@@ -38,7 +39,7 @@ export const useModuleHotkeys = (
     // Registrar todos los comandos
     commands.forEach(cmd => registerCommand(cmd));
 
-    console.log(`⌨️  [${moduleName}] ${commands.length} atajos de teclado registrados`);
+    logger.log(`⌨️  [${moduleName}] ${commands.length} atajos de teclado registrados`);
 
     // Cleanup
     return () => {
@@ -65,7 +66,7 @@ export const useModuleHotkeys = (
 
         if (keyMatch && ctrlMatch && altMatch && shiftMatch && metaMatch) {
           if (config.enabled !== false) {
-            console.log(`⚡ [${moduleName}] Ejecutando: ${config.name}`);
+            logger.log(`⚡ [${moduleName}] Ejecutando: ${config.name}`);
             config.action();
           }
           break;

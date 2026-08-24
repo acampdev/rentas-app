@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/pagoService.ts
 import { buildApiUrl, getApiHeaders } from '../config/api.unified.config';
 import apiClient, { extractApiMessage } from './apiClient';
@@ -79,7 +80,7 @@ class PagoService {
   }
 
   private constructor() {
-    console.log('[PagoService] Inicializado');
+    logger.log('[PagoService] Inicializado');
   }
 
   /**
@@ -88,7 +89,7 @@ class PagoService {
    */
   async registrarPagoOrdinario(datos: PagoOrdinarioDTO): Promise<PagoOperationResult> {
     try {
-      console.log('[PagoService] Registrando Pago Ordinario:', datos);
+      logger.log('[PagoService] Registrando Pago Ordinario:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoOrdinario`);
 
       const responseData = await apiClient.request<unknown>(url, {
@@ -98,7 +99,7 @@ class PagoService {
         body: JSON.stringify(datos)
       });
 
-      console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoOrdinario:', responseData);
+      logger.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoOrdinario:', responseData);
 
       return {
         data: isRecord(responseData) && 'data' in responseData ? responseData.data : responseData,
@@ -109,7 +110,7 @@ class PagoService {
         error,
         'Error al registrar el pago ordinario.'
       );
-      console.error('[PagoService] Error al registrar pago ordinario:', normalizedError);
+      logger.error('[PagoService] Error al registrar pago ordinario:', normalizedError);
       throw normalizedError;
     }
   }
@@ -120,7 +121,7 @@ class PagoService {
    */
   async registrarPagoCuotaFraccionamiento(datos: PagoCuotaFraccionamientoDTO): Promise<PagoOperationResult> {
     try {
-      console.log('[PagoService] Registrando Pago Cuota Fraccionamiento:', datos);
+      logger.log('[PagoService] Registrando Pago Cuota Fraccionamiento:', datos);
       const url = buildApiUrl(`${this.endpoint}/pagoCuotaFraccionamiento`);
 
       const responseData = await apiClient.request<unknown>(url, {
@@ -130,7 +131,7 @@ class PagoService {
         body: JSON.stringify(datos)
       });
 
-      console.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoCuotaFraccionamiento:', responseData);
+      logger.log('[PagoService] Datos de respuesta del servidor (JSON) para pagoCuotaFraccionamiento:', responseData);
 
       return {
         data: isRecord(responseData) && 'data' in responseData ? responseData.data : responseData,
@@ -144,7 +145,7 @@ class PagoService {
         error,
         'Error al registrar el pago de fraccionamiento.'
       );
-      console.error('[PagoService] Error al registrar pago cuota fraccionamiento:', normalizedError);
+      logger.error('[PagoService] Error al registrar pago cuota fraccionamiento:', normalizedError);
       throw normalizedError;
     }
   }

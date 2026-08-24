@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/arbitrios/Serenazgo.tsx
 import React, { useState, useMemo, useCallback } from 'react';
 import {
@@ -104,7 +105,7 @@ const Serenazgo: React.FC = () => {
       handleLimpiar();
       recargar();
     } catch (error) {
-      console.error('❌ Error al registrar:', error);
+      logger.error('❌ Error al registrar:', error);
     }
   };
 
@@ -116,7 +117,7 @@ const Serenazgo: React.FC = () => {
   };
 
   const handleBuscar = () => {
-    console.log('🔍 [Serenazgo] Buscando para año:', anioBusqueda);
+    logger.log('🔍 [Serenazgo] Buscando para año:', anioBusqueda);
     setAnio(anioBusqueda);
     setMostrarTabla(true);
     // Forzar recarga inmediata
@@ -128,11 +129,11 @@ const Serenazgo: React.FC = () => {
    */
   const { matrixData, availableGroups } = useMemo(() => {
     if (!serenazgo || serenazgo.length === 0) {
-      console.log('⚠️ [Serenazgo] No hay datos para el año', anioBusqueda);
+      logger.log('⚠️ [Serenazgo] No hay datos para el año', anioBusqueda);
       return { matrixData: [], availableGroups: usosOptions };
     }
 
-    console.log('📊 [Serenazgo] Procesando matriz con', serenazgo.length, 'registros');
+    logger.log('📊 [Serenazgo] Procesando matriz con', serenazgo.length, 'registros');
 
     // 1. Identificar todos los grupos de uso presentes en la data o en las opciones
     let finalGroups = usosOptions;

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService, { ApiResponse } from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
 
@@ -87,7 +88,7 @@ class ResolucionInteresService extends BaseApiService<ResolucionInteresData, Cre
       
       return this.normalizeData(rawData);
     } catch (error) {
-      console.error('Error in obtenerTodas:', error);
+      logger.error('Error in obtenerTodas:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/DireccionesPage.tsx
 import React, { useState, useMemo } from 'react';
 import {
@@ -54,12 +55,12 @@ const DireccionesPage: React.FC = () => {
       setDireccionSeleccionada(null);
       setTabValue(1);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 
   const handleSeleccionar = (direccion: DireccionData) => {
-    console.log('🎯 [DireccionesPage] Seleccionando dirección para editar:', direccion);
+    logger.log('🎯 [DireccionesPage] Seleccionando dirección para editar:', direccion);
     setDireccionSeleccionada(direccion);
     setModoEdicion(true);
     setTabValue(0);

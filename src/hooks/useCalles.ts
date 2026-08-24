@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useCalles.ts
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useCrudEntity } from './useCrudEntity';
@@ -83,7 +84,7 @@ export const useCalles = () => {
       const data = await sectorService.getAll();
       setSectores(data);
     } catch (error) {
-      console.error('Error cargando sectores:', error);
+      logger.error('Error cargando sectores:', error);
     } finally {
       setLoadingSectores(false);
     }
@@ -97,7 +98,7 @@ export const useCalles = () => {
       setBarrios(data);
       setBarriosFiltrados(data);
     } catch (error) {
-      console.error('Error cargando barrios:', error);
+      logger.error('Error cargando barrios:', error);
     } finally {
       setLoadingBarrios(false);
     }
@@ -110,7 +111,7 @@ export const useCalles = () => {
       const data = await tipoViaService.getAll();
       setTiposVia(data);
     } catch (error) {
-      console.error('Error cargando tipos de vía:', error);
+      logger.error('Error cargando tipos de vía:', error);
     } finally {
       setLoadingTiposVia(false);
     }
@@ -196,7 +197,7 @@ export const useCalles = () => {
       codSector: data.codSector
     };
 
-    console.log('📤 [useCalles] Enviando payload:', payload);
+    logger.log('📤 [useCalles] Enviando payload:', payload);
 
     return actions.createItem(payload);
   }, [actions, barrios]);
@@ -219,7 +220,7 @@ export const useCalles = () => {
       codSector: data.codSector
     };
 
-    console.log('📤 [useCalles] Actualizando con payload:', payload);
+    logger.log('📤 [useCalles] Actualizando con payload:', payload);
 
     return actions.updateItem(id, payload);
   }, [actions, barrios]);
@@ -238,18 +239,18 @@ export const useCalles = () => {
   // Actualizar sector
   const actualizarSector = useCallback(async (sectorId: number, nombre: string) => {
     try {
-      console.log('📝 [useCalles] Actualizando sector:', sectorId, nombre);
+      logger.log('📝 [useCalles] Actualizando sector:', sectorId, nombre);
       
       await calleService.actualizarSector(sectorId, { nombreSector: nombre });
       
       // Recargar sectores después de actualizar
       await cargarSectores();
       
-      console.log('✅ Sector actualizado exitosamente');
+      logger.log('✅ Sector actualizado exitosamente');
       return true;
       
     } catch (error: any) {
-      console.error('❌ [useCalles] Error al actualizar sector:', error);
+      logger.error('❌ [useCalles] Error al actualizar sector:', error);
       throw error;
     }
   }, [cargarSectores]);

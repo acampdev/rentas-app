@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // services/usuarioService.ts
 import BaseApiService from './BaseApiService';
 
@@ -145,7 +146,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
 
       return this.normalizeData(items);
     } catch (error) {
-      console.error('[UsuarioService] Error listando usuarios:', error);
+      logger.error('[UsuarioService] Error listando usuarios:', error);
       throw error;
     }
   }
@@ -167,7 +168,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
       };
       return this.normalizeOptions.normalizeItem(created, 0);
     } catch (error) {
-      console.error('[UsuarioService] Error al insertar usuario:', error);
+      logger.error('[UsuarioService] Error al insertar usuario:', error);
       throw error;
     }
   }
@@ -189,7 +190,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
       };
       return this.normalizeOptions.normalizeItem(updated, 0);
     } catch (error) {
-      console.error('[UsuarioService] Error al actualizar usuario:', error);
+      logger.error('[UsuarioService] Error al actualizar usuario:', error);
       throw error;
     }
   }
@@ -205,7 +206,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
         body: JSON.stringify(datos)
       });
     } catch (error) {
-      console.error('[UsuarioService] Error al cambiar clave:', error);
+      logger.error('[UsuarioService] Error al cambiar clave:', error);
       throw error;
     }
   }
@@ -221,7 +222,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
         body: JSON.stringify(datos)
       });
     } catch (error) {
-      console.error('[UsuarioService] Error al dar de baja usuario:', error);
+      logger.error('[UsuarioService] Error al dar de baja usuario:', error);
       throw error;
     }
   }
@@ -237,7 +238,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
         body: JSON.stringify(datos)
       });
     } catch (error) {
-      console.error('[UsuarioService] Error al activar usuario:', error);
+      logger.error('[UsuarioService] Error al activar usuario:', error);
       throw error;
     }
   }
@@ -284,7 +285,7 @@ class UsuarioService extends BaseApiService<UsuarioData, CreateUsuarioDTO, Updat
 
       return codigoSupervisor;
     } catch (error) {
-      console.error('[UsuarioService] Error al verificar supervisor:', error);
+      logger.error('[UsuarioService] Error al verificar supervisor:', error);
       throw error;
     }
   }

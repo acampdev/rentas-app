@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/context/CommandContext.tsx
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { HotkeyConfig, formatHotkey } from '../hooks/useHotkeys';
@@ -44,7 +45,7 @@ export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) =>
     setCommands(prev => {
       const newCommands = new Map(prev);
       newCommands.set(command.id, command);
-      console.log(`✅ Comando registrado: ${command.name} (${formatHotkey(command.hotkey)}) - Módulo: ${command.module}`);
+      logger.log(`✅ Comando registrado: ${command.name} (${formatHotkey(command.hotkey)}) - Módulo: ${command.module}`);
       return newCommands;
     });
   }, []);
@@ -55,7 +56,7 @@ export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) =>
       const newCommands = new Map(prev);
       const command = newCommands.get(commandId);
       if (command) {
-        console.log(`❌ Comando desregistrado: ${command.name} - Módulo: ${command.module}`);
+        logger.log(`❌ Comando desregistrado: ${command.name} - Módulo: ${command.module}`);
         newCommands.delete(commandId);
       }
       return newCommands;
@@ -76,7 +77,7 @@ export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) =>
   const executeCommand = useCallback((commandId: string) => {
     const command = commands.get(commandId);
     if (command && command.enabled !== false) {
-      console.log(`⚡ Ejecutando comando: ${command.name}`);
+      logger.log(`⚡ Ejecutando comando: ${command.name}`);
       command.action();
     }
   }, [commands]);
@@ -88,7 +89,7 @@ export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) =>
       Array.from(newCommands.values())
         .filter(cmd => cmd.module === module)
         .forEach(cmd => newCommands.delete(cmd.id));
-      console.log(`🧹 Comandos limpiados para módulo: ${module}`);
+      logger.log(`🧹 Comandos limpiados para módulo: ${module}`);
       return newCommands;
     });
   }, []);
@@ -139,12 +140,12 @@ export const useModuleCommands = (moduleName: string, commands: Omit<Command, 'm
 
     fullCommands.forEach(cmd => registerCommand(cmd));
 
-    console.log(`📦 Módulo "${moduleName}" activado con ${fullCommands.length} comandos`);
+    logger.log(`📦 Módulo "${moduleName}" activado con ${fullCommands.length} comandos`);
 
     // Cleanup: desregistrar comandos cuando el componente se desmonte
     return () => {
       fullCommands.forEach(cmd => unregisterCommand(cmd.id));
-      console.log(`📦 Módulo "${moduleName}" desactivado`);
+      logger.log(`📦 Módulo "${moduleName}" desactivado`);
     };
   }, [moduleName, registerCommand, unregisterCommand, setActiveModule]);
 };

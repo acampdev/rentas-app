@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/tim/ConsultaTim.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -61,7 +62,7 @@ export const ConsultaTim: React.FC = () => {
       });
       setResultados(data);
     } catch (err) {
-      console.error('Error loading TIM records:', err);
+      logger.error('Error loading TIM records:', err);
       setResultados([]);
     } finally {
       setLoading(false);
@@ -82,7 +83,7 @@ export const ConsultaTim: React.FC = () => {
         });
         handleBuscar();
       } catch (err) {
-        console.error('Error deleting TIM:', err);
+        logger.error('Error deleting TIM:', err);
       }
     }
   };

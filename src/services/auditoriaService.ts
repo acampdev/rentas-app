@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import { API_CONFIG } from '../config/api.unified.config';
 
@@ -51,7 +52,7 @@ class AuditoriaService extends BaseApiService<AuditoriaItem, unknown, unknown, A
         : response?.data || response?.items || response?.content || (response ? [response] : []);
       return this.normalizeData(rawData);
     } catch (error) {
-      console.error('❌ [AuditoriaService] Error al obtener auditorías:', error);
+      logger.error('❌ [AuditoriaService] Error al obtener auditorías:', error);
       throw error;
     }
   }

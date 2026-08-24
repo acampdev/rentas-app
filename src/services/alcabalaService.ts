@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/alcabalaService.ts
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
@@ -87,7 +88,7 @@ class AlcabalaService extends BaseApiService<AlcabalaData, CreateAlcabalaDTO, Up
       const items = Array.isArray(response) ? response : response.data || [];
       return items.length > 0 ? this.normalizeOptions.normalizeItem(items[0], 0) : null;
     } catch (error) {
-      console.error('[AlcabalaService] Error:', error);
+      logger.error('[AlcabalaService] Error:', error);
       if (isApiNotFoundError(error)) return null;
       throw error;
     }

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/asignacionCajaService.ts
 import BaseApiService from './BaseApiService';
 import apiClient, { unwrapApiList } from './apiClient';
@@ -117,7 +118,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    */
   async listar(params?: ListarAsignacionCajaParams): Promise<AsignacionCajaData[]> {
     try {
-      console.log('[AsignacionCajaService] Listando asignaciones con parametros:', params);
+      logger.log('[AsignacionCajaService] Listando asignaciones con parametros:', params);
 
       const url = buildApiUrl(this.endpoint + '/listar');
 
@@ -137,7 +138,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
       queryParams.append('codUsuario', String(codUsuario));
 
       const getUrl = `${url}?${queryParams.toString()}`;
-      console.log('[AsignacionCajaService] GET URL:', getUrl);
+      logger.log('[AsignacionCajaService] GET URL:', getUrl);
 
       const token = sessionStorage.getItem('auth_token');
       const headers: Record<string, string> = {
@@ -153,11 +154,11 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         headers
       });
 
-      console.log('[AsignacionCajaService] Datos obtenidos:', responseData);
+      logger.log('[AsignacionCajaService] Datos obtenidos:', responseData);
       return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
-      console.error('[AsignacionCajaService] Error listando asignaciones:', error);
+      logger.error('[AsignacionCajaService] Error listando asignaciones:', error);
       throw error;
     }
   }
@@ -170,7 +171,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    */
   async insertar(datos: CreateAsignacionCajaDTO): Promise<void> {
     try {
-      console.log('[AsignacionCajaService] Insertando asignacion:', datos);
+      logger.log('[AsignacionCajaService] Insertando asignacion:', datos);
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
@@ -189,11 +190,11 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         body: JSON.stringify(datos)
       });
 
-      console.log('[AsignacionCajaService] Asignacion creada:', responseData);
+      logger.log('[AsignacionCajaService] Asignacion creada:', responseData);
       assertMutationAccepted(responseData, 'crear');
 
     } catch (error: unknown) {
-      console.error('[AsignacionCajaService] Error al insertar asignacion:', error);
+      logger.error('[AsignacionCajaService] Error al insertar asignacion:', error);
       throw error;
     }
   }
@@ -206,7 +207,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    */
   async actualizar(datos: UpdateAsignacionCajaDTO): Promise<void> {
     try {
-      console.log('[AsignacionCajaService] Actualizando asignacion:', datos);
+      logger.log('[AsignacionCajaService] Actualizando asignacion:', datos);
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
@@ -225,11 +226,11 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
         body: JSON.stringify(datos)
       });
 
-      console.log('[AsignacionCajaService] Asignacion actualizada:', responseData);
+      logger.log('[AsignacionCajaService] Asignacion actualizada:', responseData);
       assertMutationAccepted(responseData, 'actualizar');
 
     } catch (error: unknown) {
-      console.error('[AsignacionCajaService] Error al actualizar asignacion:', error);
+      logger.error('[AsignacionCajaService] Error al actualizar asignacion:', error);
       throw error;
     }
   }
@@ -242,7 +243,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    */
   async eliminar(datos: DeleteAsignacionCajaDTO): Promise<void> {
     try {
-      console.log('[AsignacionCajaService] Eliminando asignacion:', datos);
+      logger.log('[AsignacionCajaService] Eliminando asignacion:', datos);
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
@@ -262,10 +263,10 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
       });
 
       assertMutationAccepted(responseData, 'eliminar');
-      console.log('[AsignacionCajaService] Asignacion eliminada exitosamente');
+      logger.log('[AsignacionCajaService] Asignacion eliminada exitosamente');
 
     } catch (error: unknown) {
-      console.error('[AsignacionCajaService] Error al eliminar asignacion:', error);
+      logger.error('[AsignacionCajaService] Error al eliminar asignacion:', error);
       throw error;
     }
   }
@@ -274,7 +275,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Obtiene todas las asignaciones (alias para listar sin parametros)
    */
   async obtenerTodas(): Promise<AsignacionCajaData[]> {
-    console.log('[AsignacionCajaService] Obteniendo todas las asignaciones');
+    logger.log('[AsignacionCajaService] Obteniendo todas las asignaciones');
     return this.listar();
   }
 
@@ -282,7 +283,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Busca asignaciones por termino de busqueda
    */
   async buscarPorTermino(termino: string): Promise<AsignacionCajaData[]> {
-    console.log('[AsignacionCajaService] Buscando por termino:', termino);
+    logger.log('[AsignacionCajaService] Buscando por termino:', termino);
     return this.listar({ terminoBusqueda: termino });
   }
 
@@ -290,7 +291,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Busca asignaciones por fecha
    */
   async buscarPorFecha(fecha: string): Promise<AsignacionCajaData[]> {
-    console.log('[AsignacionCajaService] Buscando por fecha:', fecha);
+    logger.log('[AsignacionCajaService] Buscando por fecha:', fecha);
     return this.listar({ fecha });
   }
 
@@ -298,7 +299,7 @@ class AsignacionCajaService extends BaseApiService<AsignacionCajaData, CreateAsi
    * Busca asignaciones por usuario
    */
   async buscarPorUsuario(codUsuario: number): Promise<AsignacionCajaData[]> {
-    console.log('[AsignacionCajaService] Buscando por usuario:', codUsuario);
+    logger.log('[AsignacionCajaService] Buscando por usuario:', codUsuario);
     return this.listar({ codUsuario });
   }
 }

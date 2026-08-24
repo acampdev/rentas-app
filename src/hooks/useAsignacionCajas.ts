@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useAsignacionCajas.ts
 import { useState, useCallback, useRef } from 'react';
 import { NotificationService } from '../components/utils/Notification';
@@ -56,7 +57,7 @@ export const useAsignacionCajas = () => {
   const cargarAsignaciones = useCallback(async (params?: ListarAsignacionCajaParams) => {
     // Usar ref para evitar cargas multiples
     if (isLoadingRef.current) {
-      console.log('[useAsignacionCajas] Carga ya en proceso, omitiendo...');
+      logger.log('[useAsignacionCajas] Carga ya en proceso, omitiendo...');
       return;
     }
 
@@ -65,16 +66,16 @@ export const useAsignacionCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAsignacionCajas] Cargando asignaciones de caja...');
+      logger.log('[useAsignacionCajas] Cargando asignaciones de caja...');
 
       const datos = await asignacionCajaService.listar(params);
 
       setAsignaciones(datos);
-      console.log(`[useAsignacionCajas] ${datos.length} asignaciones cargadas`);
+      logger.log(`[useAsignacionCajas] ${datos.length} asignaciones cargadas`);
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useAsignacionCajas] Error:', error);
+      logger.error('[useAsignacionCajas] Error:', error);
       setError(message);
       NotificationService.error(message);
     } finally {
@@ -91,16 +92,16 @@ export const useAsignacionCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAsignacionCajas] Buscando con filtros:', params);
+      logger.log('[useAsignacionCajas] Buscando con filtros:', params);
 
       const resultados = await asignacionCajaService.listar(params);
 
       setAsignaciones(resultados);
-      console.log(`[useAsignacionCajas] ${resultados.length} resultados encontrados`);
+      logger.log(`[useAsignacionCajas] ${resultados.length} resultados encontrados`);
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al buscar asignaciones';
-      console.error('[useAsignacionCajas] Error en busqueda:', error);
+      logger.error('[useAsignacionCajas] Error en busqueda:', error);
       setError(message);
       NotificationService.error('Error al buscar asignaciones de caja');
     } finally {
@@ -137,7 +138,7 @@ export const useAsignacionCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAsignacionCajas] Creando asignacion (incluye usuario logeado):', datos);
+      logger.log('[useAsignacionCajas] Creando asignacion (incluye usuario logeado):', datos);
 
       await asignacionCajaService.insertar(datos);
 
@@ -150,7 +151,7 @@ export const useAsignacionCajas = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al crear asignacion';
-      console.error('[useAsignacionCajas] Error al crear:', error);
+      logger.error('[useAsignacionCajas] Error al crear:', error);
       setError(message);
       NotificationService.error(message);
       return false;
@@ -167,7 +168,7 @@ export const useAsignacionCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAsignacionCajas] Actualizando asignacion:', datos);
+      logger.log('[useAsignacionCajas] Actualizando asignacion:', datos);
 
       await asignacionCajaService.actualizar(datos);
 
@@ -180,7 +181,7 @@ export const useAsignacionCajas = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al actualizar asignacion';
-      console.error('[useAsignacionCajas] Error al actualizar:', error);
+      logger.error('[useAsignacionCajas] Error al actualizar:', error);
       setError(message);
       NotificationService.error(message);
       return false;
@@ -197,7 +198,7 @@ export const useAsignacionCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAsignacionCajas] Eliminando asignacion:', codAsignacionCaja, 'autorizado por usuario:', usuario);
+      logger.log('[useAsignacionCajas] Eliminando asignacion:', codAsignacionCaja, 'autorizado por usuario:', usuario);
 
       await asignacionCajaService.eliminar({ codAsignacionCaja, usuario });
 
@@ -210,7 +211,7 @@ export const useAsignacionCajas = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al eliminar asignacion';
-      console.error('[useAsignacionCajas] Error al eliminar:', error);
+      logger.error('[useAsignacionCajas] Error al eliminar:', error);
       setError(message);
       NotificationService.error(message);
       return false;

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/aperturaCajaService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import { AperturaCaja, AperturaCajaDTO, CierreCajaDTO } from '../models';
@@ -43,9 +44,9 @@ class AperturaCajaService {
   }
 
   private constructor() {
-    console.log('[AperturaCajaService] Inicializado');
-    console.log(`  - Endpoint: "${this.endpoint}"`);
-    console.log('  - Autenticación: Bearer');
+    logger.log('[AperturaCajaService] Inicializado');
+    logger.log(`  - Endpoint: "${this.endpoint}"`);
+    logger.log('  - Autenticación: Bearer');
   }
 
   /**
@@ -56,7 +57,7 @@ class AperturaCajaService {
    */
   async apertura(datos: AperturaCajaDTO): Promise<AperturaCaja> {
     try {
-      console.log('[AperturaCajaService] Realizando apertura de caja:', datos);
+      logger.log('[AperturaCajaService] Realizando apertura de caja:', datos);
 
       // Validar datos requeridos
       if (
@@ -73,7 +74,7 @@ class AperturaCajaService {
         method: 'POST',
         body: JSON.stringify(datos)
       });
-      console.log('[AperturaCajaService] Apertura realizada exitosamente:', responseData);
+      logger.log('[AperturaCajaService] Apertura realizada exitosamente:', responseData);
 
       // El POST puede devolver solamente un mensaje. La fuente de verdad es la
       // consulta autenticada de la apertura activa del usuario.
@@ -88,7 +89,7 @@ class AperturaCajaService {
       );
 
     } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error en apertura de caja:', error);
+      logger.error('[AperturaCajaService] Error en apertura de caja:', error);
       throw error;
     }
   }
@@ -101,7 +102,7 @@ class AperturaCajaService {
    */
   async cierre(datos: CierreCajaDTO): Promise<AperturaCaja> {
     try {
-      console.log('[AperturaCajaService] Realizando cierre de caja:', datos);
+      logger.log('[AperturaCajaService] Realizando cierre de caja:', datos);
 
       // Validar datos requeridos
       if (
@@ -139,7 +140,7 @@ class AperturaCajaService {
         method: 'PUT',
         body: JSON.stringify(requestBody)
       });
-      console.log('[AperturaCajaService] Cierre realizado exitosamente:', responseData);
+      logger.log('[AperturaCajaService] Cierre realizado exitosamente:', responseData);
 
       // Extraer datos del wrapper si existe
       const cierreData = unwrapApiData<Partial<AperturaCaja> | string>(responseData);
@@ -162,7 +163,7 @@ class AperturaCajaService {
       return normalized;
 
     } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error en cierre de caja:', error);
+      logger.error('[AperturaCajaService] Error en cierre de caja:', error);
       throw error;
     }
   }
@@ -177,12 +178,12 @@ class AperturaCajaService {
         throw new Error('El código de usuario para consultar la apertura no es válido');
       }
 
-      console.log('[AperturaCajaService] Obteniendo apertura para usuario:', codUsuario);
+      logger.log('[AperturaCajaService] Obteniendo apertura para usuario:', codUsuario);
       
       const url = buildApiUrl(`${this.endpoint}?codUsuario=${codUsuario}`);
       
       const responseData = await apiClient.request<unknown>(url, { method: 'GET' });
-      console.log('[AperturaCajaService] Datos de apertura obtenidos:', responseData);
+      logger.log('[AperturaCajaService] Datos de apertura obtenidos:', responseData);
 
       const unwrapped = unwrapApiData<Partial<AperturaCaja> | Partial<AperturaCaja>[]>(responseData);
       const candidates = Array.isArray(unwrapped) ? unwrapped : unwrapped ? [unwrapped] : [];
@@ -217,7 +218,7 @@ class AperturaCajaService {
       };
 
     } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error obteniendo apertura de usuario:', error);
+      logger.error('[AperturaCajaService] Error obteniendo apertura de usuario:', error);
       if (error instanceof ApiClientError && error.statusCode === 404) return null;
       throw error;
     }
@@ -258,7 +259,7 @@ class AperturaCajaService {
    */
   async listarPorUsuario(codUsuario: number): Promise<AperturaCaja[]> {
     try {
-      console.log('[AperturaCajaService] Listando aperturas para usuario:', codUsuario);
+      logger.log('[AperturaCajaService] Listando aperturas para usuario:', codUsuario);
       
       const url = buildApiUrl(`${this.endpoint}?codUsuario=${codUsuario}`);
       
@@ -274,7 +275,7 @@ class AperturaCajaService {
         method: 'GET',
         headers
       });
-      console.log('[AperturaCajaService] Datos de lista obtenidos:', responseData);
+      logger.log('[AperturaCajaService] Datos de lista obtenidos:', responseData);
 
       if (!responseData) return [];
       const rawList = responseData.data || responseData;
@@ -297,7 +298,7 @@ class AperturaCajaService {
       }));
 
     } catch (error: unknown) {
-      console.error('[AperturaCajaService] Error listando aperturas:', error);
+      logger.error('[AperturaCajaService] Error listando aperturas:', error);
       if (error instanceof ApiClientError && error.statusCode === 404) return [];
       throw error;
     }
@@ -307,7 +308,7 @@ class AperturaCajaService {
    * Valida si una caja puede ser abierta
    */
   async validarApertura(codAsignacionCaja: number, fecha: string): Promise<boolean> {
-    console.log('[AperturaCajaService] Validando apertura para:', { codAsignacionCaja, fecha });
+    logger.log('[AperturaCajaService] Validando apertura para:', { codAsignacionCaja, fecha });
     return true;
   }
 
@@ -315,7 +316,7 @@ class AperturaCajaService {
    * Valida si una caja puede ser cerrada
    */
   async validarCierre(codAperturaCaja: number, codUsuario: number): Promise<boolean> {
-    console.log('[AperturaCajaService] Validando cierre para:', { codAperturaCaja, codUsuario });
+    logger.log('[AperturaCajaService] Validando cierre para:', { codAperturaCaja, codUsuario });
     await this.verificarAperturaActiva(codUsuario, codAperturaCaja);
     return true;
   }

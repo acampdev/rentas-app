@@ -19,7 +19,7 @@ describe("CuentaCorrienteService API contract", () => {
       codPredio: null,
     });
 
-    const url = new URL(String(fetchMock.mock.calls[0][0]));
+    const url = new URL(String(fetchMock.mock.calls[0][0]), "http://localhost");
     expect(url.pathname).toBe("/api/estadoCuenta/listar");
     expect(url.searchParams.get("codContribuyente")).toBe("8");
     expect(url.searchParams.get("anio")).toBe("");
@@ -34,7 +34,7 @@ describe("CuentaCorrienteService API contract", () => {
 
     await cuentaCorrienteService.listarDetalleEstadoCuenta(2, 2026, 15);
 
-    const url = new URL(String(fetchMock.mock.calls[0][0]));
+    const url = new URL(String(fetchMock.mock.calls[0][0]), "http://localhost");
     expect(url.pathname).toBe("/api/estadoCuenta/listarDetalle");
     expect(url.searchParams.get("codContribuyente")).toBe("2");
     expect(url.searchParams.get("anio")).toBe("2026");

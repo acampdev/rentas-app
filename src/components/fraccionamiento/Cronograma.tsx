@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/fraccionamiento/Cronograma.tsx
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
@@ -68,14 +69,14 @@ const Cronograma: React.FC = () => {
     setHasSearched(true);
     
     try {
-      console.log(`🔍 [Cronograma] Buscando cronograma para año=${parsedAnio}, resolución=${parsedRes}`);
+      logger.log(`🔍 [Cronograma] Buscando cronograma para año=${parsedAnio}, resolución=${parsedRes}`);
       const data = await fraccionamientoService.obtenerCronograma(parsedAnio, parsedRes);
       setCronograma(data || []);
       if (!data || data.length === 0) {
-        console.warn('⚠️ [Cronograma] La API retornó un cronograma vacío.');
+        logger.warn('⚠️ [Cronograma] La API retornó un cronograma vacío.');
       }
     } catch (err: any) {
-      console.error('❌ [Cronograma] Error al obtener cronograma:', err);
+      logger.error('❌ [Cronograma] Error al obtener cronograma:', err);
       setError(err.message || 'Error al conectar con el servidor.');
       setCronograma([]);
     } finally {

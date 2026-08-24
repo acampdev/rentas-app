@@ -6,7 +6,7 @@ Aplicación web para la gestión de rentas municipales: contribuyentes, predios,
 
 - Node.js 20 o superior.
 - pnpm 11. El proyecto usa exclusivamente `pnpm-lock.yaml`.
-- Acceso al backend configurado mediante `VITE_API_URL`.
+- Acceso al backend mediante una URL del navegador o el proxy de desarrollo.
 
 Si `pnpm` no está disponible:
 
@@ -17,13 +17,30 @@ corepack prepare pnpm@11.19.0 --activate
 
 ## Configuración
 
-Copie `.env.example` como `.env` y configure el backend:
+Copie `.env.example` como `.env`. Para desarrollo se recomienda mantener las
+peticiones del navegador en el mismo origen y configurar únicamente el destino
+interno del proxy de Vite:
 
 ```env
-VITE_API_URL=http://localhost:8085
+VITE_API_URL=
+API_PROXY_TARGET=http://localhost:8085
 ```
 
-En producción HTTPS, use una API HTTPS o un proxy del mismo origen para `/api` y `/auth`. No publique secretos en variables `VITE_*`, porque forman parte del código del navegador.
+El destino HTTP anterior es válido únicamente entre el servidor local de Vite y
+el backend de desarrollo; el navegador no lo recibe ni lo utiliza directamente.
+
+`VITE_API_URL` y `API_PROXY_TARGET` cumplen funciones diferentes:
+
+- `VITE_API_URL`: base visible y utilizada por el navegador. Déjela vacía para
+  rutas `/api` y `/auth` del mismo origen, o configure una URL HTTPS absoluta si
+  el backend permite CORS.
+- `API_PROXY_TARGET`: destino privado usado solamente por el servidor de
+  desarrollo de Vite. No se incorpora al bundle del navegador.
+
+En producción HTTPS, use una API HTTPS o un proxy inverso del mismo origen. No
+publique secretos en variables `VITE_*`, porque forman parte del código del navegador.
+El build rechaza expresamente cualquier `VITE_API_URL` que comience con
+`http://` cuando se ejecuta en modo producción.
 
 ## Comandos
 

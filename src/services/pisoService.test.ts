@@ -30,7 +30,7 @@ describe('PisoService editing API contract', () => {
     });
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://26.161.18.122:8085/api/piso/all?anio=2025&codPredioBase=5&numeroPiso=1'
+      '/api/piso/all?anio=2025&codPredioBase=5&numeroPiso=1'
     );
     expect(piso).toMatchObject({
       anio: 2025,

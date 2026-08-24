@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useMantenedorCaja.ts
 import { useState, useCallback, useRef } from 'react';
 import { NotificationService } from '../components/utils/Notification';
@@ -51,7 +52,7 @@ export const useMantenedorCaja = () => {
   const cargarCajas = useCallback(async (params?: ListarMantenedorCajaParams) => {
     // Usar ref para evitar cargas multiples
     if (isLoadingRef.current) {
-      console.log('[useMantenedorCaja] Carga ya en proceso, omitiendo...');
+      logger.log('[useMantenedorCaja] Carga ya en proceso, omitiendo...');
       return;
     }
 
@@ -60,16 +61,16 @@ export const useMantenedorCaja = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useMantenedorCaja] Cargando cajas...');
+      logger.log('[useMantenedorCaja] Cargando cajas...');
 
       const datos = await mantenedorCajaService.listar(params);
 
       setCajas(datos);
-      console.log(`[useMantenedorCaja] ${datos.length} cajas cargadas`);
+      logger.log(`[useMantenedorCaja] ${datos.length} cajas cargadas`);
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useMantenedorCaja] Error:', error);
+      logger.error('[useMantenedorCaja] Error:', error);
       setError(errorMessage);
       NotificationService.error(errorMessage);
     } finally {
@@ -86,16 +87,16 @@ export const useMantenedorCaja = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useMantenedorCaja] Buscando con filtros:', params);
+      logger.log('[useMantenedorCaja] Buscando con filtros:', params);
 
       const resultados = await mantenedorCajaService.listar(params);
 
       setCajas(resultados);
-      console.log(`[useMantenedorCaja] ${resultados.length} resultados encontrados`);
+      logger.log(`[useMantenedorCaja] ${resultados.length} resultados encontrados`);
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useMantenedorCaja] Error:', error);
+      logger.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
     } finally {
@@ -125,7 +126,7 @@ export const useMantenedorCaja = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useMantenedorCaja] Creando caja:', datos);
+      logger.log('[useMantenedorCaja] Creando caja:', datos);
 
       await mantenedorCajaService.insertar(datos);
 
@@ -138,7 +139,7 @@ export const useMantenedorCaja = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useMantenedorCaja] Error:', error);
+      logger.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
       return false;
@@ -155,7 +156,7 @@ export const useMantenedorCaja = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useMantenedorCaja] Actualizando caja:', datos);
+      logger.log('[useMantenedorCaja] Actualizando caja:', datos);
 
       await mantenedorCajaService.actualizar(datos);
 
@@ -168,7 +169,7 @@ export const useMantenedorCaja = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useMantenedorCaja] Error:', error);
+      logger.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
       return false;
@@ -185,7 +186,7 @@ export const useMantenedorCaja = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useMantenedorCaja] Eliminando caja:', codCaja);
+      logger.log('[useMantenedorCaja] Eliminando caja:', codCaja);
 
       await mantenedorCajaService.eliminar({ codCaja });
 
@@ -198,7 +199,7 @@ export const useMantenedorCaja = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('[useMantenedorCaja] Error:', error);
+      logger.error('[useMantenedorCaja] Error:', error);
       setError(message);
       NotificationService.error(message);
       return false;

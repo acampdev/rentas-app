@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useAperturaCajas.ts
 import { useState, useCallback } from 'react';
 import { NotificationService } from '../components/utils/Notification';
@@ -23,7 +24,7 @@ export const useAperturaCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAperturaCajas] Abriendo caja:', datos);
+      logger.log('[useAperturaCajas] Abriendo caja:', datos);
 
       // Validar datos
       if (datos.montoApertura === undefined || datos.montoApertura === null || !datos.codUsuario) {
@@ -47,7 +48,7 @@ export const useAperturaCajas = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al abrir caja';
-      console.error('[useAperturaCajas] Error al abrir caja:', error);
+      logger.error('[useAperturaCajas] Error al abrir caja:', error);
       setError(message);
       NotificationService.error(message);
       return null;
@@ -64,7 +65,7 @@ export const useAperturaCajas = () => {
       setLoading(true);
       setError(null);
 
-      console.log('[useAperturaCajas] Cerrando caja:', datos);
+      logger.log('[useAperturaCajas] Cerrando caja:', datos);
 
       // Validar datos
       if (
@@ -89,7 +90,7 @@ export const useAperturaCajas = () => {
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al cerrar caja';
-      console.error('[useAperturaCajas] Error al cerrar caja:', error);
+      logger.error('[useAperturaCajas] Error al cerrar caja:', error);
       setError(message);
       NotificationService.error(message);
       return null;
@@ -112,7 +113,7 @@ export const useAperturaCajas = () => {
       return apertura;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al obtener apertura';
-      console.error('[useAperturaCajas] Error al obtener apertura:', error);
+      logger.error('[useAperturaCajas] Error al obtener apertura:', error);
       setError(message);
       return null;
     } finally {
@@ -131,7 +132,7 @@ export const useAperturaCajas = () => {
       return lista;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al listar aperturas';
-      console.error('[useAperturaCajas] Error al listar aperturas:', error);
+      logger.error('[useAperturaCajas] Error al listar aperturas:', error);
       setError(message);
       return [];
     } finally {
@@ -144,7 +145,7 @@ export const useAperturaCajas = () => {
    */
   const validarApertura = useCallback(async (codAsignacionCaja: number, fecha: string): Promise<boolean> => {
     try {
-      console.log('[useAperturaCajas] Validando apertura...');
+      logger.log('[useAperturaCajas] Validando apertura...');
 
       // Validar que no haya una apertura activa
       if (aperturaActual && aperturaActual.estado === 'ABIERTA') {
@@ -161,7 +162,7 @@ export const useAperturaCajas = () => {
       return esValida;
 
     } catch (error: unknown) {
-      console.error('[useAperturaCajas] Error validando apertura:', error);
+      logger.error('[useAperturaCajas] Error validando apertura:', error);
       return false;
     }
   }, [aperturaActual]);
@@ -171,7 +172,7 @@ export const useAperturaCajas = () => {
    */
   const validarCierre = useCallback(async (codAperturaCaja: number, codUsuario: number): Promise<boolean> => {
     try {
-      console.log('[useAperturaCajas] Validando cierre...');
+      logger.log('[useAperturaCajas] Validando cierre...');
 
       // Validar que haya una apertura activa
       if (!aperturaActual || aperturaActual.estado !== 'ABIERTA') {
@@ -188,7 +189,7 @@ export const useAperturaCajas = () => {
       return esValido;
 
     } catch (error: unknown) {
-      console.error('[useAperturaCajas] Error validando cierre:', error);
+      logger.error('[useAperturaCajas] Error validando cierre:', error);
       return false;
     }
   }, [aperturaActual]);

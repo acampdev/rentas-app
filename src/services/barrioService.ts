@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
 
@@ -135,7 +136,7 @@ class BarrioService extends BaseApiService<BarrioData, CreateBarrioDTO, UpdateBa
       const data = Array.isArray(res) ? res : res.data || [];
       return this.normalizeData(data);
     } catch (error) {
-      console.error('[BarrioService] Error obteniendo por sector:', error);
+      logger.error('[BarrioService] Error obteniendo por sector:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

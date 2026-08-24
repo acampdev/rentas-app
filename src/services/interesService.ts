@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/interesService.ts
 import BaseApiService from './BaseApiService';
 import apiClient, { isApiNotFoundError } from './apiClient';
@@ -43,7 +44,7 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
    */
   async obtenerPorAnio(anio: number): Promise<InteresData[]> {
     try {
-      console.log(`🔍 [InteresService] Obteniendo intereses para año: ${anio}`);
+      logger.log(`🔍 [InteresService] Obteniendo intereses para año: ${anio}`);
       const url = buildApiUrl(`${this.endpoint}?anio=${anio}`);
       const res = await apiClient.request<unknown>(url);
       const payload = res && typeof res === 'object' && !Array.isArray(res) && 'data' in res
@@ -52,7 +53,7 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
       const items = Array.isArray(payload) ? payload : payload ? [payload] : [];
       return this.normalizeData(items as Record<string, unknown>[]);
     } catch (error) {
-      console.error('❌ [InteresService] Error en obtenerPorAnio:', error);
+      logger.error('❌ [InteresService] Error en obtenerPorAnio:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }
@@ -63,7 +64,7 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
    * POST /api/interes
    */
   async insertar(datos: CreateInteresDTO): Promise<InteresData> {
-    console.log('➕ [InteresService] Creando interés:', datos);
+    logger.log('➕ [InteresService] Creando interés:', datos);
     return this.create(datos);
   }
 
@@ -73,18 +74,18 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
    */
   async actualizarSinId(datos: UpdateInteresDTO): Promise<InteresData> {
     try {
-      console.log('📝 [InteresService] Actualizando interés sin ID en la ruta:', datos);
+      logger.log('📝 [InteresService] Actualizando interés sin ID en la ruta:', datos);
       
       const responseData = await this.makeRequest<any>('', {
         method: 'PUT',
         body: JSON.stringify(datos)
       });
       
-      console.log('✅ [InteresService] Interés actualizado exitosamente:', responseData);
+      logger.log('✅ [InteresService] Interés actualizado exitosamente:', responseData);
       const updated = responseData.data || responseData;
       return this.normalizeData([updated])[0];
     } catch (error: unknown) {
-      console.error('❌ [InteresService] Error al actualizar interés:', error);
+      logger.error('❌ [InteresService] Error al actualizar interés:', error);
       throw error;
     }
   }
@@ -109,7 +110,7 @@ class InteresService extends BaseApiService<InteresData, CreateInteresDTO, Updat
         || (typeof response.data === 'string' ? response.data : '')
         || 'Interés inactivado correctamente';
     } catch (error: unknown) {
-      console.error('❌ [InteresService] Error al inactivar interés:', error);
+      logger.error('❌ [InteresService] Error al inactivar interés:', error);
       throw error;
     }
   }

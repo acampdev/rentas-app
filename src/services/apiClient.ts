@@ -1,4 +1,5 @@
 import { API_CONFIG, buildApiUrl, getApiHeaders } from '../config/api.unified.config';
+import { invalidateSessionFromUnauthorized } from './authSession';
 
 export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
   body?: BodyInit | Record<string, unknown> | unknown[] | null;
@@ -179,8 +180,14 @@ class ApiClient {
 
       if (!response.ok) {
         const payload = await parseResponseBody(response.clone());
+        const message = extractApiMessage(payload, `Error ${response.status}: ${response.statusText}`);
+
+        if (auth && response.status === 401) {
+          invalidateSessionFromUnauthorized(message);
+        }
+
         throw new ApiClientError(
-          extractApiMessage(payload, `Error ${response.status}: ${response.statusText}`),
+          message,
           response.status,
           payload
         );

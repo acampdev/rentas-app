@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
 
@@ -134,7 +135,7 @@ class UITService extends BaseApiService<UITData, CreateUITDTO, UpdateUITDTO, UIT
       const arrayData = Array.isArray(rawData) ? rawData : [rawData];
       return this.normalizeData(arrayData);
     } catch (error) {
-      console.error('Error al listar UITs:', error);
+      logger.error('Error al listar UITs:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }
@@ -155,7 +156,7 @@ class UITService extends BaseApiService<UITData, CreateUITDTO, UpdateUITDTO, UIT
       const created = response && response.data !== undefined ? response.data : response;
       return this.normalizeOptions.normalizeItem(created as UITRaw, 0);
     } catch (error) {
-      console.error('Error al crear UIT:', error);
+      logger.error('Error al crear UIT:', error);
       throw error;
     }
   }
@@ -169,7 +170,7 @@ class UITService extends BaseApiService<UITData, CreateUITDTO, UpdateUITDTO, UIT
       const updated = response && response.data !== undefined ? response.data : response;
       return this.normalizeOptions.normalizeItem(updated as UITRaw, 0);
     } catch (error) {
-      console.error('Error al actualizar UIT:', error);
+      logger.error('Error al actualizar UIT:', error);
       throw error;
     }
   }

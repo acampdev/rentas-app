@@ -50,7 +50,6 @@ export { default as ReportesPage } from './reportes/ReportesPage';
 // Páginas de Fraccionamiento
 export { default as SolicitudFraccionamientoPage } from './fraccionamiento/SolicitudFraccionamientoPage';
 export { default as ConsultaFraccionamientoPage } from './fraccionamiento/ConsultaFraccionamientoPage';
-export { default as AprobacionFraccionamientoPage } from './fraccionamiento/AprobacionFraccionamientoPage';
 export { default as CronogramaPage } from './fraccionamiento/CronogramaPage';
 
 // Páginas de Sistema

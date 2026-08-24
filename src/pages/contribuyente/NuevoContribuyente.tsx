@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/contribuyente/NuevoContribuyente.tsx - Versión con Material-UI
 import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -40,29 +41,29 @@ const NuevoContribuyente: React.FC = () => {
       if (isEditMode && id) {
         try {
           setLoadingContribuyente(true);
-          console.log('📝 [NuevoContribuyente] Cargando contribuyente para edición, ID:', id);
+          logger.log('📝 [NuevoContribuyente] Cargando contribuyente para edición, ID:', id);
 
           // Enviar codigoContribuyente y codPersona como string vacío (no null)
-          console.log('🚀 [NuevoContribuyente] Llamando a obtenerContribuyenteDetalle con codigoContribuyente:', id, 'codPersona: ""');
+          logger.log('🚀 [NuevoContribuyente] Llamando a obtenerContribuyenteDetalle con codigoContribuyente:', id, 'codPersona: ""');
           const detalle = await obtenerContribuyenteDetalle(id, "");
 
-          console.log('📥 [NuevoContribuyente] Respuesta de obtenerContribuyenteDetalle:', detalle);
-          console.log('📥 [NuevoContribuyente] Tipo de detalle:', typeof detalle);
-          console.log('📥 [NuevoContribuyente] Es null?:', detalle === null);
-          console.log('📥 [NuevoContribuyente] Es array?:', Array.isArray(detalle));
+          logger.log('📥 [NuevoContribuyente] Respuesta de obtenerContribuyenteDetalle:', detalle);
+          logger.log('📥 [NuevoContribuyente] Tipo de detalle:', typeof detalle);
+          logger.log('📥 [NuevoContribuyente] Es null?:', detalle === null);
+          logger.log('📥 [NuevoContribuyente] Es array?:', Array.isArray(detalle));
 
           // Si es un array, extraer el primer elemento
           let detalleObj = detalle;
           if (Array.isArray(detalle)) {
-            console.log('⚠️ [NuevoContribuyente] detalle es un ARRAY, extrayendo primer elemento');
+            logger.log('⚠️ [NuevoContribuyente] detalle es un ARRAY, extrayendo primer elemento');
             detalleObj = detalle.length > 0 ? detalle[0] : null;
-            console.log('📥 [NuevoContribuyente] Primer elemento extraído:', detalleObj);
+            logger.log('📥 [NuevoContribuyente] Primer elemento extraído:', detalleObj);
           }
 
           if (detalleObj) {
-            console.log('✅ [NuevoContribuyente] ========== PROCESANDO DATOS ==========');
-            console.log('✅ [NuevoContribuyente] Datos del contribuyente cargados:', detalleObj);
-            console.log('🔍 [NuevoContribuyente] Campos disponibles:', Object.keys(detalleObj));
+            logger.log('✅ [NuevoContribuyente] ========== PROCESANDO DATOS ==========');
+            logger.log('✅ [NuevoContribuyente] Datos del contribuyente cargados:', detalleObj);
+            logger.log('🔍 [NuevoContribuyente] Campos disponibles:', Object.keys(detalleObj));
 
             // Convertir fecha de nacimiento (puede venir como string "1979-12-31" o timestamp)
             let fechaNac = null;
@@ -74,7 +75,7 @@ const NuevoContribuyente: React.FC = () => {
               } else if (typeof fechaStr === 'number') {
                 fechaNac = new Date(fechaStr);
               }
-              console.log('📅 [NuevoContribuyente] Fecha convertida:', fechaNac);
+              logger.log('📅 [NuevoContribuyente] Fecha convertida:', fechaNac);
             }
 
             // Función para convertir codTipoDocumento del API (1, 2) al formato del formulario (4101, 4102)
@@ -124,38 +125,38 @@ const NuevoContribuyente: React.FC = () => {
             const extraerLoteDeDireccion = (direccionCompleta: string): { direccion: string; lote: string } => {
               if (!direccionCompleta) return { direccion: '', lote: '' };
 
-              console.log('🔍 [extraerLoteDeDireccion] Procesando:', direccionCompleta);
+              logger.log('🔍 [extraerLoteDeDireccion] Procesando:', direccionCompleta);
 
               // Buscar patrón "Lt." o "Lote" seguido de número (más flexible)
               const regexLote = /\s*(Lt\.?|Lote\.?)\s*(\d+)\s*$/i;
               const match = direccionCompleta.match(regexLote);
 
-              console.log('🔍 [extraerLoteDeDireccion] Match resultado:', match);
+              logger.log('🔍 [extraerLoteDeDireccion] Match resultado:', match);
 
               if (match) {
                 const lote = match[2]; // El número del lote (grupo 2)
                 const direccionSinLote = direccionCompleta.replace(regexLote, '').trim();
-                console.log('📍 [extraerLoteDeDireccion] Lote extraído:', lote);
-                console.log('📍 [extraerLoteDeDireccion] Dirección sin lote:', direccionSinLote);
+                logger.log('📍 [extraerLoteDeDireccion] Lote extraído:', lote);
+                logger.log('📍 [extraerLoteDeDireccion] Dirección sin lote:', direccionSinLote);
                 return { direccion: direccionSinLote, lote };
               }
 
-              console.log('⚠️ [extraerLoteDeDireccion] No se encontró patrón Lt./Lote');
+              logger.log('⚠️ [extraerLoteDeDireccion] No se encontró patrón Lt./Lote');
               return { direccion: direccionCompleta.trim(), lote: '' };
             };
 
             // Extraer lote de la dirección si existe
             const direccionOriginal = detalleObj.direccion?.trim() || '';
-            console.log('📍 [NuevoContribuyente] ========== PROCESANDO DIRECCIÓN ==========');
-            console.log('📍 [NuevoContribuyente] Dirección original del API:', direccionOriginal);
+            logger.log('📍 [NuevoContribuyente] ========== PROCESANDO DIRECCIÓN ==========');
+            logger.log('📍 [NuevoContribuyente] Dirección original del API:', direccionOriginal);
 
             const { direccion: direccionLimpia, lote: loteExtraido } = extraerLoteDeDireccion(direccionOriginal);
 
             // Usar el lote del API si existe, sino usar el extraído de la dirección
             const nFincaFinal = detalleObj.lote?.trim() || loteExtraido || '';
 
-            console.log('📍 [NuevoContribuyente] Dirección limpia (sin lote):', direccionLimpia);
-            console.log('📍 [NuevoContribuyente] N Finca final:', nFincaFinal);
+            logger.log('📍 [NuevoContribuyente] Dirección limpia (sin lote):', direccionLimpia);
+            logger.log('📍 [NuevoContribuyente] N Finca final:', nFincaFinal);
 
             // Crear objeto de dirección para el formulario
             const direccionObj = direccionLimpia ? {
@@ -187,21 +188,21 @@ const NuevoContribuyente: React.FC = () => {
               esPensionista: convertirBandera(detalleObj.esPensionista)
             };
 
-            console.log('📋 [NuevoContribuyente] ========== DATOS MAPEADOS ==========');
-            console.log('📋 [NuevoContribuyente] Datos mapeados para formulario:', datosFormulario);
-            console.log('📋 [NuevoContribuyente] numeroDocumento:', datosFormulario.numeroDocumento);
-            console.log('📋 [NuevoContribuyente] nombres:', datosFormulario.nombres);
-            console.log('📋 [NuevoContribuyente] apellidoPaterno:', datosFormulario.apellidoPaterno);
-            console.log('📋 [NuevoContribuyente] Llamando setInitialData...');
+            logger.log('📋 [NuevoContribuyente] ========== DATOS MAPEADOS ==========');
+            logger.log('📋 [NuevoContribuyente] Datos mapeados para formulario:', datosFormulario);
+            logger.log('📋 [NuevoContribuyente] numeroDocumento:', datosFormulario.numeroDocumento);
+            logger.log('📋 [NuevoContribuyente] nombres:', datosFormulario.nombres);
+            logger.log('📋 [NuevoContribuyente] apellidoPaterno:', datosFormulario.apellidoPaterno);
+            logger.log('📋 [NuevoContribuyente] Llamando setInitialData...');
             setInitialData(datosFormulario);
-            console.log('✅ [NuevoContribuyente] setInitialData ejecutado correctamente');
+            logger.log('✅ [NuevoContribuyente] setInitialData ejecutado correctamente');
           } else {
-            console.log('❌ [NuevoContribuyente] detalle es null o undefined');
+            logger.log('❌ [NuevoContribuyente] detalle es null o undefined');
             setError('No se encontró el contribuyente');
             NotificationService.error('No se encontró el contribuyente');
           }
         } catch (err: any) {
-          console.error('❌ [NuevoContribuyente] Error al cargar contribuyente:', err);
+          logger.error('❌ [NuevoContribuyente] Error al cargar contribuyente:', err);
           setError(err.message || 'Error al cargar los datos del contribuyente');
           NotificationService.error('Error al cargar los datos del contribuyente');
         } finally {
@@ -239,7 +240,7 @@ const NuevoContribuyente: React.FC = () => {
   // Manejar el resultado del guardado del contribuyente
   const handleSubmit = useCallback(async (resultado: ContribuyenteFormData) => {
     try {
-      console.log('✅ [NuevoContribuyente] Contribuyente guardado exitosamente:', resultado);
+      logger.log('✅ [NuevoContribuyente] Contribuyente guardado exitosamente:', resultado);
       
       // Invalidar cache de React Query para que la consulta se actualice de inmediato
       queryClient.invalidateQueries({ queryKey: ['contribuyentes'] });
@@ -248,7 +249,7 @@ const NuevoContribuyente: React.FC = () => {
       navigate('/contribuyente/consulta');
       
     } catch (error: any) {
-      console.error('❌ [NuevoContribuyente] Error:', error);
+      logger.error('❌ [NuevoContribuyente] Error:', error);
       showMessage(`❌ Error: ${error.message || 'Error desconocido'}`, 'error');
     }
   }, [navigate, queryClient]);

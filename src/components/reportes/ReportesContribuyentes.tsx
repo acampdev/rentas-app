@@ -1,5 +1,5 @@
 // src/components/reportes/ReportesContribuyentes.tsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -27,6 +27,8 @@ import {
 } from '@mui/icons-material';
 import { useContribuyentes } from '../../hooks/useContribuyentes';
 import { useAuthContext } from '../../context/AuthContext';
+import { useTipoDocumentoOptions } from '../../hooks/useConstantesOptions';
+import { filtrarContribuyentesReporte } from './reportesContribuyentes.filters';
 import {
   createPdfHeader,
   createPdfFooter,
@@ -42,6 +44,10 @@ const ReportesContribuyentes: React.FC = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const { contribuyentes, loading, cargarContribuyentes } = useContribuyentes();
+  const {
+    options: tiposDocumento,
+    loading: loadingTiposDocumento
+  } = useTipoDocumentoOptions();
 
   const [filtros, setFiltros] = useState({
     tipoPersona: 'todos',
@@ -54,16 +60,16 @@ const ReportesContribuyentes: React.FC = () => {
     }
   }, [cargarContribuyentes, contribuyentes.length]);
 
+  const contribuyentesFiltrados = useMemo(
+    () => filtrarContribuyentesReporte(contribuyentes, filtros, tiposDocumento),
+    [contribuyentes, filtros, tiposDocumento]
+  );
+
+  const tipoDocumentoSeleccionado = tiposDocumento.find(
+    (option) => String(option.value) === filtros.tipoDocumento
+  );
+
   const handleGenerarPDF = useCallback(() => {
-    // Filtrar contribuyentes
-    let contribuyentesFiltrados = contribuyentes;
-
-    if (filtros.tipoPersona !== 'todos') {
-      contribuyentesFiltrados = contribuyentesFiltrados.filter(
-        c => c.tipoPersona === filtros.tipoPersona
-      );
-    }
-
     if (contribuyentesFiltrados.length === 0) {
       alert('No hay datos para generar el reporte');
       return;
@@ -119,6 +125,7 @@ const ReportesContribuyentes: React.FC = () => {
               width: '*',
               stack: [
                 createInfoRow('Filtro Tipo Persona', filtros.tipoPersona === 'todos' ? 'Todos' : filtros.tipoPersona === 'natural' ? 'Natural' : 'Jurídica'),
+                createInfoRow('Filtro Tipo Documento', tipoDocumentoSeleccionado?.label || 'Todos'),
                 createInfoRow('Estado del sistema', 'Activo'),
                 createInfoRow('Usuario', user?.nombreCompleto || user?.username || 'Usuario autenticado')
               ]
@@ -160,12 +167,12 @@ const ReportesContribuyentes: React.FC = () => {
 
     // Generar y descargar PDF
     generateAndDownloadPdf(docDefinition, 'reporte_contribuyentes');
-  }, [contribuyentes, filtros, user]);
+  }, [contribuyentesFiltrados, filtros.tipoPersona, tipoDocumentoSeleccionado?.label, user]);
 
   const stats = {
-    naturales: contribuyentes.filter(c => c.tipoPersona === 'natural').length,
-    juridicas: contribuyentes.filter(c => c.tipoPersona === 'juridica').length,
-    total: contribuyentes.length
+    naturales: contribuyentesFiltrados.filter(c => c.tipoPersona === 'natural').length,
+    juridicas: contribuyentesFiltrados.filter(c => c.tipoPersona === 'juridica').length,
+    total: contribuyentesFiltrados.length
   };
 
   return (
@@ -227,25 +234,37 @@ const ReportesContribuyentes: React.FC = () => {
                   value={filtros.tipoDocumento}
                   onChange={(e) => setFiltros({ ...filtros, tipoDocumento: e.target.value })}
                   size="small"
-                  disabled
+                  disabled={loadingTiposDocumento}
                 >
                   <MenuItem value="todos">Todos los documentos</MenuItem>
-                  <MenuItem value="dni">DNI</MenuItem>
-                  <MenuItem value="ruc">RUC</MenuItem>
+                  {tiposDocumento.map((option) => (
+                    <MenuItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
             </Grid>
 
             <Box sx={{ mt: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 0.5 }}>Filtros activos:</Typography>
-              {filtros.tipoPersona === 'todos' ? (
+              {filtros.tipoPersona === 'todos' && filtros.tipoDocumento === 'todos' ? (
                 <Chip label="Ninguno" size="small" variant="outlined" sx={{ borderStyle: 'dashed' }} />
-              ) : (
+              ) : null}
+              {filtros.tipoPersona !== 'todos' && (
                 <Chip
                   label={`Tipo: ${filtros.tipoPersona === 'natural' ? 'Natural' : 'Jurídica'}`}
                   color="primary"
                   size="small"
                   onDelete={() => setFiltros({ ...filtros, tipoPersona: 'todos' })}
+                />
+              )}
+              {filtros.tipoDocumento !== 'todos' && (
+                <Chip
+                  label={`Documento: ${tipoDocumentoSeleccionado?.label || filtros.tipoDocumento}`}
+                  color="secondary"
+                  size="small"
+                  onDelete={() => setFiltros({ ...filtros, tipoDocumento: 'todos' })}
                 />
               )}
             </Box>
@@ -311,7 +330,7 @@ const ReportesContribuyentes: React.FC = () => {
           size="large"
           startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
           onClick={handleGenerarPDF}
-          disabled={loading || contribuyentes.length === 0}
+          disabled={loading || loadingTiposDocumento || contribuyentesFiltrados.length === 0}
           sx={{ 
             minWidth: 320, 
             height: 56, 

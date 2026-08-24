@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/usuarios/CrearUsers.tsx
 import React from 'react';
 import {
@@ -87,7 +88,7 @@ const CrearUsers: React.FC = () => {
   // Handler para guardar
   const onSubmit = async (data: CrearUserFormData) => {
     try {
-      console.log('[CrearUsers] Enviando datos:', data);
+      logger.log('[CrearUsers] Enviando datos:', data);
 
       await crearUsuario({
         username: data.username,
@@ -109,7 +110,7 @@ const CrearUsers: React.FC = () => {
       });
 
     } catch (error: any) {
-      console.error('[CrearUsers] Error:', error);
+      logger.error('[CrearUsers] Error:', error);
     }
   };
 

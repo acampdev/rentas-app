@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/cajaService.ts
 import BaseApiService from './BaseApiService';
 import apiClient, { unwrapApiData, unwrapApiList } from './apiClient';
@@ -77,7 +78,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    */
   async listar(params?: ListarCajaParams): Promise<CajaData[]> {
     try {
-      console.log('[CajaService] Listando cajas con parametros:', params);
+      logger.log('[CajaService] Listando cajas con parametros:', params);
 
       const url = buildApiUrl(this.endpoint + '/listar');
 
@@ -91,7 +92,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
       queryParams.append('codUsuario', String(params?.codUsuario !== undefined ? params.codUsuario : defaultCodUsuario));
 
       const getUrl = `${url}?${queryParams.toString()}`;
-      console.log('[CajaService] GET URL:', getUrl);
+      logger.log('[CajaService] GET URL:', getUrl);
 
       const token = sessionStorage.getItem('auth_token');
       const headers: Record<string, string> = {
@@ -106,11 +107,11 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         method: 'GET',
         headers
       });
-      console.log('[CajaService] Datos obtenidos:', responseData);
+      logger.log('[CajaService] Datos obtenidos:', responseData);
       return this.normalizeData(unwrapApiList<Record<string, unknown>>(responseData));
 
     } catch (error: unknown) {
-      console.error('[CajaService] Error listando cajas:', error);
+      logger.error('[CajaService] Error listando cajas:', error);
       throw error;
     }
   }
@@ -123,7 +124,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    */
   async insertar(datos: CreateCajaDTO): Promise<CajaData> {
     try {
-      console.log('[CajaService] Insertando caja:', datos);
+      logger.log('[CajaService] Insertando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/insertar');
 
@@ -142,14 +143,14 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         body: JSON.stringify(datos)
       });
 
-      console.log('[CajaService] Caja creada:', responseData);
+      logger.log('[CajaService] Caja creada:', responseData);
       const created = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([created])[0];
 
       return normalized;
 
     } catch (error: unknown) {
-      console.error('[CajaService] Error al insertar caja:', error);
+      logger.error('[CajaService] Error al insertar caja:', error);
       throw error;
     }
   }
@@ -162,7 +163,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    */
   async actualizar(datos: UpdateCajaDTO): Promise<CajaData> {
     try {
-      console.log('[CajaService] Actualizando caja:', datos);
+      logger.log('[CajaService] Actualizando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/actualizar');
 
@@ -181,14 +182,14 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         body: JSON.stringify(datos)
       });
 
-      console.log('[CajaService] Caja actualizada:', responseData);
+      logger.log('[CajaService] Caja actualizada:', responseData);
       const updated = unwrapApiData<Record<string, unknown>>(responseData);
       const normalized = this.normalizeData([updated])[0];
 
       return normalized;
 
     } catch (error: unknown) {
-      console.error('[CajaService] Error al actualizar caja:', error);
+      logger.error('[CajaService] Error al actualizar caja:', error);
       throw error;
     }
   }
@@ -201,7 +202,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    */
   async eliminar(datos: DeleteCajaDTO): Promise<void> {
     try {
-      console.log('[CajaService] Eliminando caja:', datos);
+      logger.log('[CajaService] Eliminando caja:', datos);
 
       const url = buildApiUrl(this.endpoint + '/eliminar');
 
@@ -220,10 +221,10 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
         body: JSON.stringify(datos)
       });
 
-      console.log('[CajaService] Caja eliminada exitosamente');
+      logger.log('[CajaService] Caja eliminada exitosamente');
 
     } catch (error: unknown) {
-      console.error('[CajaService] Error al eliminar caja:', error);
+      logger.error('[CajaService] Error al eliminar caja:', error);
       throw error;
     }
   }
@@ -232,7 +233,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Obtiene todas las cajas (alias para listar sin parametros)
    */
   async obtenerTodas(): Promise<CajaData[]> {
-    console.log('[CajaService] Obteniendo todas las cajas');
+    logger.log('[CajaService] Obteniendo todas las cajas');
     return this.listar();
   }
 
@@ -240,7 +241,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Busca cajas por descripcion
    */
   async buscarPorDescripcion(descripcion: string): Promise<CajaData[]> {
-    console.log('[CajaService] Buscando por descripcion:', descripcion);
+    logger.log('[CajaService] Buscando por descripcion:', descripcion);
     return this.listar({ descripcion });
   }
 
@@ -248,7 +249,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Busca cajas por usuario
    */
   async buscarPorUsuario(codUsuario: number): Promise<CajaData[]> {
-    console.log('[CajaService] Buscando por usuario:', codUsuario);
+    logger.log('[CajaService] Buscando por usuario:', codUsuario);
     return this.listar({ codUsuario });
   }
 
@@ -256,7 +257,7 @@ class CajaService extends BaseApiService<CajaData, CreateCajaDTO, UpdateCajaDTO>
    * Obtiene cajas disponibles
    */
   async obtenerDisponibles(): Promise<CajaData[]> {
-    console.log('[CajaService] Obteniendo cajas disponibles');
+    logger.log('[CajaService] Obteniendo cajas disponibles');
     const todas = await this.listar();
     return todas.filter(caja => caja.estado === 'DISPONIBLE');
   }

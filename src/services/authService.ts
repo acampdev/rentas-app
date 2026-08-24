@@ -1,8 +1,10 @@
+import { logger } from '../utils/logger';
 import { NotificationService } from '../components/utils/Notification';
 import { buildApiUrl, getApiHeaders, getAuthToken, getStoredAuthUser } from '../config/api.unified.config';
 import { AuthCredentials, AuthResponse, RegisterData, RegisterResponse, AuthUserStored } from '../models/Auth';
 import { ROLE_BY_CODE } from '../config/accessControl';
 import apiClient, { ApiClientError } from './apiClient';
+import { clearStoredAuthSession } from './authSession';
 
 // Configuración de autenticación
 const AUTH_CONFIG = {
@@ -89,7 +91,7 @@ export class AuthService {
 
   private constructor() {
     this.migrateLegacyStorage();
-    console.log('🔧 [AuthService] Inicializado');
+    logger.log('🔧 [AuthService] Inicializado');
   }
 
   static getInstance(): AuthService {
@@ -121,7 +123,7 @@ export class AuthService {
       sessionStorage.removeItem('auth_token_expiry');
     }
 
-    console.log(
+    logger.log(
       expiry
         ? `✅ [AuthService] Sesión iniciada. Expira: ${expiry.toLocaleString()}`
         : '✅ [AuthService] Sesión iniciada; el servidor no informó expiración.'
@@ -261,20 +263,13 @@ export class AuthService {
       );
       return true;
     } catch (error) {
-      console.error('[AuthService] No se pudo renovar la sesión:', error);
+      logger.error('[AuthService] No se pudo renovar la sesión:', error);
       return false;
     }
   }
 
   private clearLocalSession(): void {
-    sessionStorage.removeItem('auth_token');
-    sessionStorage.removeItem('auth_token_expiry');
-    sessionStorage.removeItem('auth_user');
-    sessionStorage.setItem('explicit_logout', 'true');
-
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_token_expiry');
-    localStorage.removeItem('auth_user');
+    clearStoredAuthSession({ explicitLogout: true });
   }
 
   async logout(): Promise<void> {
@@ -298,7 +293,7 @@ export class AuthService {
         NotificationService.info('Sesión cerrada correctamente');
         return;
       }
-      console.warn('[AuthService] No se pudo confirmar el cierre de sesión en el servidor:', error);
+      logger.warn('[AuthService] No se pudo confirmar el cierre de sesión en el servidor:', error);
       NotificationService.warning('La sesión local se cerró, pero el servidor no confirmó la operación');
     }
   }

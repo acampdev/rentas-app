@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/utils/FormErrorBoundary.tsx - ERROR BOUNDARY ESPECÍFICO PARA FORMULARIOS
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
@@ -31,8 +32,8 @@ class FormErrorBoundary extends Component<FormErrorBoundaryProps, FormErrorBound
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error(`❌ [FormErrorBoundary] Error en formulario ${this.props.formName}:`, error);
-    console.error('Error info:', errorInfo);
+    logger.error(`❌ [FormErrorBoundary] Error en formulario ${this.props.formName}:`, error);
+    logger.error('Error info:', errorInfo);
     
     this.setState({
       errorInfo

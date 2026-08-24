@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/CallePage.tsx
 import React, { useState } from 'react';
 import {
@@ -60,7 +61,7 @@ const CallePage: React.FC = () => {
   const handleSeleccionar = (calle: Calle) => {
     const codVia = Number(calle.codVia ?? calle.id);
     if (!Number.isInteger(codVia) || codVia <= 0) {
-      console.error('[CallePage] La vía seleccionada no tiene un código válido:', calle);
+      logger.error('[CallePage] La vía seleccionada no tiene un código válido:', calle);
       return;
     }
 

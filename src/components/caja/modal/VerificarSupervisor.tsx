@@ -1,3 +1,4 @@
+import { logger } from '../../../utils/logger';
 // src/components/caja/modal/VerificarSupervisor.tsx
 import React, { useState } from 'react';
 import {
@@ -42,13 +43,13 @@ const VerificarSupervisor: React.FC<VerificarSupervisorProps> = ({
 
     try {
       const esValido = await verificarSupervisor(username.trim(), password.trim());
-      console.log('[VerificarSupervisor] verificarSupervisorCajero esValido:', esValido);
+      logger.log('[VerificarSupervisor] verificarSupervisorCajero esValido:', esValido);
       if (esValido) {
         // Realizar login en segundo plano para obtener el token del supervisor
         let supervisorToken: string | null = null;
         try {
           const loginUrl = buildApiUrl('/auth/login');
-          console.log('[VerificarSupervisor] Intentando login en:', loginUrl);
+          logger.log('[VerificarSupervisor] Intentando login en:', loginUrl);
           const loginData = await apiClient.request<Record<string, unknown>>(loginUrl, {
             method: 'POST',
             auth: false,
@@ -57,9 +58,9 @@ const VerificarSupervisor: React.FC<VerificarSupervisorProps> = ({
           });
           const tokenValue = loginData.token ?? loginData.access_token ?? loginData.accessToken;
           supervisorToken = typeof tokenValue === 'string' ? tokenValue : null;
-          console.log('[VerificarSupervisor] Token obtenido con éxito:', supervisorToken ? `${supervisorToken.substring(0, 15)}...` : 'null');
+          logger.log('[VerificarSupervisor] Token obtenido con éxito:', supervisorToken ? `${supervisorToken.substring(0, 15)}...` : 'null');
         } catch (loginErr) {
-          console.error('[VerificarSupervisor] Excepción al obtener token de supervisor:', loginErr);
+          logger.error('[VerificarSupervisor] Excepción al obtener token de supervisor:', loginErr);
         }
 
         NotificationService.success('¡Supervisor verificado exitosamente!');

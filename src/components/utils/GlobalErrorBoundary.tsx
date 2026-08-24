@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 
 interface GlobalErrorBoundaryProps {
@@ -39,7 +40,7 @@ class GlobalErrorBoundary extends Component<GlobalErrorBoundaryProps, GlobalErro
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const incidentId = this.state.incidentId ?? createIncidentId();
 
-    console.error('[GlobalErrorBoundary] Error de renderizado', {
+    logger.error('[GlobalErrorBoundary] Error de renderizado', {
       incidentId,
       error,
       componentStack: errorInfo.componentStack

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import BaseApiService from './BaseApiService';
 import { isApiNotFoundError } from './apiClient';
 
@@ -91,7 +92,7 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
       const data = Array.isArray(response) ? response : response.data || [];
       return this.normalizeData(data);
     } catch (error) {
-      console.error('[SectorService] Error obteniendo todos:', error);
+      logger.error('[SectorService] Error obteniendo todos:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }
@@ -128,7 +129,7 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
         referenciaBarrio: (i.referenciaBarrio as string) || null
       }));
     } catch (error) {
-      console.error('[SectorService] Error obteniendo cuadrantes:', error);
+      logger.error('[SectorService] Error obteniendo cuadrantes:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }
@@ -145,7 +146,7 @@ class SectorService extends BaseApiService<SectorData, CreateSectorDTO, UpdateSe
         descripcionUnidadUrbana: (i.descripcionUnidadUrbana as string) || ''
       }));
     } catch (error) {
-      console.error('[SectorService] Error obteniendo unidades urbanas:', error);
+      logger.error('[SectorService] Error obteniendo unidades urbanas:', error);
       if (isApiNotFoundError(error)) return [];
       throw error;
     }

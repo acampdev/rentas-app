@@ -20,10 +20,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test:coverage
+      - name: Pruebas y umbral mínimo de cobertura
+        run: pnpm test:coverage
       - run: pnpm build
         env:
-          VITE_API_URL: http://127.0.0.1:8085
+          # El build valida la configuración segura de producción. Una URL
+          # vacía representa /api y /auth mediante proxy inverso del mismo origen.
+          VITE_API_URL: ""
 
   e2e:
     runs-on: ubuntu-latest
@@ -40,4 +43,5 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
         env:
-          VITE_API_URL: http://127.0.0.1:8085
+          VITE_API_URL: ""
+          API_PROXY_TARGET: http://127.0.0.1:8085

@@ -22,7 +22,7 @@ describe('PredioService filter API contract', () => {
     });
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://26.161.18.122:8085/api/predio/all?codPredioBase=30&anio=2026'
+      '/api/predio/all?codPredioBase=30&anio=2026'
     );
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('parametroBusqueda');
     expect(predios[0]).toMatchObject({ codPredioBase: '30', anio: 2026 });
@@ -42,7 +42,7 @@ describe('PredioService filter API contract', () => {
     const usos = await predioService.obtenerUsosPredio();
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://26.161.18.122:8085/api/predio/usos'
+      '/api/predio/usos'
     );
     expect(usos).toEqual([
       { codUsoPredio: 10, codGrupoUso: 2, descripcionUso: 'Comercio' },

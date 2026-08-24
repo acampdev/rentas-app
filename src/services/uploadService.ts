@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/uploadService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import { NotificationService } from '../components/utils/Notification';
@@ -45,7 +46,7 @@ class UploadService {
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResponse> {
     try {
-      console.log('📤 [UploadService] Subiendo archivo:', {
+      logger.log('📤 [UploadService] Subiendo archivo:', {
         name: file.name,
         size: file.size,
         type: file.type
@@ -57,7 +58,7 @@ class UploadService {
       
       // Construir URL completa
       const url = buildApiUrl(this.endpoint);
-      console.log('🌐 [UploadService] URL de upload:', url);
+      logger.log('🌐 [UploadService] URL de upload:', url);
       
       // Crear XMLHttpRequest para manejar progreso
       if (onProgress) {
@@ -88,7 +89,7 @@ class UploadService {
       return responseData;
       
     } catch (error: any) {
-      console.error('❌ [UploadService] Error al subir archivo:', error);
+      logger.error('❌ [UploadService] Error al subir archivo:', error);
       NotificationService.error(error.message || 'Error al subir el archivo');
       throw error;
     }
@@ -102,13 +103,13 @@ class UploadService {
     onProgress?: (fileIndex: number, progress: UploadProgress) => void
   ): Promise<UploadResponse[]> {
     try {
-      console.log(`📤 [UploadService] Subiendo ${files.length} archivos`);
+      logger.log(`📤 [UploadService] Subiendo ${files.length} archivos`);
       
       const results: UploadResponse[] = [];
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        console.log(`📤 [UploadService] Subiendo archivo ${i + 1}/${files.length}: ${file.name}`);
+        logger.log(`📤 [UploadService] Subiendo archivo ${i + 1}/${files.length}: ${file.name}`);
         
         const result = await this.uploadFile(
           file,
@@ -118,11 +119,11 @@ class UploadService {
         results.push(result);
       }
       
-      console.log(`✅ [UploadService] Todos los archivos subidos`);
+      logger.log(`✅ [UploadService] Todos los archivos subidos`);
       return results;
       
     } catch (error: any) {
-      console.error('❌ [UploadService] Error al subir múltiples archivos:', error);
+      logger.error('❌ [UploadService] Error al subir múltiples archivos:', error);
       throw error;
     }
   }

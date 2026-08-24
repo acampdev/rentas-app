@@ -1,372 +1,117 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { NotificationService } from '../components/utils/Notification';
-import { BUSINESS_CODES } from '../config/constants';
-import { ContribuyenteDireccion } from '../types/formTypes';
-import { PersonaData } from '../services/personaService';
-import { ContribuyenteData } from '../services/contribuyenteService';
-import { getAuthenticatedUserCode } from '../config/api.unified.config';
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import { useForm } from "react-hook-form";
+import { NotificationService } from "../components/utils/Notification";
+import { BUSINESS_CODES } from "../config/constants";
+import type { ContribuyenteDireccion } from "../types/formTypes";
+import { logger } from "../utils/logger";
+import { fullAddressText } from "./contribuyenteForm/contribuyenteForm.adapters";
+import { createFormValues } from "./contribuyenteForm/contribuyenteForm.defaults";
+import { persistContributor } from "./contribuyenteForm/contribuyenteForm.persistence";
+import type {
+  ContribuyenteFormValues,
+  UseContribuyenteFormProps,
+} from "./contribuyenteForm/contribuyenteForm.types";
 
-export interface ContribuyenteFormValues {
-  codPersona: number | null;
-  esPersonaJuridica: boolean;
-  tipoDocumento: string;
-  numeroDocumento: string;
-  nombres: string;
-  razonSocial: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-  direccion: ContribuyenteDireccion | null;
-  nFinca: string;
-  otroNumero: string;
-  telefono: string;
-  sexo: string;
-  estadoCivil: string;
-  fechaNacimiento: Date | string | null;
-  esExonerado: boolean;
-  esPensionista: boolean;
-}
-
-const toBooleanFlag = (value: unknown): boolean => {
-  if (value === true || value === 1) return true;
-  const normalized = String(value ?? '').trim().toLowerCase();
-  return normalized === '1' || normalized === 'true' || normalized === 'si' || normalized === 'sí';
-};
-
-interface UseContribuyenteFormProps {
-  onSubmit?: (data: {
-    persona: PersonaData;
-    contribuyente: ContribuyenteData;
-    conyugeRepresentante: number | null;
-  }) => void | Promise<void>;
-  onEdit?: () => void;
-  onNew?: () => void;
-  initialData?: Partial<ContribuyenteFormValues> & Record<string, unknown>;
-}
+export type { ContribuyenteFormValues } from "./contribuyenteForm/contribuyenteForm.types";
 
 export const useContribuyenteForm = ({
   onSubmit,
   onEdit,
   onNew,
-  initialData
+  initialData,
 }: UseContribuyenteFormProps) => {
   const [internalLoading, setInternalLoading] = useState(false);
-  const [showConyugeRepresentante, setShowConyugeRepresentante] = useState(false);
+  const [showConyugeRepresentante, setShowConyugeRepresentante] =
+    useState(false);
   const [isDireccionModalOpen, setIsDireccionModalOpen] = useState(false);
-  const [isConyugeDireccionModalOpen, setIsConyugeDireccionModalOpen] = useState(false);
-  const [tipoContribuyente, setTipoContribuyente] = useState<'natural' | 'juridica'>('natural');
-
-  // Formulario principal
+  const [isConyugeDireccionModalOpen, setIsConyugeDireccionModalOpen] =
+    useState(false);
+  const [tipoContribuyente, setTipoContribuyente] = useState<
+    "natural" | "juridica"
+  >("natural");
   const principalForm = useForm<ContribuyenteFormValues>({
-    defaultValues: {
-      codPersona: initialData?.codPersona || null,
-      esPersonaJuridica: initialData?.esPersonaJuridica || false,
-      tipoDocumento: initialData?.tipoDocumento || BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
-      numeroDocumento: initialData?.numeroDocumento || '',
-      nombres: initialData?.nombres || '',
-      razonSocial: initialData?.razonSocial || '',
-      apellidoPaterno: initialData?.apellidoPaterno || '',
-      apellidoMaterno: initialData?.apellidoMaterno || '',
-      direccion: initialData?.direccion || null,
-      nFinca: initialData?.nFinca || '',
-      otroNumero: initialData?.otroNumero || '',
-      telefono: initialData?.telefono || '',
-      sexo: initialData?.sexo || BUSINESS_CODES.SEXO.MASCULINO,
-      estadoCivil: initialData?.estadoCivil || '',
-      fechaNacimiento: initialData?.fechaNacimiento || null,
-      esExonerado: toBooleanFlag(initialData?.esExonerado),
-      esPensionista: toBooleanFlag(initialData?.esPensionista)
-    },
-    mode: 'onBlur'
+    defaultValues: createFormValues(initialData),
+    mode: "onBlur",
   });
-
-  // Formulario para cónyuge/representante
   const conyugeRepresentanteForm = useForm<ContribuyenteFormValues>({
-    defaultValues: {
-      codPersona: null,
-      esPersonaJuridica: false,
-      tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
-      numeroDocumento: '',
-      nombres: '',
-      razonSocial: '',
-      apellidoPaterno: '',
-      apellidoMaterno: '',
-      direccion: null,
-      nFinca: '',
-      otroNumero: '',
-      telefono: '',
-      sexo: BUSINESS_CODES.SEXO.MASCULINO,
-      estadoCivil: '',
-      fechaNacimiento: null,
-      esExonerado: false,
-      esPensionista: false
-    }
+    defaultValues: createFormValues(),
   });
+  const esPersonaJuridica = tipoContribuyente === "juridica";
 
-  const esPersonaJuridica = tipoContribuyente === 'juridica';
-
-  // Efecto para cargar datos iniciales
   useEffect(() => {
-    if (initialData) {
-      const formData: ContribuyenteFormValues = {
-        codPersona: initialData.codPersona || null,
-        esPersonaJuridica: initialData.esPersonaJuridica || false,
-        tipoDocumento: initialData.tipoDocumento || BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
-        numeroDocumento: initialData.numeroDocumento || '',
-        nombres: initialData.nombres || '',
-        razonSocial: initialData.razonSocial || '',
-        apellidoPaterno: initialData.apellidoPaterno || '',
-        apellidoMaterno: initialData.apellidoMaterno || '',
-        direccion: initialData.direccion || null,
-        nFinca: initialData.nFinca || '',
-        otroNumero: initialData.otroNumero || '',
-        telefono: initialData.telefono || '',
-        sexo: initialData.sexo || BUSINESS_CODES.SEXO.MASCULINO,
-        estadoCivil: initialData.estadoCivil || '',
-        fechaNacimiento: initialData.fechaNacimiento || null,
-        esExonerado: toBooleanFlag(initialData.esExonerado),
-        esPensionista: toBooleanFlag(initialData.esPensionista)
-      };
-
-      principalForm.reset(formData);
-      setTipoContribuyente(initialData.esPersonaJuridica ? 'juridica' : 'natural');
-    }
+    if (!initialData) return;
+    principalForm.reset(createFormValues(initialData));
+    setTipoContribuyente(
+      initialData.esPersonaJuridica ? "juridica" : "natural",
+    );
   }, [initialData, principalForm]);
 
-  const handleTipoContribuyenteChange = useCallback((
-    _event: React.MouseEvent<HTMLElement>,
-    newValue: 'natural' | 'juridica' | null
-  ) => {
-    if (newValue !== null) {
-      setTipoContribuyente(newValue);
-      principalForm.setValue('esPersonaJuridica', newValue === 'juridica');
-      
-      if (newValue === 'juridica') {
-        principalForm.setValue('tipoDocumento', BUSINESS_CODES.TIPO_DOCUMENTO.RUC);
-        principalForm.setValue('nombres', '');
-        principalForm.setValue('apellidoPaterno', '');
-        principalForm.setValue('apellidoMaterno', '');
+  const handleTipoContribuyenteChange = useCallback(
+    (_event: MouseEvent<HTMLElement>, value: "natural" | "juridica" | null) => {
+      if (!value) return;
+      setTipoContribuyente(value);
+      principalForm.setValue("esPersonaJuridica", value === "juridica");
+      if (value === "juridica") {
+        principalForm.setValue(
+          "tipoDocumento",
+          BUSINESS_CODES.TIPO_DOCUMENTO.RUC,
+        );
+        principalForm.setValue("nombres", "");
+        principalForm.setValue("apellidoPaterno", "");
+        principalForm.setValue("apellidoMaterno", "");
       } else {
-        principalForm.setValue('tipoDocumento', BUSINESS_CODES.TIPO_DOCUMENTO.DNI);
-        principalForm.setValue('razonSocial', '');
+        principalForm.setValue(
+          "tipoDocumento",
+          BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
+        );
+        principalForm.setValue("razonSocial", "");
       }
-    }
-  }, [principalForm]);
+    },
+    [principalForm],
+  );
 
-  const toggleConyugeForm = useCallback(() => {
-    setShowConyugeRepresentante(prev => !prev);
-  }, []);
+  const handleSelectDireccion = useCallback(
+    (address: ContribuyenteDireccion) => {
+      principalForm.setValue("direccion", address);
+      setIsDireccionModalOpen(false);
+    },
+    [principalForm],
+  );
 
-  const handleOpenDireccionModal = useCallback(() => setIsDireccionModalOpen(true), []);
-  const handleCloseDireccionModal = useCallback(() => setIsDireccionModalOpen(false), []);
-  const handleOpenConyugeDireccionModal = useCallback(() => setIsConyugeDireccionModalOpen(true), []);
-  const handleCloseConyugeDireccionModal = useCallback(() => setIsConyugeDireccionModalOpen(false), []);
-
-  const handleSelectDireccion = useCallback((direccion: ContribuyenteDireccion) => {
-    principalForm.setValue('direccion', direccion);
-    handleCloseDireccionModal();
-  }, [principalForm, handleCloseDireccionModal]);
-
-  const handleSelectConyugeDireccion = useCallback((direccion: ContribuyenteDireccion) => {
-    conyugeRepresentanteForm.setValue('direccion', direccion);
-    handleCloseConyugeDireccionModal();
-  }, [conyugeRepresentanteForm, handleCloseConyugeDireccionModal]);
-
-  const getDireccionTextoCompleto = useCallback((direccion: ContribuyenteDireccion | null, nFinca?: string, otroNumero?: string) => {
-    if (!direccion) return '';
-    let texto = direccion.descripcion || '';
-    texto = texto.replace(/,?\s*Lotes?:\s*\d+\s*-?\s*\d*/gi, '').trim();
-    texto = texto.replace(/,\s*$/, '').trim();
-    if (nFinca) texto += ` - N° Finca: ${nFinca}`;
-    if (otroNumero) texto += ` - Otro: ${otroNumero}`;
-    return texto;
-  }, []);
-
-  const convertirDatosPersona = (formData: ContribuyenteFormValues, esJuridica: boolean) => {
-    // Tipo de Documento: DNI: 4101, RUC: 4102, CE: 4103, PASAPORTE: 4104
-    let codTipoDocumento = 4101;
-    if (formData.tipoDocumento) {
-      const parsed = parseInt(formData.tipoDocumento);
-      if (!isNaN(parsed) && parsed > 10) {
-        codTipoDocumento = parsed;
-      } else {
-        if (formData.tipoDocumento === BUSINESS_CODES.TIPO_DOCUMENTO.DNI || formData.tipoDocumento === '1') codTipoDocumento = 4101;
-        else if (formData.tipoDocumento === BUSINESS_CODES.TIPO_DOCUMENTO.RUC || formData.tipoDocumento === '2') codTipoDocumento = 4102;
-        else if (formData.tipoDocumento === BUSINESS_CODES.TIPO_DOCUMENTO.CE) codTipoDocumento = 4103;
-        else if (formData.tipoDocumento === BUSINESS_CODES.TIPO_DOCUMENTO.PASAPORTE) codTipoDocumento = 4104;
-      }
-    }
-
-    // Sexo: Masculino: 2001, Femenino: 2002
-    let codSexo = 2001;
-    if (formData.sexo) {
-      const parsed = parseInt(formData.sexo);
-      if (!isNaN(parsed) && parsed > 10) {
-        codSexo = parsed;
-      } else {
-        if (formData.sexo === BUSINESS_CODES.SEXO.MASCULINO || formData.sexo === '1') codSexo = 2001;
-        else if (formData.sexo === BUSINESS_CODES.SEXO.FEMENINO || formData.sexo === '2') codSexo = 2002;
-      }
-    }
-
-    // Estado Civil: Soltero: 1801, Casado: 1802, Viudo: 1803, Divorciado: 1804
-    let codEstadoCivil = 1801;
-    if (formData.estadoCivil) {
-      const parsed = parseInt(formData.estadoCivil);
-      if (!isNaN(parsed) && parsed > 10) {
-        codEstadoCivil = parsed;
-      } else {
-        if (formData.estadoCivil === BUSINESS_CODES.ESTADO_CIVIL.SOLTERO || formData.estadoCivil === '1' || formData.estadoCivil === 'SOLTERO') codEstadoCivil = 1801;
-        else if (formData.estadoCivil === BUSINESS_CODES.ESTADO_CIVIL.CASADO || formData.estadoCivil === '2' || formData.estadoCivil === 'CASADO') codEstadoCivil = 1802;
-        else if (formData.estadoCivil === BUSINESS_CODES.ESTADO_CIVIL.VIUDO || formData.estadoCivil === '3' || formData.estadoCivil === 'VIUDO') codEstadoCivil = 1803;
-        else if (formData.estadoCivil === BUSINESS_CODES.ESTADO_CIVIL.DIVORCIADO || formData.estadoCivil === '4' || formData.estadoCivil === 'DIVORCIADO') codEstadoCivil = 1804;
-      }
-    }
-
-    return {
-      codPersona: formData.codPersona,
-      codTipopersona: esJuridica ? BUSINESS_CODES.TIPO_PERSONA.JURIDICA : BUSINESS_CODES.TIPO_PERSONA.NATURAL,
-      codTipoDocumento: codTipoDocumento,
-      numerodocumento: formData.numeroDocumento?.toString() || '',
-      nombres: esJuridica ? formData.razonSocial : formData.nombres,
-      apellidomaterno: formData.apellidoMaterno || '',
-      apellidopaterno: formData.apellidoPaterno || '',
-      fechanacimiento: formData.fechaNacimiento ? 
-        (formData.fechaNacimiento instanceof Date ? 
-          formData.fechaNacimiento.toISOString().split('T')[0] : 
-          formData.fechaNacimiento.split('T')[0]) : "1980-01-01",
-      codestadocivil: codEstadoCivil,
-      codsexo: codSexo,
-      telefono: formData.telefono?.toString() || '',
-      codDireccion: formData.direccion?.id || 1,
-      lote: formData.nFinca?.toString() || null,
-      otros: formData.otroNumero?.toString() || null,
-      parametroBusqueda: null,
-      codUsuario: getAuthenticatedUserCode()
-    };
-  };
+  const handleSelectConyugeDireccion = useCallback(
+    (address: ContribuyenteDireccion) => {
+      conyugeRepresentanteForm.setValue("direccion", address);
+      setIsConyugeDireccionModalOpen(false);
+    },
+    [conyugeRepresentanteForm],
+  );
 
   const handleNuevo = useCallback(() => {
     principalForm.clearErrors();
     conyugeRepresentanteForm.clearErrors();
-    principalForm.reset({
-      codPersona: null,
-      esPersonaJuridica: false,
-      tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
-      numeroDocumento: '',
-      nombres: '',
-      razonSocial: '',
-      apellidoPaterno: '',
-      apellidoMaterno: '',
-      direccion: null,
-      nFinca: '',
-      otroNumero: '',
-      telefono: '',
-      sexo: BUSINESS_CODES.SEXO.MASCULINO,
-      estadoCivil: '',
-      fechaNacimiento: null,
-      esExonerado: false,
-      esPensionista: false
-    });
-    conyugeRepresentanteForm.reset({
-      codPersona: null,
-      esPersonaJuridica: false,
-      tipoDocumento: BUSINESS_CODES.TIPO_DOCUMENTO.DNI,
-      numeroDocumento: '',
-      nombres: '',
-      razonSocial: '',
-      apellidoPaterno: '',
-      apellidoMaterno: '',
-      direccion: null,
-      nFinca: '',
-      otroNumero: '',
-      telefono: '',
-      sexo: BUSINESS_CODES.SEXO.MASCULINO,
-      estadoCivil: '',
-      fechaNacimiento: null,
-      esExonerado: false,
-      esPensionista: false
-    });
+    principalForm.reset(createFormValues());
+    conyugeRepresentanteForm.reset(createFormValues());
     setShowConyugeRepresentante(false);
-    setTipoContribuyente('natural');
-    if (onNew) onNew();
-  }, [principalForm, conyugeRepresentanteForm, onNew]);
-
-  const handleEditar = useCallback(() => {
-    if (onEdit) onEdit();
-  }, [onEdit]);
+    setTipoContribuyente("natural");
+    onNew?.();
+  }, [conyugeRepresentanteForm, onNew, principalForm]);
 
   const handleSubmit = principalForm.handleSubmit(async (data) => {
     try {
       setInternalLoading(true);
-      const { personaService } = await import('../services/personaService');
-      const { contribuyenteService } = await import('../services/contribuyenteService');
-
-      const personaPrincipalData = convertirDatosPersona(data, esPersonaJuridica);
-      const personaPrincipal = data.codPersona
-        ? {
-            ...await personaService.actualizarPersonaAPI({
-              ...personaPrincipalData,
-              codPersona: data.codPersona
-            }),
-            codPersona: data.codPersona
-          }
-        : await personaService.crearPersonaAPI(personaPrincipalData);
-
-      if (!personaPrincipal || !personaPrincipal.codPersona) {
-        console.error('❌ [useContribuyenteForm] Error al crear persona principal, respuesta:', personaPrincipal);
-        throw new Error('Error al crear persona principal: El servidor no retornó un código de persona válido.');
-      }
-
-      let conyugeRepresentanteId: number | null = null;
-      if (showConyugeRepresentante) {
-        const conyugeData = conyugeRepresentanteForm.getValues();
-        if (conyugeData.numeroDocumento && (conyugeData.nombres || conyugeData.razonSocial)) {
-          const conyugePersonaData = convertirDatosPersona(conyugeData, false);
-          const conyugePersona = conyugeData.codPersona
-            ? {
-                ...await personaService.actualizarPersonaAPI({
-                  ...conyugePersonaData,
-                  codPersona: conyugeData.codPersona
-                }),
-                codPersona: conyugeData.codPersona
-              }
-            : await personaService.crearPersonaAPI(conyugePersonaData);
-          if (conyugePersona && conyugePersona.codPersona) {
-            conyugeRepresentanteId = conyugePersona.codPersona;
-          }
-        }
-      }
-
-      const contribuyenteAPIData = {
-        codPersona: personaPrincipal.codPersona,
-        codConyuge: conyugeRepresentanteId,
-        codRepresentanteLegal: esPersonaJuridica ? conyugeRepresentanteId : null,
-        codestado: "0201",
-        codUsuario: getAuthenticatedUserCode(),
-        esExonerado: Boolean(data.esExonerado),
-        esPensionista: Boolean(data.esPensionista)
-      };
-      
-      const contribuyente = await contribuyenteService.crearContribuyenteAPI(contribuyenteAPIData);
-      
-      if (!contribuyente) throw new Error('Error al crear contribuyente');
-      
-      NotificationService.success('Contribuyente registrado exitosamente');
-
-      if (onSubmit) {
-        await onSubmit({
-          persona: personaPrincipal,
-          contribuyente: contribuyente,
-          conyugeRepresentante: conyugeRepresentanteId
-        });
-      }
-
+      const related = showConyugeRepresentante
+        ? conyugeRepresentanteForm.getValues()
+        : null;
+      const result = await persistContributor(data, related, esPersonaJuridica);
+      NotificationService.success("Contribuyente registrado exitosamente");
+      await onSubmit?.(result);
       handleNuevo();
-    } catch (error: unknown) {
-      console.error(error);
+    } catch (error) {
+      logger.error(error);
       NotificationService.error(
-        error instanceof Error ? error.message : 'Error al guardar contribuyente'
+        error instanceof Error
+          ? error.message
+          : "Error al guardar contribuyente",
       );
     } finally {
       setInternalLoading(false);
@@ -383,16 +128,17 @@ export const useContribuyenteForm = ({
     tipoContribuyente,
     esPersonaJuridica,
     handleTipoContribuyenteChange,
-    toggleConyugeForm,
-    handleOpenDireccionModal,
-    handleCloseDireccionModal,
-    handleOpenConyugeDireccionModal,
-    handleCloseConyugeDireccionModal,
+    toggleConyugeForm: () => setShowConyugeRepresentante((value) => !value),
+    handleOpenDireccionModal: () => setIsDireccionModalOpen(true),
+    handleCloseDireccionModal: () => setIsDireccionModalOpen(false),
+    handleOpenConyugeDireccionModal: () => setIsConyugeDireccionModalOpen(true),
+    handleCloseConyugeDireccionModal: () =>
+      setIsConyugeDireccionModalOpen(false),
     handleSelectDireccion,
     handleSelectConyugeDireccion,
-    getDireccionTextoCompleto,
+    getDireccionTextoCompleto: fullAddressText,
     handleNuevo,
-    handleEditar,
-    handleSubmit
+    handleEditar: () => onEdit?.(),
+    handleSubmit,
   };
 };

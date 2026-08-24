@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/hooks/useContribuyentes.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
@@ -13,6 +14,7 @@ export interface ContribuyenteListItem {
   codigo: number;
   contribuyente: string;
   documento: string;
+  tipoDocumento?: string;
   direccion: string;
   telefono?: string;
   tipoPersona?: 'natural' | 'juridica';
@@ -25,6 +27,7 @@ const mapToListItem = (data: ContribuyenteData): ContribuyenteListItem => ({
   codigo: data.codigo,
   contribuyente: data.nombreCompleto || data.nombres || '',
   documento: data.numeroDocumento || '',
+  tipoDocumento: data.tipoDocumento || '',
   direccion: data.direccion || 'Sin dirección',
   telefono: data.telefono || '',
   tipoPersona: data.tipoPersona === '0301' ? 'natural' : 'juridica',
@@ -38,9 +41,9 @@ export const useContribuyentes = () => {
   const [params, setParams] = useState<BusquedaContribuyenteParams>({});
 
   const fetchContribuyentes = useCallback(async (searchParams: BusquedaContribuyenteParams) => {
-    console.log('📡 [useContribuyentes] Ejecutando búsqueda API con params:', searchParams);
+    logger.log('📡 [useContribuyentes] Ejecutando búsqueda API con params:', searchParams);
     const data = await contribuyenteService.buscarContribuyentes(searchParams);
-    console.log(`✅ [useContribuyentes] ${data.length} items mapeados para la tabla`);
+    logger.log(`✅ [useContribuyentes] ${data.length} items mapeados para la tabla`);
     return data.map(mapToListItem);
   }, []);
 
@@ -77,7 +80,7 @@ export const useContribuyentes = () => {
   });
 
   const buscarContribuyentesConQueryParams = useCallback(async (p: BusquedaContribuyenteParams | any) => {
-    console.log('📡 [useContribuyentes] buscarContribuyentesConQueryParams recibido:', p);
+    logger.log('📡 [useContribuyentes] buscarContribuyentesConQueryParams recibido:', p);
 
     let cleanParams: BusquedaContribuyenteParams = {};
     if (typeof p === 'string') {
@@ -98,7 +101,7 @@ export const useContribuyentes = () => {
       };
     }
 
-    console.log('📡 [useContribuyentes] Limpiados y seteados params finales:', cleanParams);
+    logger.log('📡 [useContribuyentes] Limpiados y seteados params finales:', cleanParams);
 
     // 1. Ejecutar query directa con cleanParams
     const result = await queryClient.fetchQuery({

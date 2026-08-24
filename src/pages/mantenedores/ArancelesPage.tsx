@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/ArancelesPage.tsx
 import React, { useState, useCallback } from 'react';
 import {
@@ -67,7 +68,7 @@ const ArancelesPage: React.FC = () => {
   }, [setAnio, setBusqueda]);
 
   const handleSeleccionar = (arancel: ArancelData) => {
-    console.log('🎯 [ArancelesPage] Seleccionando arancel:', arancel);
+    logger.log('🎯 [ArancelesPage] Seleccionando arancel:', arancel);
     setArancelSeleccionado(arancel);
     setTabValue(0);
   };
@@ -107,7 +108,7 @@ const ArancelesPage: React.FC = () => {
       handleNuevo();
       cargarAranceles();
     } catch (err) {
-      console.error('Error al guardar:', err);
+      logger.error('Error al guardar:', err);
     }
   };
 

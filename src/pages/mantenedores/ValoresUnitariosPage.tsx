@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import React, { useState } from 'react';
 import {
   Box,
@@ -101,7 +102,7 @@ const ValoresUnitariosPage: React.FC = () => {
       setModoEdicion(false);
       cargarValores();
     } catch (err) {
-      console.error('Error al guardar valor unitario:', err);
+      logger.error('Error al guardar valor unitario:', err);
     }
   };
 
@@ -111,7 +112,7 @@ const ValoresUnitariosPage: React.FC = () => {
       setTabValue(1);
       handleNuevo();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/services/fraccionamientoService.ts
 import { buildApiUrl } from '../config/api.unified.config';
 import apiClient from './apiClient';
@@ -44,8 +45,8 @@ class FraccionamientoService {
   // Solicitudes
   async crearSolicitud(data: any): Promise<Fraccionamiento> {
     const url = buildApiUrl(this.endpoint);
-    console.log('🌐 [FraccionamientoService] POST Request to:', url);
-    console.log('📦 [FraccionamientoService] Request Payload:', JSON.stringify(data, null, 2));
+    logger.log('🌐 [FraccionamientoService] POST Request to:', url);
+    logger.log('📦 [FraccionamientoService] Request Payload:', JSON.stringify(data, null, 2));
 
     try {
       const result = await apiClient.request<unknown>(url, {
@@ -54,10 +55,10 @@ class FraccionamientoService {
         body: JSON.stringify(data)
       });
 
-      console.log('✅ [FraccionamientoService] Response Success Data:', result);
+      logger.log('✅ [FraccionamientoService] Response Success Data:', result);
       return unwrapData<Fraccionamiento>(result);
     } catch (err) {
-      console.error('💥 [FraccionamientoService] Fetch exception:', err);
+      logger.error('💥 [FraccionamientoService] Fetch exception:', err);
       throw err;
     }
   }

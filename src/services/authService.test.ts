@@ -72,7 +72,7 @@ describe('AuthService', () => {
     expect(JSON.parse(sessionStorage.getItem('auth_user') ?? '{}').id).toBe('17');
   });
 
-  it('informa que no renovó cuando el servidor rechaza la petición', async () => {
+  it('invalida la sesión cuando el servidor rechaza la renovación con 401', async () => {
     sessionStorage.setItem('auth_token', 'token-anterior');
     sessionStorage.setItem('auth_user', JSON.stringify({
       id: '17', username: 'cramos', nombreCompleto: 'Carlos Ramos', roles: ['CAJERO'],
@@ -82,7 +82,8 @@ describe('AuthService', () => {
     ));
 
     await expect(authService.refreshToken()).resolves.toBe(false);
-    expect(sessionStorage.getItem('auth_token')).toBe('token-anterior');
+    expect(sessionStorage.getItem('auth_token')).toBeNull();
+    expect(sessionStorage.getItem('auth_user')).toBeNull();
   });
 
   it('cierra la sesión local aunque el backend no responda correctamente', async () => {

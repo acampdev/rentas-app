@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/resolucionInteres/ConsultaResolucion.tsx
 import React, { useState } from 'react';
 import {
@@ -60,11 +61,11 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
     setHasSearched(true);
 
     try {
-      console.log(`🔍 [ConsultaResolucion] Buscando resolución con código: ${code}`);
+      logger.log(`🔍 [ConsultaResolucion] Buscando resolución con código: ${code}`);
       const data = await resolucionInteresService.obtenerTodas({ codResolucionInteres: code });
       setResoluciones(data || []);
     } catch (err: any) {
-      console.error('Error al buscar resolución:', err);
+      logger.error('Error al buscar resolución:', err);
       setError(err.message || 'Error al conectar con el servidor.');
       setResoluciones([]);
     } finally {
@@ -84,7 +85,7 @@ const ConsultaResolucion: React.FC<ConsultaResolucionProps> = ({
         // Remover de la vista local después de eliminar lógicamente
         setResoluciones(prev => prev.filter(item => item.codResolucionInteres !== selectedId));
       } catch (err) {
-        console.error(err);
+        logger.error(err);
       } finally {
         setDeleteConfirmOpen(false);
         setSelectedId(null);

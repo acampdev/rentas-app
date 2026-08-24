@@ -23,7 +23,7 @@ describe('UsuarioService API contracts', () => {
     await expect(usuarioService.verificarSupervisorCajero('davila', '13579')).resolves.toBe('26');
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://26.161.18.122:8085/api/usuario/verificarSupervisorCajero'
+      '/api/usuario/verificarSupervisorCajero'
     );
     const options = fetchMock.mock.calls[0][1] as RequestInit;
     expect(options.method).toBe('POST');

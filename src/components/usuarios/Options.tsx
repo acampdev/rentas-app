@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/components/usuarios/Options.tsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -89,7 +90,7 @@ const Options: React.FC = () => {
         await darBajaUsuario(codigo);
       }
     } catch (error) {
-      console.error('Error al ejecutar operacion:', error);
+      logger.error('Error al ejecutar operacion:', error);
     }
   };
 

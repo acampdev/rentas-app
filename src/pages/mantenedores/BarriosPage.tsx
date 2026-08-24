@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/BarriosPage.tsx
 import React, { useState } from 'react';
 import {
@@ -76,7 +77,7 @@ const BarriosPage: React.FC = () => {
       handleNuevo();
       cargarBarrios();
     } catch (err) {
-      console.error('Error al guardar barrio:', err);
+      logger.error('Error al guardar barrio:', err);
     }
   };
 

@@ -2,16 +2,16 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { validateProductionBrowserApiUrl } from './viteApiEnvironment'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
-  const apiTarget = env.VITE_API_URL
+  const browserApiUrl = env.VITE_API_URL?.trim().replace(/\/$/, '') ?? ''
+  const proxyTarget = env.API_PROXY_TARGET?.trim().replace(/\/$/, '')
   const enableDebugLogs = env.VITE_ENABLE_DEBUG_LOGS === 'true'
 
-  if (!apiTarget) {
-    throw new Error('VITE_API_URL debe estar configurada para iniciar Vite')
-  }
+  validateProductionBrowserApiUrl(mode, browserApiUrl)
 
   return {
   plugins: [react()],
@@ -30,7 +30,16 @@ export default defineConfig(({ mode }) => {
         'src/main.tsx',
         'src/models/**',
         'src/types/**'
-      ]
+      ],
+      // Línea base global medida el 2026-08-23. Vitest finaliza con error si
+      // una modificación reduce cualquiera de estas métricas, por lo que el
+      // paso `pnpm test:coverage` de CI funciona como control de regresión.
+      thresholds: {
+        statements: 11,
+        branches: 60,
+        functions: 60,
+        lines: 11
+      }
     }
   },
   // Los logs del navegador quedan desactivados por defecto también en desarrollo.
@@ -54,39 +63,38 @@ export default defineConfig(({ mode }) => {
   server: {
     port: 3000,
     host: true, // Permite acceso desde la red local
-    
-    
-    // Configuración del proxy para evitar CORS
-    proxy: {
-      // Proxy para todas las rutas /api/*
-      '/api': {
-        target: apiTarget,
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('❌ Proxy error:', err);
-          });
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.removeHeader('origin');
-            proxyReq.removeHeader('referer');
-          });
-        }
-      },
-      
-      // Proxy para rutas de autenticación /auth/*
-      '/auth': {
-        target: apiTarget,
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.removeHeader('origin');
-            proxyReq.removeHeader('referer');
-          });
+
+    // El proxy es exclusivamente una facilidad del servidor de desarrollo.
+    // VITE_API_URL controla las URL del navegador y nunca se reutiliza aquí.
+    ...(proxyTarget ? {
+      proxy: {
+        '/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+          configure: (proxy) => {
+            proxy.on('error', (err) => {
+              console.log('❌ Proxy error:', err);
+            });
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin');
+              proxyReq.removeHeader('referer');
+            });
+          }
+        },
+        '/auth': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin');
+              proxyReq.removeHeader('referer');
+            });
+          }
         }
       }
-    }
+    } : {})
   },
   
   // Configuración de build

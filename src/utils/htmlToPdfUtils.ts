@@ -1,3 +1,4 @@
+import { logger } from './logger';
 // src/utils/htmlToPdfUtils.ts
 export interface HtmlToPdfOptions {
   filename?: string;
@@ -87,7 +88,7 @@ export const generatePdfFromHtml = async (
 
     return Promise.resolve();
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    logger.error('Error generating PDF:', error);
 
     // Ocultar loader en caso de error
     const loader = document.getElementById('pdf-loader');
@@ -153,7 +154,7 @@ export const generatePdfFromMultipleElements = async (
 
     pdf.save(`${filename}_${new Date().getTime()}.pdf`);
   } catch (error) {
-    console.error('Error generating PDF from multiple elements:', error);
+    logger.error('Error generating PDF from multiple elements:', error);
     throw error;
   }
 };

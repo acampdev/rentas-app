@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 // src/pages/mantenedores/UitPage.tsx
 import React, { useState } from 'react';
 import {
@@ -91,7 +92,7 @@ const UitPage: React.FC = () => {
       setTabValue(1);
       handleNuevo();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 

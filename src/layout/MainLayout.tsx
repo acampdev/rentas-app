@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // src/layout/MainLayout.tsx 
 import React, { FC, ReactNode, memo, useEffect } from 'react';
 import {
@@ -52,7 +53,7 @@ const MainLayout: FC<MainLayoutProps> = memo(({
 
   // Para depuración
   useEffect(() => {
-    console.log('MainLayout rendered', { loading, isAuthenticated });
+    logger.log('MainLayout rendered', { loading, isAuthenticated });
   }, [loading, isAuthenticated]);
 
   return (
