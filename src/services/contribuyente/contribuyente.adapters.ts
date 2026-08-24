@@ -138,6 +138,29 @@ export const createdContributor = (
   return raw && typeof raw === "object" ? (raw as ContribuyenteRaw) : null;
 };
 
+export const contributorFromDetail = (
+  detail: ContribuyenteDetalle,
+): ContribuyenteData =>
+  normalizeContributor({
+    codContribuyente: detail.codContribuyente,
+    codPersona: detail.codPersona ?? 0,
+    tipoContribuyente: detail.tipoContribuyente ?? "",
+    codTipopersona: detail.codTipopersona ?? "",
+    codTipoDocumento: detail.codTipoDocumento ?? "",
+    numerodocumento: detail.numerodocumento ?? "",
+    nombres: detail.nombres ?? "",
+    apellidopaterno: detail.apellidopaterno ?? "",
+    apellidomaterno: detail.apellidomaterno ?? "",
+    direccion: detail.direccion ?? "",
+    telefono: detail.telefono ?? "",
+    codestadocivil: detail.codestadocivil ?? "",
+    codsexo: detail.codsexo ?? "",
+    lote: detail.lote ?? "",
+    codestado: detail.codestado ?? "ACTIVO",
+    esExonerado: detail.esExonerado,
+    esPensionista: detail.esPensionista,
+  });
+
 export const hasContributorFilters = (
   criteria: BusquedaContribuyenteParams,
 ): boolean =>

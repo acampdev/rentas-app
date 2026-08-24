@@ -1,17 +1,15 @@
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 // src/pages/contribuyente/ConsultaContribuyente.tsx
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@mui/material';
-import {
-  Box,
-  Typography
-} from '@mui/material';
-import { MainLayout } from '../../layout';
-import Breadcrumb from '../../components/utils/Breadcrumb';
-import ContribuyenteConsulta from '../../components/contribuyentes/ContribuyenteConsulta';
-import { BreadcrumbItem } from '../../components/utils/Breadcrumb';
-import { useContribuyentes } from '../../hooks/useContribuyentes';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import { MainLayout } from "../../layout";
+import Breadcrumb from "../../components/utils/Breadcrumb";
+import ContribuyenteConsulta from "../../components/contribuyentes/ContribuyenteConsulta";
+import type { ContribuyenteConsultaFiltro } from "../../components/contribuyentes/contribuyenteConsulta.types";
+import { BreadcrumbItem } from "../../components/utils/Breadcrumb";
+import { useContribuyentes } from "../../hooks/useContribuyentes";
 
 /**
  * Página para consultar y listar contribuyentes con diseño compacto
@@ -19,26 +17,22 @@ import { useContribuyentes } from '../../hooks/useContribuyentes';
 const ConsultaContribuyente: React.FC = () => {
   const _theme = useTheme();
   const navigate = useNavigate();
-  
+
   // Hook personalizado para manejar contribuyentes
   // El hook ya carga los contribuyentes automáticamente en su useEffect
-  const { 
-    contribuyentes,
-    loading,
-    error,
-    buscarContribuyentes
-  } = useContribuyentes();
+  const { contribuyentes, loading, error, buscarContribuyentes } =
+    useContribuyentes();
 
   // Migas de pan para la navegación
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Módulo', path: '/' },
-    { label: 'Contribuyente', path: '/contribuyente' },
-    { label: 'Consulta contribuyente', active: true }
+    { label: "Módulo", path: "/" },
+    { label: "Contribuyente", path: "/contribuyente" },
+    { label: "Consulta contribuyente", active: true },
   ];
 
   // Manejar la búsqueda de contribuyentes con nueva API general
-  const handleBuscar = (filtro: any) => {
-    logger.log('🔍 Buscando con filtros usando API general:', filtro);
+  const handleBuscar = (filtro: ContribuyenteConsultaFiltro) => {
+    logger.log("🔍 Buscando con filtros usando API general:", filtro);
 
     // El componente de consulta ya construye los parámetros esperados por
     // /api/contribuyente/general. No los reduzcas a un campo inexistente
@@ -48,12 +42,12 @@ const ConsultaContribuyente: React.FC = () => {
 
   // Manejar la navegación a nuevo contribuyente
   const handleNuevo = () => {
-    navigate('/contribuyente/nuevo');
+    navigate("/contribuyente/nuevo");
   };
 
   // Manejar la edición de un contribuyente
   const handleEditar = (codigo: string | number) => {
-    logger.log('Editar contribuyente:', codigo);
+    logger.log("Editar contribuyente:", codigo);
     navigate(`/contribuyente/editar/${codigo}`);
   };
 
@@ -66,8 +60,8 @@ const ConsultaContribuyente: React.FC = () => {
         </Box>
 
         {/* Contenedor principal centrado */}
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Box sx={{ width: '100%', maxWidth: '100%' }}>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Box sx={{ width: "100%", maxWidth: "100%" }}>
             {/* Componente consolidado que incluye filtros y lista */}
             <ContribuyenteConsulta
               contribuyentes={contribuyentes}
@@ -79,13 +73,12 @@ const ConsultaContribuyente: React.FC = () => {
 
             {/* Mostrar error si existe */}
             {error && (
-              <Box sx={{ p: 2, textAlign: 'center', mt: 2 }}>
+              <Box sx={{ p: 2, textAlign: "center", mt: 2 }}>
                 <Typography color="error">{error}</Typography>
               </Box>
             )}
           </Box>
         </Box>
-
       </Box>
     </MainLayout>
   );

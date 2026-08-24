@@ -3,6 +3,7 @@ import BaseApiService from "./BaseApiService";
 import apiClient, { isApiNotFoundError } from "./apiClient";
 import {
   buildContributorSearchParams,
+  contributorFromDetail,
   createdContributor,
   hasContributorFilters,
   normalizeContributor,
@@ -110,8 +111,18 @@ class ContribuyenteService extends BaseApiService<
     );
     const result = createdContributor(payload, datos);
     if (!result) {
+      // Algunos despliegues confirman la inserción devolviendo solamente un
+      // mensaje. Recuperar el registro real evita inventar un identificador y
+      // permite completar correctamente el flujo del formulario.
+      const createdDetail = await this.obtenerContribuyenteDetalle(
+        "",
+        datos.codPersona,
+      );
+      if (createdDetail?.codContribuyente) {
+        return contributorFromDetail(createdDetail);
+      }
       throw new Error(
-        "La respuesta del servidor no contiene un ID de contribuyente válido.",
+        "El contribuyente fue procesado, pero el servidor no devolvió ni permitió recuperar su código.",
       );
     }
     const isNormalized =

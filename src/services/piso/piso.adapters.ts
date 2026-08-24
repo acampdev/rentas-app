@@ -145,26 +145,31 @@ export const buildFloorPayload = (
   codUsuario: getAuthenticatedUserCode(),
 });
 
-export const floorMutationError = (
-  response: PisoMutationResponse,
-): string | null => {
+export const floorMutationError = (response: unknown): string | null => {
+  if (!response || typeof response !== "object" || Array.isArray(response))
+    return null;
+
+  const mutationResponse = response as PisoMutationResponse;
   if (
-    response.success === false ||
-    response.error === true ||
-    response.error === "true"
+    mutationResponse.success === false ||
+    mutationResponse.error === true ||
+    mutationResponse.error === "true"
   )
     return String(
-      response.message ||
-        response.mensaje ||
-        response.descripcion ||
-        response.error ||
+      mutationResponse.message ||
+        mutationResponse.mensaje ||
+        mutationResponse.descripcion ||
+        mutationResponse.error ||
         "Error al procesar piso",
     );
-  if (response.codigo && !["OK", "200", "SUCCESS"].includes(response.codigo))
+  if (
+    mutationResponse.codigo &&
+    !["OK", "200", "SUCCESS"].includes(mutationResponse.codigo)
+  )
     return String(
-      response.mensaje ||
-        response.message ||
-        response.descripcion ||
+      mutationResponse.mensaje ||
+        mutationResponse.message ||
+        mutationResponse.descripcion ||
         "Error al procesar piso",
     );
   return null;

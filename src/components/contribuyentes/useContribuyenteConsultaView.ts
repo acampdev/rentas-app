@@ -54,9 +54,28 @@ export const useContribuyenteConsultaView = (
     setRowsPerPage(Number(event.target.value));
     setPage(0);
   };
+
+  const orderedRows = useMemo(
+    () =>
+      [...rows].sort((left, right) => {
+        const leftCode = Number(left.codigo);
+        const rightCode = Number(right.codigo);
+
+        if (Number.isFinite(leftCode) && Number.isFinite(rightCode)) {
+          return rightCode - leftCode;
+        }
+
+        return String(right.codigo).localeCompare(String(left.codigo), "es", {
+          numeric: true,
+        });
+      }),
+    [rows],
+  );
+
   const visibleRows = useMemo(
-    () => rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [page, rows, rowsPerPage],
+    () =>
+      orderedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [orderedRows, page, rowsPerPage],
   );
 
   return {

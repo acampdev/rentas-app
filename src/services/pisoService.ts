@@ -80,14 +80,14 @@ class PisoService extends BaseApiService<
     );
   }
 
-  async actualizarPiso(data: CreatePisoApiDTO): Promise<PisoData> {
+  async actualizarPiso(data: CreatePisoApiDTO): Promise<PisoData | null> {
     this.validateFloor(data, true);
-    return this.mutateFloor("PUT", buildFloorPayload(data, true), "actualizar");
+    return this.mutateFloor("PUT", buildFloorPayload(data, true));
   }
 
-  async crearPisoSinAuth(data: CreatePisoApiDTO): Promise<PisoData> {
+  async crearPisoSinAuth(data: CreatePisoApiDTO): Promise<PisoData | null> {
     this.validateFloor(data, false);
-    return this.mutateFloor("POST", buildFloorPayload(data, false), "crear");
+    return this.mutateFloor("POST", buildFloorPayload(data, false));
   }
 
   async eliminarPiso(params: PisoDeleteQuery): Promise<boolean> {
@@ -127,8 +127,7 @@ class PisoService extends BaseApiService<
   private async mutateFloor(
     method: "POST" | "PUT",
     body: CreatePisoApiDTO,
-    action: string,
-  ): Promise<PisoData> {
+  ): Promise<PisoData | null> {
     const response = await this.makeRequest<PisoMutationResponse | PisoRaw>(
       "",
       {
@@ -139,9 +138,11 @@ class PisoService extends BaseApiService<
     const error = floorMutationError(response as PisoMutationResponse);
     if (error) throw new Error(error);
     const raw = unwrapFloors(response)[0];
-    if (!raw)
-      throw new Error(`El servidor no devolvió datos del piso al ${action}`);
-    return normalizeFloor(raw, 0);
+
+    // Algunos despliegues confirman el POST/PUT solamente con success/message
+    // o con un texto en data. La operación ya fue validada por apiClient y no
+    // debe convertirse en error por no repetir el objeto actualizado.
+    return raw ? normalizeFloor(raw, 0) : null;
   }
 
   private validateFloor(data: CreatePisoApiDTO, editing: boolean): void {

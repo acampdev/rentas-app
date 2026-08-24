@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { NotificationService } from '../components/utils/Notification';
-import { pisoService, CreatePisoApiDTO } from '../services/pisoService';
-import { Piso } from '../models/Piso';
-import { getAuthenticatedUserCode } from '../config/api.unified.config';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { NotificationService } from "../components/utils/Notification";
+import { pisoService, CreatePisoApiDTO } from "../services/pisoService";
+import { Piso } from "../models/Piso";
+import { getAuthenticatedUserCode } from "../config/api.unified.config";
 
 export interface CrearPisoFormData {
   anio: number;
@@ -35,7 +35,11 @@ export interface CrearPisoFormData {
 /**
  * Hook para gestión de pisos con React Query
  */
-export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?: string; anio?: number }) => {
+export const usePisos = (filtrosIniciales?: {
+  codPredio?: string;
+  codPredioBase?: string;
+  anio?: number;
+}) => {
   const queryClient = useQueryClient();
   const [filtros, setFiltros] = useState<{
     anio?: number;
@@ -50,9 +54,9 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
     data: pisos = [] as Piso[],
     isLoading: loading,
     error,
-    refetch: _refetch
+    refetch: _refetch,
   } = useQuery({
-    queryKey: ['pisos', filtros],
+    queryKey: ["pisos", filtros],
     queryFn: async () => {
       if (!filtros.codPredio && !filtros.codPredioBase) return [];
       const data = await pisoService.consultarPisos(filtros);
@@ -62,7 +66,8 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
         id: (piso.id || piso.codPiso || index + 1) as number,
         codPiso: piso.codPiso,
         item: index + 1,
-        descripcion: piso.numeroPisoDesc || `Piso ${piso.numeroPiso || index + 1}`,
+        descripcion:
+          piso.numeroPisoDesc || `Piso ${piso.numeroPiso || index + 1}`,
         numeroPisoDesc: piso.numeroPisoDesc,
         valorUnitario: piso.valorUnitario || 0,
         incremento: piso.incremento || 0,
@@ -71,20 +76,27 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
         valorAreaConstruida: piso.valorAreaConstruida || 0,
         valorAreasComunes: piso.valorAreasComunes ?? 0,
         areaConstruida: piso.areaConstruida ?? null,
-        areaTotalConstruccion: piso.areaTotalConstruccion || piso.totalAreaConstruccion || 0,
+        areaTotalConstruccion:
+          piso.areaTotalConstruccion || piso.totalAreaConstruccion || 0,
         valorConstruccion: piso.valorConstruccion || 0,
         fechaConstruccion: piso.fechaConstruccion || undefined,
-        fechaConstruccionStr: piso.fechaConstruccionStr || undefined
+        fechaConstruccionStr: piso.fechaConstruccionStr || undefined,
       }));
     },
     enabled: true,
-    placeholderData: (prev) => prev
+    placeholderData: (prev) => prev,
   });
 
   // Mutación: Crear/Actualizar
   const mutationGuardar = useMutation({
-    mutationFn: async (datos: CrearPisoFormData) => {
-      const isUpdate = !!(datos.codPiso && datos.codPiso > 0);
+    mutationFn: async ({
+      datos,
+      mode,
+    }: {
+      datos: CrearPisoFormData;
+      mode: "create" | "update";
+    }) => {
+      const isUpdate = mode === "update";
       const datosApi: CreatePisoApiDTO = {
         anio: datos.anio || new Date().getFullYear(),
         codPredio: String(datos.codPredio),
@@ -97,56 +109,78 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
         puertasVentanas: String(datos.puertasVentanas || "100202"),
         revestimiento: String(datos.revestimiento || "100203"),
         banios: String(datos.banios || "100204"),
-        instalacionesElectricas: String(datos.instalacionesElectricas || "100301"),
+        instalacionesElectricas: String(
+          datos.instalacionesElectricas || "100301",
+        ),
         codLetraMurosColumnas: String(datos.codLetraMurosColumnas || "1101"),
         codLetraTechos: String(datos.codLetraTechos || "1101"),
         codLetraPisos: String(datos.codLetraPisos || "1101"),
-        codLetraPuertasVentanas: String(datos.codLetraPuertasVentanas || "1101"),
+        codLetraPuertasVentanas: String(
+          datos.codLetraPuertasVentanas || "1101",
+        ),
         codLetraRevestimiento: String(datos.codLetraRevestimiento || "1101"),
         codLetraBanios: String(datos.codLetraBanios || "1101"),
-        codLetraInstalacionesElectricas: String(datos.codLetraInstalacionesElectricas || "1101"),
+        codLetraInstalacionesElectricas: String(
+          datos.codLetraInstalacionesElectricas || "1101",
+        ),
         codEstadoConservacion: String(datos.codEstadoConservacion || "9402"),
         codMaterialEstructural: String(datos.codMaterialEstructural || "0703"),
         areaConstruida: String(datos.areaConstruida),
         valorAreasComunes: String(datos.valorAreasComunes ?? "0"),
-        codUsuario: getAuthenticatedUserCode()
+        codUsuario: getAuthenticatedUserCode(),
       };
 
-      return isUpdate 
+      return isUpdate
         ? pisoService.actualizarPiso(datosApi)
         : pisoService.crearPisoSinAuth(datosApi);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pisos'] });
-      NotificationService.success('Piso guardado exitosamente');
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["pisos"],
+        refetchType: "none",
+      });
+      NotificationService.success("Piso guardado exitosamente");
     },
     onError: (err: Error) => {
-      NotificationService.error(err.message || 'Error al guardar piso');
-    }
+      NotificationService.error(err.message || "Error al guardar piso");
+    },
   });
 
   // Mutación: Eliminar
   const mutationEliminar = useMutation({
-    mutationFn: (params: { anio: number; codPredio: string; numeroPiso: number; codPiso?: number }) => 
-      pisoService.eliminarPiso(params),
+    mutationFn: (params: {
+      anio: number;
+      codPredio: string;
+      numeroPiso: number;
+      codPiso?: number;
+    }) => pisoService.eliminarPiso(params),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pisos'] });
-      NotificationService.success('Piso eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: ["pisos"] });
+      NotificationService.success("Piso eliminado correctamente");
     },
     onError: (err: Error) => {
-      NotificationService.error(err.message || 'Error al eliminar piso');
-    }
+      NotificationService.error(err.message || "Error al eliminar piso");
+    },
   });
 
-  const buscarPisos = useCallback((newFiltros: { anio?: number; codPiso?: number; codPredio?: string; codPredioBase?: string; numeroPiso?: number }) => {
-    setFiltros(newFiltros);
-  }, []);
+  const buscarPisos = useCallback(
+    (newFiltros: {
+      anio?: number;
+      codPiso?: number;
+      codPredio?: string;
+      codPredioBase?: string;
+      numeroPiso?: number;
+    }) => {
+      setFiltros(newFiltros);
+    },
+    [],
+  );
 
-  const obtenerPisoParaEdicion = useCallback((params: {
-    anio: number;
-    codPredioBase: string;
-    numeroPiso: number;
-  }) => pisoService.consultarPisoParaEdicion(params), []);
+  const obtenerPisoParaEdicion = useCallback(
+    (params: { anio: number; codPredioBase: string; numeroPiso: number }) =>
+      pisoService.consultarPisoParaEdicion(params),
+    [],
+  );
 
   return {
     pisos,
@@ -157,10 +191,12 @@ export const usePisos = (filtrosIniciales?: { codPredio?: string; codPredioBase?
     buscarPisos,
     consultarPisos: buscarPisos, // Alias
     obtenerPisoParaEdicion,
-    guardarPiso: mutationGuardar.mutateAsync,
-    crearPiso: mutationGuardar.mutateAsync, // Alias para compatibilidad
+    guardarPiso: (datos: CrearPisoFormData) =>
+      mutationGuardar.mutateAsync({ datos, mode: "update" }),
+    crearPiso: (datos: CrearPisoFormData) =>
+      mutationGuardar.mutateAsync({ datos, mode: "create" }),
     eliminarPiso: mutationEliminar.mutateAsync,
     isSaving: mutationGuardar.isPending,
-    isDeleting: mutationEliminar.isPending
+    isDeleting: mutationEliminar.isPending,
   };
 };
