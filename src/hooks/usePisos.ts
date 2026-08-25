@@ -139,6 +139,10 @@ export const usePisos = (filtrosIniciales?: {
         queryKey: ["pisos"],
         refetchType: "none",
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["predios"],
+        refetchType: "none",
+      });
       NotificationService.success("Piso guardado exitosamente");
     },
     onError: (err: Error) => {
@@ -156,6 +160,7 @@ export const usePisos = (filtrosIniciales?: {
     }) => pisoService.eliminarPiso(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pisos"] });
+      queryClient.invalidateQueries({ queryKey: ["predios"] });
       NotificationService.success("Piso eliminado correctamente");
     },
     onError: (err: Error) => {

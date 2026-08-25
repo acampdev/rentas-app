@@ -12,7 +12,7 @@ describe("asignacionPredio utils", () => {
     expect(date && formatAssignmentDate(date)).toBe("2026-02-26");
   });
 
-  it("construye el JSON de asignación y convierte 100% en null", () => {
+  it("construye el JSON de asignación conservando el porcentaje ingresado", () => {
     const payload = buildAssignmentPayload({
       contribuyente: { codigo: 20, nombreCompleto: "Contribuyente" },
       predio: { codigoPredio: "28", anio: 2026 } as Predio,
@@ -22,13 +22,28 @@ describe("asignacionPredio utils", () => {
       porcentajeCondomino: "100",
     });
     expect(payload).toMatchObject({
+      anio: new Date().getFullYear(),
       codPredio: "202628",
       codContribuyente: 20,
-      porcentajeCondomino: null,
+      porcentajeCondomino: 100,
       fechaDeclaracion: "2026-02-26",
       fechaVenta: "2026-02-26",
       codModoDeclaracion: "0402",
     });
+  });
+
+  it("conserva un porcentaje condómino parcial", () => {
+    const payload = buildAssignmentPayload({
+      contribuyente: { codigo: 20, nombreCompleto: "Contribuyente" },
+      predio: { codigoPredio: "202628", anio: 2026 } as Predio,
+      modoDeclaracion: "0402",
+      fechaDeclaracion: new Date(2026, 1, 26),
+      fechaVenta: null,
+      porcentajeCondomino: "37.5",
+    });
+
+    expect(payload.porcentajeCondomino).toBe(37.5);
+    expect(payload.anio).toBe(new Date().getFullYear());
   });
 
   it("rechaza porcentajes fuera del rango permitido", () => {

@@ -47,13 +47,27 @@ export const useSelectorContribuyente = ({ isOpen, selectedId }: Params) => {
 
   const filtrados = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return contribuyentes;
-    return contribuyentes.filter(
-      (item) =>
-        item.contribuyente?.toLowerCase().includes(term) ||
-        item.documento?.toLowerCase().includes(term) ||
-        item.codigo?.toString().includes(term),
-    );
+    const matches = term
+      ? contribuyentes.filter(
+          (item) =>
+            item.contribuyente?.toLowerCase().includes(term) ||
+            item.documento?.toLowerCase().includes(term) ||
+            item.codigo?.toString().includes(term),
+        )
+      : contribuyentes;
+
+    return [...matches].sort((left, right) => {
+      const leftCode = Number(left.codigo);
+      const rightCode = Number(right.codigo);
+
+      if (Number.isFinite(leftCode) && Number.isFinite(rightCode)) {
+        return rightCode - leftCode;
+      }
+
+      return String(right.codigo).localeCompare(String(left.codigo), "es", {
+        numeric: true,
+      });
+    });
   }, [contribuyentes, searchTerm]);
 
   const visibles = useMemo(

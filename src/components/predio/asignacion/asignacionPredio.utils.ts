@@ -80,13 +80,14 @@ export const buildAssignmentPayload = (
   if (!baseCode || !Number.isFinite(contributorCode))
     throw new Error("Los códigos de predio o contribuyente no son válidos");
   return {
+    anio: new Date().getFullYear(),
     codPredio: (/^\d{4}/.test(baseCode) || !Number.isFinite(year)
       ? baseCode
       : `${year}${baseCode}`
     ).trim(),
     codContribuyente: contributorCode,
     codAsignacion: edit?.codAsignacion ?? null,
-    porcentajeCondomino: percentage >= 100 ? null : percentage,
+    porcentajeCondomino: percentage,
     fechaDeclaracion: formatAssignmentDate(form.fechaDeclaracion),
     fechaVenta: formatAssignmentDate(form.fechaVenta || form.fechaDeclaracion),
     codModoDeclaracion: form.modoDeclaracion.trim(),
