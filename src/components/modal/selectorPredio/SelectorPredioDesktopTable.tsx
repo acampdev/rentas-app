@@ -21,7 +21,7 @@ import {
   Terrain as TerrainIcon,
 } from '@mui/icons-material';
 import { formatCurrency } from '../../../utils/formatters';
-import { getPredioAddress, getPredioCode, getPredioKey } from '../selectorPredio.utils';
+import { getPredioAddress, getPredioCode, getPredioRowKey } from '../selectorPredio.utils';
 import { SelectorPredioPagination } from './SelectorPredioPagination';
 import type { SelectorPredioListProps } from './selectorPredio.types';
 
@@ -43,8 +43,6 @@ export const SelectorPredioDesktopTable = ({
   onRowsPerPageChange,
 }: DesktopTableProps) => {
   const theme = useTheme();
-  const selectedKey = getPredioKey(selectedPredio);
-
   return (
     <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <TableContainer sx={{
@@ -83,11 +81,10 @@ export const SelectorPredioDesktopTable = ({
           </TableHead>
           <TableBody>
             {predios.map((predio, index) => {
-              const currentKey = getPredioKey(predio);
-              const isSelected = selectedKey !== null && selectedKey === currentKey;
+              const isSelected = selectedPredio === predio;
               return (
                 <TableRow
-                  key={currentKey || index}
+                  key={getPredioRowKey(predio, index)}
                   hover
                   selected={isSelected}
                   onClick={() => onSelect(predio)}

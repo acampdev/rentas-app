@@ -62,4 +62,18 @@ describe("AsignacionService write contract", () => {
       expect(body).not.toHaveProperty("esPensionista");
     },
   );
+
+  it("conserva el mensaje real del API al registrar", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({
+        success: true,
+        message: "Asignación registrada por el servidor",
+        data: payload,
+      })),
+    );
+
+    const result = await asignacionService.crearAsignacionAPI(payload);
+    expect(result.operationMessage).toBe("Asignación registrada por el servidor");
+  });
 });

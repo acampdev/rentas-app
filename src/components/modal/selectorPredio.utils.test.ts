@@ -3,6 +3,7 @@ import type { Predio } from '../../models/Predio';
 import {
   formatPredioDireccion,
   getPredioKey,
+  getPredioRowKey,
   prepareSelectedPredio,
   sortPrediosByCode,
 } from './selectorPredio.utils';
@@ -28,6 +29,7 @@ describe('selectorPredio utilities', () => {
     } as Predio;
 
     expect(getPredioKey(predio)).toBe('8-Av. Lima 100--2026');
+    expect(getPredioRowKey(predio, 0)).not.toBe(getPredioRowKey(predio, 1));
     expect(prepareSelectedPredio(predio)).toMatchObject({
       codPredioBase: '8', codigoPredio: '8', codPredio: '8',
     });

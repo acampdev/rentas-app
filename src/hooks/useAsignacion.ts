@@ -36,9 +36,9 @@ export const useAsignacion = (paramsIniciales: AsignacionQueryParams = {}) => {
 
   const mutationCrear = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.crearAsignacionAPI(datos),
-    onSuccess: () => {
+    onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      NotificationService.success('Asignación de predio creada correctamente');
+      NotificationService.success(result.operationMessage || 'Asignación de predio creada correctamente');
     },
     onError: (error: unknown) => {
       NotificationService.error(getErrorMessage(error, 'Error al crear la asignación de predio'));
@@ -47,9 +47,9 @@ export const useAsignacion = (paramsIniciales: AsignacionQueryParams = {}) => {
 
   const mutationActualizar = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.actualizarAsignacionAPI(datos),
-    onSuccess: () => {
+    onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      NotificationService.success('Asignación de predio actualizada correctamente');
+      NotificationService.success(result.operationMessage || 'Asignación de predio actualizada correctamente');
     },
     onError: (error: unknown) => {
       NotificationService.error(getErrorMessage(error, 'Error al actualizar la asignación de predio'));
@@ -58,9 +58,9 @@ export const useAsignacion = (paramsIniciales: AsignacionQueryParams = {}) => {
 
   const mutationDesasignar = useMutation({
     mutationFn: (datos: CreateAsignacionAPIDTO) => asignacionService.desasignarAPI(datos),
-    onSuccess: () => {
+    onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      NotificationService.success('Desasignación realizada correctamente');
+      NotificationService.success(result.message || 'Desasignación realizada correctamente');
     },
     onError: (error: unknown) => {
       NotificationService.error(getErrorMessage(error, 'Error al desasignar el predio'));

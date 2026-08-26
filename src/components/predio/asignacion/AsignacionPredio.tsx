@@ -32,6 +32,7 @@ const AsignacionPredio = (props: AsignacionPredioProps) => {
           loading={controller.loading}
           edit={controller.isEditMode}
           unassign={controller.isDesasignarMode}
+          feedback={controller.feedback}
           onUpdate={controller.update}
           onSubmit={() => void controller.submit()}
           onClear={controller.clear}

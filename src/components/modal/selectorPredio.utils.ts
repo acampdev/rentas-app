@@ -37,6 +37,9 @@ export const getPredioKey = (predio: Predio | null): string | null => {
   return `${getPredioCode(predio)}-${getPredioAddress(predio)}-${direccionId || ''}-${predio.anio || ''}`.trim();
 };
 
+export const getPredioRowKey = (predio: Predio, index: number): string =>
+  `${getPredioKey(predio) || "predio"}-${index}`;
+
 export const prepareSelectedPredio = (predio: Predio): Predio => {
   const code = String(getPredioCode(predio)).trim();
   return {

@@ -13,6 +13,10 @@ export interface AsignacionFormData {
   fechaDeclaracion: Date | null;
   porcentajeCondomino: string;
 }
+export interface AsignacionFeedback {
+  severity: "success" | "error";
+  message: string;
+}
 export interface DatosEdicionAsignacion {
   anio?: number;
   codPredio?: string;

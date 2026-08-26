@@ -4,10 +4,12 @@ import type { Predio } from "../../../models/Predio";
 import type { ContribuyenteListItem } from "../../../hooks/useContribuyentes";
 import { useTipoInscripcionPredio } from "../../../hooks/useConstantesOptions";
 import type { CreateAsignacionAPIDTO } from "../../../services/asignacionService";
+import { extractApiMessage, getApiErrorMessage } from "../../../services/apiClient";
 import { NotificationService } from "../../utils/Notification";
 import {
   EMPTY_ASSIGNMENT,
   type AsignacionFormData,
+  type AsignacionFeedback,
   type AsignacionPredioProps,
 } from "./asignacionPredio.types";
 import {
@@ -30,6 +32,7 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
   const [form, setForm] = useState<AsignacionFormData>(EMPTY_ASSIGNMENT);
   const [loaded, setLoaded] = useState(false);
   const [internalLoading, setInternalLoading] = useState(false);
+  const [feedback, setFeedback] = useState<AsignacionFeedback | null>(null);
   const [contributorModal, setContributorModal] = useState(false);
   const [propertyModal, setPropertyModal] = useState(false);
   const [pendingUnassignment, setPendingUnassignment] =
@@ -70,24 +73,40 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
         ? onActualizarAsignacion
         : onCrearAsignacion;
     if (!operation) return;
+    setFeedback(null);
     setInternalLoading(true);
     try {
-      await operation(payload);
-      navigate("/predio/asignacion/consulta", {
-        state: {
-          searchParams: {
-            anio: Number(form.predio?.anio || payload.codPredio.slice(0, 4)),
-            codContribuyente: String(payload.codContribuyente),
+      const result = await operation(payload);
+      const resultRecord = result && typeof result === "object"
+        ? result as Record<string, unknown>
+        : null;
+      const operationMessage = typeof resultRecord?.operationMessage === "string"
+        ? resultRecord.operationMessage
+        : extractApiMessage(
+            result,
+            isEditMode
+              ? "Asignación actualizada correctamente"
+              : isDesasignarMode
+                ? "Predio desasignado correctamente"
+                : "Asignación registrada correctamente",
+          );
+      setFeedback({ severity: "success", message: operationMessage });
+
+      if (isEditMode || isDesasignarMode) {
+        navigate("/predio/asignacion/consulta", {
+          state: {
+            searchParams: {
+              anio: Number(form.predio?.anio || payload.codPredio.slice(0, 4)),
+              codContribuyente: String(payload.codContribuyente),
+            },
+            nombreContribuyente: form.contribuyente?.nombreCompleto || "",
           },
-          nombreContribuyente: form.contribuyente?.nombreCompleto || "",
-        },
-      });
+        });
+      }
     } catch (error) {
-      NotificationService.error(
-        error instanceof Error
-          ? error.message
-          : "Error al procesar la asignación",
-      );
+      const message = getApiErrorMessage(error, "Error al procesar la asignación");
+      setFeedback({ severity: "error", message });
+      NotificationService.error(message);
     } finally {
       setInternalLoading(false);
     }
@@ -95,6 +114,7 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
 
   const submit = async () => {
     try {
+      setFeedback(null);
       const payload = buildAssignmentPayload(form, datosEdicion);
       if (isDesasignarMode) setPendingUnassignment(payload);
       else await execute(payload);
@@ -115,6 +135,7 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
   const clear = () => {
     setForm(EMPTY_ASSIGNMENT);
     setLoaded(false);
+    setFeedback(null);
   };
 
   return {
@@ -126,6 +147,7 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
     contributorModal,
     propertyModal,
     pendingUnassignment,
+    feedback,
     update,
     selectContributor,
     selectProperty,

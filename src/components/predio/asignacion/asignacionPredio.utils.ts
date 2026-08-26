@@ -5,6 +5,17 @@ import type {
   DatosEdicionAsignacion,
 } from "./asignacionPredio.types";
 
+export const formatAssignmentModeOption = (option: {
+  value: unknown;
+  label?: string;
+}): string => {
+  const code = String(option.value ?? "").trim();
+  const label = String(option.label ?? "").trim();
+  if (!code) return label;
+  if (!label) return code;
+  return label.startsWith(`${code} -`) ? label : `${code} - ${label}`;
+};
+
 export const parseAssignmentDate = (value?: string | null): Date | null => {
   const [year, month, day] = String(value || "")
     .trim()

@@ -3,10 +3,16 @@ import type { Predio } from "../../../models/Predio";
 import {
   buildAssignmentPayload,
   formatAssignmentDate,
+  formatAssignmentModeOption,
   parseAssignmentDate,
 } from "./asignacionPredio.utils";
 
 describe("asignacionPredio utils", () => {
+  it("muestra código y nombre en el modo de declaración", () => {
+    expect(formatAssignmentModeOption({ value: "0402", label: "COMPRA" })).toBe("0402 - COMPRA");
+    expect(formatAssignmentModeOption({ value: "0402", label: "0402 - COMPRA" })).toBe("0402 - COMPRA");
+  });
+
   it("convierte fechas del API sin desplazamiento de zona horaria", () => {
     const date = parseAssignmentDate("2026-02-26T00:00:00");
     expect(date && formatAssignmentDate(date)).toBe("2026-02-26");

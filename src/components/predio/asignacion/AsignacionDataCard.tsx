@@ -1,5 +1,6 @@
 import { Assignment } from "@mui/icons-material";
 import {
+  Alert,
   alpha,
   Autocomplete,
   Box,
@@ -13,7 +14,8 @@ import {
   Typography,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import type { AsignacionFormData } from "./asignacionPredio.types";
+import type { AsignacionFeedback, AsignacionFormData } from "./asignacionPredio.types";
+import { formatAssignmentModeOption } from "./asignacionPredio.utils";
 
 interface Option {
   value: string | number;
@@ -25,6 +27,7 @@ interface Props {
   loading: boolean;
   edit: boolean;
   unassign: boolean;
+  feedback: AsignacionFeedback | null;
   onUpdate: <K extends keyof AsignacionFormData>(
     field: K,
     value: AsignacionFormData[K],
@@ -38,6 +41,7 @@ export const AsignacionDataCard = ({
   loading,
   edit,
   unassign,
+  feedback,
   onUpdate,
   onSubmit,
   onClear,
@@ -50,12 +54,20 @@ export const AsignacionDataCard = ({
           Datos de la asignación
         </Typography>
       </Stack>
+      {feedback && (
+        <Alert
+          severity={feedback.severity}
+          sx={{ mb: 2, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+        >
+          {feedback.message}
+        </Alert>
+      )}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
         <Autocomplete
           sx={{ width: 280 }}
           disabled={unassign}
           options={modes}
-          getOptionLabel={(option) => option.label || ""}
+          getOptionLabel={formatAssignmentModeOption}
           value={
             modes.find(
               (option) => String(option.value) === form.modoDeclaracion,

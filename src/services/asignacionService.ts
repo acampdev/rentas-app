@@ -38,6 +38,7 @@ export interface AsignacionPredio {
   porcentajeCondominio?: number;
   esPensionista?: boolean;
   porcentajeLibre?: number;
+  operationMessage?: string;
 }
 
 export interface AsignacionQueryParams {
@@ -139,7 +140,12 @@ class AsignacionService {
       );
     }
     const responseData = toAsignacionRecord(response.data || payload);
-    return normalizarAsignacion({ ...writePayload, ...responseData });
+    return {
+      ...normalizarAsignacion({ ...writePayload, ...responseData }),
+      operationMessage: String(
+        response.message || responseData.message || "Asignación guardada correctamente",
+      ),
+    };
   }
 
   async desasignarAPI(

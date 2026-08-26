@@ -7,7 +7,7 @@ import {
   Terrain as TerrainIcon,
 } from '@mui/icons-material';
 import { formatCurrency } from '../../../utils/formatters';
-import { getPredioAddress, getPredioCode, getPredioKey } from '../selectorPredio.utils';
+import { getPredioAddress, getPredioCode, getPredioRowKey } from '../selectorPredio.utils';
 import { SelectorPredioPagination } from './SelectorPredioPagination';
 import type { SelectorPredioListProps } from './selectorPredio.types';
 
@@ -22,19 +22,16 @@ export const SelectorPredioMobileList = ({
   onRowsPerPageChange,
 }: SelectorPredioListProps) => {
   const theme = useTheme();
-  const selectedKey = getPredioKey(selectedPredio);
-
   return (
     <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <Box sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
         <Stack spacing={1} sx={{ py: 1 }}>
           {predios.map((predio, index) => {
-            const currentKey = getPredioKey(predio);
-            const isSelected = selectedKey !== null && selectedKey === currentKey;
+            const isSelected = selectedPredio === predio;
             const predioCode = getPredioCode(predio);
             return (
               <Paper
-                key={currentKey || index}
+                key={getPredioRowKey(predio, index)}
                 onClick={() => onSelect(predio)}
                 sx={{
                   p: 2,
