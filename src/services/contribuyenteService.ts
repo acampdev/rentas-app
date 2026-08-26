@@ -1,6 +1,6 @@
 import { buildApiUrl } from "../config/api.unified.config";
 import BaseApiService from "./BaseApiService";
-import apiClient, { isApiNotFoundError } from "./apiClient";
+import apiClient, { extractApiMessage, isApiNotFoundError } from "./apiClient";
 import {
   buildContributorSearchParams,
   contributorFromDetail,
@@ -109,6 +109,17 @@ class ContribuyenteService extends BaseApiService<
         body: JSON.stringify(body),
       },
     );
+    const payloadRecord =
+      payload && typeof payload === "object"
+        ? (payload as Record<string, unknown>)
+        : null;
+    const responseData = payloadRecord?.data;
+    const operationMessage =
+      typeof responseData === "string" &&
+      responseData.trim() &&
+      !/^\d+$/.test(responseData.trim())
+        ? responseData.trim()
+        : extractApiMessage(payload, "Contribuyente guardado correctamente");
     const result = createdContributor(payload, datos);
     if (!result) {
       // Algunos despliegues confirman la inserción devolviendo solamente un
@@ -119,7 +130,10 @@ class ContribuyenteService extends BaseApiService<
         datos.codPersona,
       );
       if (createdDetail?.codContribuyente) {
-        return contributorFromDetail(createdDetail);
+        return {
+          ...contributorFromDetail(createdDetail),
+          operationMessage,
+        };
       }
       throw new Error(
         "El contribuyente fue procesado, pero el servidor no devolvió ni permitió recuperar su código.",
@@ -130,9 +144,10 @@ class ContribuyenteService extends BaseApiService<
       "codigoPersona" in result &&
       "nombreCompleto" in result &&
       "numeroDocumento" in result;
-    return isNormalized
+    const contributor = isNormalized
       ? (result as ContribuyenteData)
       : normalizeContributor(result);
+    return { ...contributor, operationMessage };
   }
 }
 

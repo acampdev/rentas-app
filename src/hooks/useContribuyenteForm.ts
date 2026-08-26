@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { NotificationService } from "../components/utils/Notification";
 import { BUSINESS_CODES } from "../config/constants";
 import type { ContribuyenteDireccion } from "../types/formTypes";
 import { logger } from "../utils/logger";
+import { getApiErrorMessage } from "../services/apiClient";
 import { fullAddressText } from "./contribuyenteForm/contribuyenteForm.adapters";
 import { createFormValues } from "./contribuyenteForm/contribuyenteForm.defaults";
 import { persistContributor } from "./contribuyenteForm/contribuyenteForm.persistence";
@@ -20,7 +22,12 @@ export const useContribuyenteForm = ({
   onNew,
   initialData,
 }: UseContribuyenteFormProps) => {
+  const navigate = useNavigate();
   const [internalLoading, setInternalLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    severity: "info" | "error";
+    message: string;
+  } | null>(null);
   const [showConyugeRepresentante, setShowConyugeRepresentante] =
     useState(false);
   const [isDireccionModalOpen, setIsDireccionModalOpen] = useState(false);
@@ -87,6 +94,7 @@ export const useContribuyenteForm = ({
   );
 
   const handleNuevo = useCallback(() => {
+    setFeedback(null);
     principalForm.clearErrors();
     conyugeRepresentanteForm.clearErrors();
     principalForm.reset(createFormValues());
@@ -97,22 +105,30 @@ export const useContribuyenteForm = ({
   }, [conyugeRepresentanteForm, onNew, principalForm]);
 
   const handleSubmit = principalForm.handleSubmit(async (data) => {
+    setFeedback(null);
     try {
       setInternalLoading(true);
       const related = showConyugeRepresentante
         ? conyugeRepresentanteForm.getValues()
         : null;
       const result = await persistContributor(data, related, esPersonaJuridica);
-      NotificationService.success("Contribuyente registrado exitosamente");
+      const message =
+        result.contribuyente.operationMessage ||
+        "Contribuyente guardado correctamente";
+      setFeedback({ severity: "info", message });
       await onSubmit?.(result);
-      handleNuevo();
+      window.setTimeout(
+        () => navigate("/contribuyente/consulta", { replace: true }),
+        1500,
+      );
     } catch (error) {
       logger.error(error);
-      NotificationService.error(
-        error instanceof Error
-          ? error.message
-          : "Error al guardar contribuyente",
+      const message = getApiErrorMessage(
+        error,
+        "Error al guardar contribuyente",
       );
+      setFeedback({ severity: "error", message });
+      NotificationService.error(message);
     } finally {
       setInternalLoading(false);
     }
@@ -122,6 +138,7 @@ export const useContribuyenteForm = ({
     principalForm,
     conyugeRepresentanteForm,
     internalLoading,
+    feedback,
     showConyugeRepresentante,
     isDireccionModalOpen,
     isConyugeDireccionModalOpen,

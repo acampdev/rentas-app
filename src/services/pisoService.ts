@@ -1,5 +1,5 @@
 import BaseApiService from "./BaseApiService";
-import { isApiNotFoundError } from "./apiClient";
+import { extractApiMessage, isApiNotFoundError } from "./apiClient";
 import {
   buildFloorPayload,
   buildFloorQuery,
@@ -138,11 +138,25 @@ class PisoService extends BaseApiService<
     const error = floorMutationError(response as PisoMutationResponse);
     if (error) throw new Error(error);
     const raw = unwrapFloors(response)[0];
+    const responseData =
+      response && typeof response === "object" && "data" in response
+        ? (response as PisoMutationResponse).data
+        : undefined;
+    const operationMessage =
+      typeof responseData === "string" && responseData.trim()
+        ? responseData.trim()
+        : extractApiMessage(
+            response,
+            method === "PUT"
+              ? "Piso actualizado correctamente."
+              : "Piso registrado correctamente.",
+          );
 
     // Algunos despliegues confirman el POST/PUT solamente con success/message
     // o con un texto en data. La operación ya fue validada por apiClient y no
     // debe convertirse en error por no repetir el objeto actualizado.
-    return raw ? normalizeFloor(raw, 0) : null;
+    const normalized = normalizeFloor(raw || (body as PisoRaw), 0);
+    return { ...normalized, operationMessage };
   }
 
   private validateFloor(data: CreatePisoApiDTO, editing: boolean): void {

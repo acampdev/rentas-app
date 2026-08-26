@@ -35,7 +35,11 @@ export function useNuevoPredio(anio?: string, codPredio?: string) {
   const [loadingPredio, setLoadingPredio] = useState(false);
 
   useEffect(() => {
-    if (!editMode || !anio || !codPredio) return;
+    if (!editMode || !anio || !codPredio) {
+      setExistingPredio(undefined);
+      setLoadingPredio(false);
+      return;
+    }
     let active = true;
     const load = async () => {
       setLoadingPredio(true);
@@ -57,6 +61,17 @@ export function useNuevoPredio(anio?: string, codPredio?: string) {
           if (baseAddress) address = await findAddress(baseAddress);
         } catch (error) {
           logger.error("❌ [NuevoPredio] Error buscando dirección:", error);
+        }
+        // Al editar debe conservarse el código de dirección del registro.
+        // Una búsqueda textual puede encontrar una dirección parecida y provocar
+        // que el PUT modifique la relación equivocada o sea rechazado por el API.
+        if (predio.codDireccion) {
+          const originalAddressCode = Number(predio.codDireccion);
+          address = {
+            ...address,
+            id: originalAddressCode,
+            codigo: originalAddressCode,
+          };
         }
         if (active) {
           setExistingPredio(mapPredioToForm(predio, address));

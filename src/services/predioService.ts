@@ -1,6 +1,6 @@
 import { logger } from "../utils/logger";
 import BaseApiService from "./BaseApiService";
-import { isApiNotFoundError } from "./apiClient";
+import { extractApiMessage, isApiNotFoundError } from "./apiClient";
 import {
   buildCreatePredio,
   calcularEstadisticasPredio,
@@ -136,7 +136,7 @@ class PredioService extends BaseApiService<
     try {
       validateCreatePredio(datos);
       const response = await this.makeRequest<
-        { data?: PredioRaw; success?: boolean; message?: string } | PredioRaw
+        { data?: PredioRaw | string; success?: boolean; message?: string } | PredioRaw
       >("", { method: "POST", body: JSON.stringify(buildCreatePredio(datos)) });
       if ("success" in response && response.success === false)
         throw new Error(
@@ -144,13 +144,52 @@ class PredioService extends BaseApiService<
             ? response.data
             : response.message || "Error al crear el predio",
         );
-      const raw =
-        "data" in response && response.data
-          ? response.data
+      const responseData = "data" in response ? response.data : undefined;
+      const raw = responseData && typeof responseData === "object"
+        ? responseData
+        : "success" in response
+          ? (buildCreatePredio(datos) as PredioRaw)
           : (response as PredioRaw);
-      return normalizePredio(raw);
+      const operationMessage =
+        typeof responseData === "string" && responseData.trim()
+          ? responseData.trim()
+          : extractApiMessage(response, "Predio registrado correctamente");
+      return { ...normalizePredio(raw), operationMessage };
     } catch (error: unknown) {
       logger.error("[PredioService] Error creando predio:", error);
+      throw error;
+    }
+  }
+
+  async actualizarPredio(datos: CreatePredioDTO): Promise<PredioData> {
+    try {
+      validateCreatePredio(datos);
+      const codPredio = String(datos.codPredio || "").trim();
+      if (!codPredio) throw new Error("El código del predio es requerido para actualizar");
+
+      const payload = buildCreatePredio({ ...datos, codPredio });
+      const response = await this.makeRequest<
+        { data?: PredioRaw | string; success?: boolean; message?: string } | PredioRaw
+      >("", { method: "PUT", body: JSON.stringify(payload) });
+      if ("success" in response && response.success === false)
+        throw new Error(
+          typeof response.data === "string"
+            ? response.data
+            : response.message || "Error al actualizar el predio",
+        );
+      const responseData = "data" in response ? response.data : undefined;
+      const raw = responseData && typeof responseData === "object"
+        ? responseData
+        : "success" in response
+          ? (payload as PredioRaw)
+          : (response as PredioRaw);
+      const operationMessage =
+        typeof responseData === "string" && responseData.trim()
+          ? responseData.trim()
+          : extractApiMessage(response, "Predio actualizado correctamente");
+      return { ...normalizePredio(raw), operationMessage };
+    } catch (error: unknown) {
+      logger.error("[PredioService] Error actualizando predio:", error);
       throw error;
     }
   }

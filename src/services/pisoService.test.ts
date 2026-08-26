@@ -96,7 +96,10 @@ describe("PisoService editing API contract", () => {
       codUsuario: 17,
     };
 
-    await expect(pisoService.actualizarPiso(payload)).resolves.toBeNull();
+    await expect(pisoService.actualizarPiso(payload)).resolves.toMatchObject({
+      operationMessage: "Piso actualizado correctamente.",
+      codPredio: "202628",
+    });
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "PUT" });
   });

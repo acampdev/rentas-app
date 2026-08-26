@@ -1,4 +1,5 @@
-import { Divider, Paper, Stack } from "@mui/material";
+import { Alert, Divider, Paper, Stack } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import SelectorDireccionArancel from "../modal/SelectorDireccionArancel";
 import { usePredioForm } from "../../hooks/usePredioForm";
 import { PredioFields } from "./predioForm/PredioFields";
@@ -14,6 +15,7 @@ const PredioForm = ({
   codPersona,
   loading: externalLoading = false,
 }: PredioFormProps) => {
+  const navigate = useNavigate();
   const predio = usePredioForm(predioExistente, codPersona, onSubmitCallback);
   const direccion = usePredioDireccion(predio.form);
   const loading = externalLoading || predio.form.formState.isSubmitting;
@@ -23,6 +25,15 @@ const PredioForm = ({
       <form onSubmit={predio.onFormSubmit}>
         <Stack spacing={3}>
           <PredioFormHeader editing={!!predioExistente} />
+          {predio.feedback && (
+            <Alert
+              severity={predio.feedback.severity}
+              role="status"
+              sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+            >
+              {predio.feedback.message}
+            </Alert>
+          )}
           <PredioFields
             form={predio.form}
             options={predio.options}
@@ -42,7 +53,13 @@ const PredioForm = ({
           <PredioFormActions
             editing={!!predioExistente}
             loading={loading}
-            onReset={() => predio.form.reset()}
+            onReset={() => {
+              if (predioExistente) {
+                navigate("/predio/nuevo");
+                return;
+              }
+              predio.resetForm();
+            }}
           />
         </Stack>
       </form>

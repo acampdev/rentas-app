@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { NotificationService } from '../components/utils/Notification';
+import { extractApiMessage, getApiErrorMessage } from '../services/apiClient';
 import constanteService from '../services/constanteService';
 import {
   useCondicionPropiedadOptions,
@@ -87,11 +88,15 @@ export interface PredioFormSubmitData extends PredioFormData {
 export const usePredioForm = (
   initialData?: Partial<PredioFormData>,
   codPersona?: number,
-  onSubmitCallback?: (data: PredioFormSubmitData) => void | Promise<void>
+  onSubmitCallback?: (data: PredioFormSubmitData) => unknown | Promise<unknown>
 ) => {
   const navigate = useNavigate();
   const [showSelectorDireccionArancel, setShowSelectorDireccionArancel] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [feedback, setFeedback] = useState<{
+    severity: 'info' | 'error';
+    message: string;
+  } | null>(null);
 
   const form = useForm<PredioFormData>({
     resolver: zodResolver(predioSchema) as any,
@@ -185,15 +190,33 @@ export const usePredioForm = (
     }
   };
 
+  const resetForm = useCallback(() => {
+    reset();
+    setSelectedImages([]);
+    setFeedback(null);
+  }, [reset]);
+
   const onFormSubmit = handleSubmit(async (data) => {
+    setFeedback(null);
     try {
       if (onSubmitCallback) {
-        await onSubmitCallback({ ...data, imagenes: selectedImages } as unknown as PredioFormSubmitData);
-        NotificationService.success('Predio guardado exitosamente');
-        setTimeout(() => navigate('/predio/consulta'), 1500);
+        const result = await onSubmitCallback({ ...data, imagenes: selectedImages } as unknown as PredioFormSubmitData);
+        const resultRecord = result && typeof result === 'object'
+          ? result as Record<string, unknown>
+          : null;
+        const operationMessage =
+          typeof resultRecord?.operationMessage === 'string'
+            ? resultRecord.operationMessage
+            : extractApiMessage(result, 'Predio guardado correctamente');
+        setFeedback({
+          severity: 'info',
+          message: operationMessage,
+        });
+        window.setTimeout(() => navigate('/predio/consulta'), 1500);
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error al guardar predio';
+      const message = getApiErrorMessage(error, 'Error al guardar predio');
+      setFeedback({ severity: 'error', message });
       NotificationService.error(message);
     }
   });
@@ -204,6 +227,8 @@ export const usePredioForm = (
     setShowSelectorDireccionArancel,
     selectedImages,
     setSelectedImages,
+    resetForm,
+    feedback,
     options: {
       condicionData,
       tipoPredioData,

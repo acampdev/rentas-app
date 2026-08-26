@@ -49,12 +49,13 @@ describe("ContribuyenteService selector contract", () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
         success: true,
+        message: "Contribuyente registrado por el API",
         data: 55,
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await contribuyenteService.crearContribuyenteAPI({
+    const result = await contribuyenteService.crearContribuyenteAPI({
       codPersona: 10,
       codConyuge: null,
       codRepresentanteLegal: null,
@@ -70,6 +71,9 @@ describe("ContribuyenteService selector contract", () => {
       esExonerado: true,
       esPensionista: false,
     });
+    expect(result.operationMessage).toBe(
+      "Contribuyente registrado por el API",
+    );
   });
 
   it("recovers the created contributor when POST returns only a success message", async () => {
@@ -102,6 +106,9 @@ describe("ContribuyenteService selector contract", () => {
       "codigoContribuyente=&codigoPersona=25",
     );
     expect(result.codigo).toBe(73);
+    expect(result.operationMessage).toBe(
+      "Contribuyente registrado correctamente.",
+    );
   });
 
   it("sends the stored Bearer token in direct API operations", async () => {

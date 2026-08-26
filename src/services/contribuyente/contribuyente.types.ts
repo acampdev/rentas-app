@@ -7,6 +7,7 @@ export interface PersonaRelacionada {
 }
 
 export interface ContribuyenteData {
+  operationMessage?: string;
   codigo: number;
   codigoPersona: number;
   tipoPersona: string;

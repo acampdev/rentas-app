@@ -1,7 +1,7 @@
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import SaveIcon from "@mui/icons-material/Save";
-import { Box, Button, Card, CardContent, CircularProgress, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Paper, Stack, Typography } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { es } from "date-fns/locale";
@@ -29,6 +29,16 @@ export const RegistrosPisos = () => {
             </Box>
           </Stack>
         </Paper>
+
+        {controller.feedback && (
+          <Alert
+            severity={controller.feedback.severity}
+            role="status"
+            sx={{ mb: 2, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+          >
+            {controller.feedback.message}
+          </Alert>
+        )}
 
         <PisoPredioSection predio={controller.predio} error={controller.errors.predio} readOnly={controller.isEditMode} onOpenSelector={() => controller.setSelectorOpen(true)} />
         <PisoDatosSection form={controller.formData} errors={controller.errors} estados={catalogos.opcionesEstadoConservacion} materiales={catalogos.opcionesMaterialPredominante} loadingEstados={catalogos.loadingEstado} loadingMateriales={catalogos.loadingMaterial} onChange={controller.updateField} />

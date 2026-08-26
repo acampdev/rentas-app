@@ -366,7 +366,6 @@ const NuevoContribuyente: React.FC = () => {
           refetchType: "none",
         });
 
-        navigate("/contribuyente/consulta", { replace: true });
       } catch (error: unknown) {
         logger.error("❌ [NuevoContribuyente] Error:", error);
         showMessage(
@@ -375,7 +374,7 @@ const NuevoContribuyente: React.FC = () => {
         );
       }
     },
-    [navigate, queryClient],
+    [queryClient],
   );
 
   // Manejar edición (por implementar)

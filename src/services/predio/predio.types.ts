@@ -1,4 +1,5 @@
 export interface PredioData {
+  operationMessage?: string;
   anio?: number;
   codPredio?: string;
   codPredioBase?: string;
@@ -37,7 +38,7 @@ export interface PredioData {
 
 export interface CreatePredioDTO {
   anio: number;
-  codPredio: null;
+  codPredio: string | null;
   numeroFinca: number;
   otroNumero: string;
   codClasificacion: string;
@@ -69,7 +70,7 @@ export interface BusquedaPredioParams {
 
 export interface PredioRaw {
   anio?: number;
-  codPredio?: string;
+  codPredio?: string | null;
   codPredioBase?: string | number;
   numeroFinca?: string | number | null;
   otroNumero?: string | null;

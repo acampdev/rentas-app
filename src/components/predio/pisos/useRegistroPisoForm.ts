@@ -4,6 +4,7 @@ import type { OptionFormat } from "../../../hooks/useConstantesOptions";
 import { usePisos } from "../../../hooks/usePisos";
 import type { Predio } from "../../../models/Predio";
 import type { PisoData } from "../../../services/pisoService";
+import { getApiErrorMessage } from "../../../services/apiClient";
 import { NotificationService } from "../../utils/Notification";
 import {
   adaptarPisoEdicionAForm,
@@ -70,6 +71,10 @@ export const useRegistroPisoForm = () => {
   const [letra, setLetra] = useState<OptionFormat | null>(null);
   const [categorias, setCategorias] = useState<CategoriaSeleccionada[]>([]);
   const [editLoaded, setEditLoaded] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    severity: "info" | "error";
+    message: string;
+  } | null>(null);
   const { crearPiso, guardarPiso, isSaving } = usePisos();
   const catalogos = usePisoCatalogos(categoriaPadre, formData.anio);
 
@@ -168,22 +173,33 @@ export const useRegistroPisoForm = () => {
     setCategoriaHija(null);
     setLetra(null);
     setCategorias([]);
+    setFeedback(null);
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, navigate]);
 
   const submit = useCallback(async () => {
+    setFeedback(null);
     const nextErrors = validatePisoForm(formData, Boolean(predio));
     if (!categorias.length) nextErrors.categorias = "Agregue por lo menos una categoría";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length || !predio) return;
     try {
       const payload = crearPayloadPiso(formData, predio, categorias, pisoEdicion?.codPiso);
-      await (isEditMode ? guardarPiso(payload) : crearPiso(payload));
-      navigate("/predio/pisos/consulta", {
-        state: { anio: payload.anio, codPredio: payload.codPredio, codigoPredio: payload.codPredio, predio },
-      });
+      const result = await (isEditMode ? guardarPiso(payload) : crearPiso(payload));
+      const message = result?.operationMessage ||
+        (isEditMode
+          ? "Piso actualizado correctamente."
+          : "Piso registrado correctamente.");
+      setFeedback({ severity: "info", message });
+      window.setTimeout(() => {
+        navigate("/predio/pisos/consulta", {
+          state: { anio: payload.anio, codPredio: payload.codPredio, codigoPredio: payload.codPredio, predio },
+        });
+      }, 1500);
     } catch (error) {
-      NotificationService.error(error instanceof Error ? error.message : "No se pudo guardar el piso");
+      const message = getApiErrorMessage(error, "No se pudo guardar el piso");
+      setFeedback({ severity: "error", message });
+      NotificationService.error(message);
     }
   }, [categorias, crearPiso, formData, guardarPiso, isEditMode, navigate, pisoEdicion?.codPiso, predio]);
 
@@ -193,6 +209,6 @@ export const useRegistroPisoForm = () => {
     isEditMode, predio, selectorOpen, setSelectorOpen, selectPredio,
     formData, errors, updateField, categorias, totalCategorias,
     categoriaPadre, categoriaHija, letra, changeParent, changeChild, setLetra,
-    addCategory, removeCategory, clear, submit, isSaving, catalogos,
+    addCategory, removeCategory, clear, submit, isSaving, catalogos, feedback,
   };
 };

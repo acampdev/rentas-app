@@ -24,6 +24,8 @@ const STATUS_CODES: Record<string, string> = {
 };
 
 export interface PredioFormExtended extends PredioFormData {
+  codPredio?: string;
+  codPredioBase?: string;
   totalAreaConstruccion?: number | null;
   valorTerreno?: number | null;
   valorTotalConstruccion?: number | null;
@@ -75,6 +77,8 @@ export function mapPredioToForm(
 ): Partial<PredioFormExtended> {
   const parsed = parseAddress(predio.direccion);
   return {
+    codPredio: predio.codPredio?.trim(),
+    codPredioBase: predio.codPredioBase?.trim(),
     anio: predio.anio,
     numeroFinca: predio.numeroFinca ?? parsed.numeroFinca,
     otroNumero: predio.otroNumero ?? parsed.otroNumero,

@@ -81,7 +81,7 @@ export const validateCreatePredio = (data: CreatePredioDTO) => {
 
 export const buildCreatePredio = (data: CreatePredioDTO) => ({
   anio: data.anio,
-  codPredio: null,
+  codPredio: data.codPredio ? String(data.codPredio).trim() : null,
   numeroFinca: Number(data.numeroFinca),
   otroNumero: String(data.otroNumero || ""),
   codClasificacion: String(data.codClasificacion || "0502").trim(),

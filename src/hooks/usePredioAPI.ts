@@ -68,6 +68,16 @@ interface PredioQueryFilters {
   enabled?: boolean;
 }
 
+type PredioMutationInput = PredioFormData & {
+  codPredio?: string | null;
+  codClasificacion?: string;
+  estPredio?: string;
+  codTipoPredio?: string;
+  codCondicionPropiedad?: string;
+  codUsoPredio?: number;
+  codListaConductor?: string;
+};
+
 /**
  * Hook personalizado para gestión de predios con React Query
  */
@@ -109,18 +119,7 @@ export const usePredios = (
     refetchOnMount: "always",
   });
 
-  // Mutación para crear predio
-  const mutationCrear = useMutation({
-    mutationFn: async (
-      datos: PredioFormData & {
-        codClasificacion?: string;
-        estPredio?: string;
-        codTipoPredio?: string;
-        codCondicionPropiedad?: string;
-        codUsoPredio?: number;
-        codListaConductor?: string;
-      },
-    ) => {
+  const buildMutationPayload = (datos: PredioMutationInput): CreatePredioDTO => {
       // Validaciones básicas
       if (!datos.numeroFinca)
         throw new Error("El número de finca es requerido");
@@ -136,9 +135,9 @@ export const usePredios = (
         ? null
         : Number(datos.codUsoPredio || datos.usoPredio || 1);
 
-      const datosApi: CreatePredioDTO = {
+      return {
         anio: datos.anio || new Date().getFullYear(),
-        codPredio: null,
+        codPredio: datos.codPredio ? String(datos.codPredio).trim() : null,
         numeroFinca: Number(datos.numeroFinca),
         otroNumero: String(datos.otroNumero || ""),
         codClasificacion: codClasificacionValue,
@@ -175,9 +174,12 @@ export const usePredios = (
         codEstado: "0201",
         codUsuario: getAuthenticatedUserCode(),
       };
+  };
 
-      return predioService.crearPredio(datosApi);
-    },
+  // Mutación para crear predio
+  const mutationCrear = useMutation({
+    mutationFn: async (datos: PredioMutationInput) =>
+      predioService.crearPredio(buildMutationPayload({ ...datos, codPredio: null })),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["predios"] });
       NotificationService.success(
@@ -186,6 +188,20 @@ export const usePredios = (
     },
     onError: (err: Error) => {
       NotificationService.error(err.message || "Error al crear predio");
+    },
+  });
+
+  const mutationActualizar = useMutation({
+    mutationFn: async (datos: PredioMutationInput) =>
+      predioService.actualizarPredio(buildMutationPayload(datos)),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["predios"] });
+      NotificationService.success(
+        `Predio ${data.codPredio || ""} actualizado exitosamente`.trim(),
+      );
+    },
+    onError: (err: Error) => {
+      NotificationService.error(err.message || "Error al actualizar predio");
     },
   });
 
@@ -237,6 +253,8 @@ export const usePredios = (
     },
     buscarPrediosConFiltros,
     crearPredio: mutationCrear.mutateAsync,
+    actualizarPredio: mutationActualizar.mutateAsync,
     isCreating: mutationCrear.isPending,
+    isUpdating: mutationActualizar.isPending,
   };
 };

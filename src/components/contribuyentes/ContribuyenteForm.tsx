@@ -15,7 +15,8 @@ import {
   Radio,
   RadioGroup,
   useTheme,
-  alpha
+  alpha,
+  Alert
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -52,6 +53,7 @@ const ContribuyenteFormMUI: React.FC<ContribuyenteFormMUIProps> = ({
     principalForm,
     conyugeRepresentanteForm,
     internalLoading,
+    feedback,
     showConyugeRepresentante,
     isDireccionModalOpen,
     isConyugeDireccionModalOpen,
@@ -115,6 +117,16 @@ const ContribuyenteFormMUI: React.FC<ContribuyenteFormMUIProps> = ({
           </Box>
 
           <Divider sx={{ mb: 3 }} />
+
+          {feedback && (
+            <Alert
+              severity={feedback.severity}
+              role="status"
+              sx={{ mb: 2, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+            >
+              {feedback.message}
+            </Alert>
+          )}
 
           <Box sx={{ width: '100%' }}>
             {/* Formulario Persona Principal */}

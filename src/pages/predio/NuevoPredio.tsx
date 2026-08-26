@@ -20,16 +20,31 @@ const NuevoPredio = memo(() => {
     anio,
     codPredio,
   );
-  const { crearPredio, loading } = usePredios({ enabled: false });
+  const { crearPredio, actualizarPredio, isCreating, isUpdating } = usePredios({
+    enabled: false,
+  });
 
-  const handleSubmit = async (data: PredioFormSubmitData): Promise<void> => {
+  const handleSubmit = async (data: PredioFormSubmitData) => {
     const payload = buildCreateInput(data);
-    const created = await crearPredio(
-      payload as Parameters<typeof crearPredio>[0],
-    );
-    if (created) {
-      logger.log("✅ [NuevoPredio] Predio creado exitosamente:", created);
+    const routeCode = String(codPredio || "").trim();
+    const routeYear = String(anio || payload.anio || "").trim();
+    const editPredioCode =
+      existingPredio?.codPredio?.trim() ||
+      (routeCode.startsWith(routeYear) ? routeCode : `${routeYear}${routeCode}`);
+    const saved = editMode
+      ? await actualizarPredio({
+          ...payload,
+          codPredio: editPredioCode,
+          anio: existingPredio?.anio ?? payload.anio,
+        } as Parameters<typeof actualizarPredio>[0])
+      : await crearPredio(payload as Parameters<typeof crearPredio>[0]);
+    if (saved) {
+      logger.log(
+        `✅ [NuevoPredio] Predio ${editMode ? "actualizado" : "creado"} exitosamente:`,
+        saved,
+      );
     }
+    return saved;
   };
 
   if (loadingPredio) return <NuevoPredioLoading />;
@@ -40,9 +55,10 @@ const NuevoPredio = memo(() => {
         <Box sx={{ py: 2 }}>
           <NuevoPredioHeader editMode={editMode} />
           <PredioForm
+            key={editMode ? `edit-${anio}-${codPredio}` : "new"}
             onSubmit={handleSubmit}
-            loading={loading}
-            predioExistente={existingPredio}
+            loading={isCreating || isUpdating}
+            predioExistente={editMode ? existingPredio : undefined}
           />
         </Box>
       </Container>

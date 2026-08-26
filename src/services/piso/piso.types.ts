@@ -1,4 +1,5 @@
 export interface PisoData {
+  operationMessage?: string;
   id: number;
   codigoPredio: number | string;
   numeroPiso: number;
@@ -159,7 +160,7 @@ export interface PisoDeleteQuery {
   codPiso?: number;
 }
 export interface PisoMutationResponse {
-  data?: PisoRaw;
+  data?: PisoRaw | string;
   success?: boolean;
   message?: string;
   error?: boolean | string;
