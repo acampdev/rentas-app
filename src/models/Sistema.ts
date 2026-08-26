@@ -22,16 +22,3 @@ export interface AuditoriaOperacion {
   detalle: string;
   ip: string;
 }
-
-/**
- * Modelo para Configuración Global
- */
-export interface ConfiguracionSistema {
-  id: number;
-  nombreMunicipio: string;
-  ruc: string;
-  direccion: string;
-  telefono: string;
-  periodoActual: number;
-  tasaMora: number;
-}

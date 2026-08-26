@@ -15,6 +15,7 @@ dist-ssr
 coverage/
 test-results/
 playwright-report/
+test-performance/
 package-lock.json
 *.local
 .env

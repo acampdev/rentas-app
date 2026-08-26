@@ -155,17 +155,6 @@ export const MAIN_MENU_ITEMS: SidebarMenuItem[] = [
         label: "Consulta PU-HR",
         path: "/predio/puhr/consulta-pu-hr",
       },
-      {
-        id: "reporte-contribuyentes",
-        label: "Contribuyentes",
-        path: "/reportes/contribuyentes",
-      },
-      { id: "reporte-predios", label: "Predios", path: "/reportes/predios" },
-      {
-        id: "reporte-recaudacion",
-        label: "Recaudación",
-        path: "/reportes/recaudacion",
-      },
     ],
   },
   {

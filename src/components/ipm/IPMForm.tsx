@@ -3,20 +3,13 @@ import { Alert, Box, Button, CircularProgress, MenuItem, Paper, Stack, TextField
 import { RestartAlt as RestartAltIcon, Save as SaveIcon } from '@mui/icons-material';
 import { useTiposMesesOptions } from '../../hooks/useConstantesOptions';
 import type { IPMData, IPMWriteDTO } from '../../services/ipmService';
+import { validateIPMForm, type IPMFormState as FormState } from './ipmForm.validation';
 
 interface IPMFormProps {
   registro?: IPMData | null;
   loading?: boolean;
   onGuardar: (datos: IPMWriteDTO) => Promise<unknown>;
   onCancelar?: () => void;
-}
-
-interface FormState {
-  anio: string;
-  mes: string;
-  indice: string;
-  variacionMensual: string;
-  variacionAcumulada: string;
 }
 
 const currentYear = new Date().getFullYear();
@@ -58,19 +51,10 @@ const IPMForm = ({ registro, loading = false, onGuardar, onCancelar }: IPMFormPr
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    const anio = Number(form.anio);
-    const indice = Number(form.indice);
-    const variacionMensual = Number(form.variacionMensual);
-    const variacionAcumulada = Number(form.variacionAcumulada);
+    const validation = validateIPMForm(form, currentYear);
+    if (!validation.valid) return setError(validation.error);
 
-    if (!Number.isInteger(anio) || anio < 1900 || anio > currentYear + 10) return setError('Ingrese un año válido');
-    if (!form.mes) return setError('Seleccione un mes');
-    if (!Number.isFinite(indice) || indice <= 0) return setError('El índice debe ser mayor a cero');
-    if (!Number.isFinite(variacionMensual) || !Number.isFinite(variacionAcumulada)) {
-      return setError('Las variaciones deben contener valores numéricos válidos');
-    }
-
-    await onGuardar({ anio, mes: form.mes, indice, variacionMensual, variacionAcumulada, usuario: null });
+    await onGuardar(validation.data);
     if (!isEditing) setForm(emptyForm());
   };
 

@@ -1,8 +1,8 @@
 import BaseApiService from './BaseApiService';
-import { Role, AuditoriaOperacion, ConfiguracionSistema } from '../models/Sistema';
+import { Role, AuditoriaOperacion } from '../models/Sistema';
 
 /**
- * Servicio para gestión administrativa del sistema (Roles, Auditoría, Configuración)
+ * Servicio para gestión administrativa del sistema (Roles y Auditoría)
  */
 type AuditoriaParams = Record<string, string | number | boolean | undefined>;
 
@@ -48,26 +48,6 @@ class SistemaService extends BaseApiService<unknown> {
       { method: 'GET' }
     );
     return Array.isArray(data) ? data : data.data ?? [];
-  }
-
-  // Configuración
-  async obtenerConfiguracion(): Promise<ConfiguracionSistema | null> {
-    const data = await this.makeRequest<{ data?: ConfiguracionSistema } | ConfiguracionSistema>(
-      '/configuracion',
-      { method: 'GET' }
-    );
-    if ('data' in data) {
-      return data.data ?? null;
-    }
-    return data as ConfiguracionSistema;
-  }
-
-  async actualizarConfiguracion(datos: Partial<ConfiguracionSistema>): Promise<boolean> {
-    await this.makeRequest('/configuracion', {
-      method: 'PUT',
-      body: JSON.stringify(datos)
-    });
-    return true;
   }
 }
 

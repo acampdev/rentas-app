@@ -1,7 +1,7 @@
-import { logger } from '../utils/logger';
-import BaseApiService from './BaseApiService';
-import apiClient, { isApiNotFoundError, unwrapApiList } from './apiClient';
-import { buildApiUrl } from '../config/api.unified.config';
+import { logger } from "../utils/logger";
+import BaseApiService from "./BaseApiService";
+import apiClient, { isApiNotFoundError, unwrapApiList } from "./apiClient";
+import { buildApiUrl } from "../config/api.unified.config";
 
 /**
  * Interface para los datos de Predio Urbano (PU)
@@ -112,55 +112,59 @@ class PUService extends BaseApiService<PUData, void, void> {
 
   private constructor() {
     super(
-      '/api/pu',
+      "/api/pu",
       {
         normalizeItem: (item: PURaw): PUData => ({
-          codPredio: (item.codPredio || '').trim(),
-          codContribuyente: item.codContribuyente?.toString() || '',
-          nombreContribuyenteCompleto: item.nombreContribuyenteCompleto || '',
-          numeroDocumento: item.numeroDocumento || '',
+          codPredio: (item.codPredio || "").trim(),
+          codContribuyente: item.codContribuyente?.toString() || "",
+          nombreContribuyenteCompleto: item.nombreContribuyenteCompleto || "",
+          numeroDocumento: item.numeroDocumento || "",
           nombreRepresentanteOConyuge: item.nombreRepresentanteOConyuge || null,
-          numeroDocumentoRepresentanteOConyuge: item.numeroDocumentoRepresentanteOConyuge || null,
-          conjuntoUrbano: item.conjuntoUrbano || '',
-          direccion: item.direccion || '',
-          manzana: item.manzana || '',
-          lote: item.lote || '',
+          numeroDocumentoRepresentanteOConyuge:
+            item.numeroDocumentoRepresentanteOConyuge || null,
+          conjuntoUrbano: item.conjuntoUrbano || "",
+          direccion: item.direccion || "",
+          manzana: item.manzana || "",
+          lote: item.lote || "",
           otroNumero: item.otroNumero || null,
-          porcentajeCondomino: String(item.porcentajeCondomino || '0'),
-          fechaAdquisicion: item.fechaAdquisicion || '',
-          clasificacionPredio: item.clasificacionPredio || '',
-          estadoPredio: item.estadoPredio || '',
-          tipoPredio: item.tipoPredio || '',
-          condicionPropiedad: item.condicionPropiedad || '',
-          nivelPiso: item.nivelPiso || '',
-          fechaConstruccion: item.fechaConstruccion || '',
-          incremento5: String(item.incremento5 || '0'),
-          estadoConservacion: item.estadoConservacion || '',
-          material: item.material || '',
-          areaConstruida: String(item.areaConstruida || '0'),
-          letraMuros: item.letraMuros || '',
-          letraTechos: item.letraTechos || '',
-          letraPisos: item.letraPisos || '',
-          letraPuertas: item.letraPuertas || '',
-          letraRevestimiento: item.letraRevestimiento || '',
-          letraBanios: item.letraBanios || '',
-          letraInstElect: item.letraInstElect || '',
-          valorUnitario: String(item.valorUnitario || '0'),
-          depreciacion: String(item.depreciacion || '0'),
-          valorUnitarioDepreciado: String(item.valorUnitarioDepreciado || '0'),
-          valorAreaConstruida: String(item.valorAreaConstruida || '0'),
-          valorConstruccion: String(item.valorConstruccion || '0'),
-          arancel: String(item.arancel || '0'),
-          areaTerreno: String(item.areaTerreno || '0'),
-          areaTotalConstruida: String(item.areaTotalConstruida || '0'),
-          valorTotalConstruccion: String(item.valorTotalConstruccion || '0'),
-          valorTerreno: String(item.valorTerreno || '0'),
-          valorOtrasInstalaciones: String(item.valorOtrasInstalaciones || '0'),
-          autoavaluo: String(item.autoavaluo || '0')
+          porcentajeCondomino: String(item.porcentajeCondomino || "0"),
+          fechaAdquisicion: item.fechaAdquisicion || "",
+          clasificacionPredio: item.clasificacionPredio || "",
+          estadoPredio: item.estadoPredio || "",
+          tipoPredio: item.tipoPredio || "",
+          condicionPropiedad: item.condicionPropiedad || "",
+          nivelPiso: item.nivelPiso || "",
+          fechaConstruccion: item.fechaConstruccion || "",
+          incremento5: String(item.incremento5 || "0"),
+          estadoConservacion: item.estadoConservacion || "",
+          material: item.material || "",
+          areaConstruida: String(item.areaConstruida || "0"),
+          letraMuros: item.letraMuros || "",
+          letraTechos: item.letraTechos || "",
+          letraPisos: item.letraPisos || "",
+          letraPuertas: item.letraPuertas || "",
+          letraRevestimiento: item.letraRevestimiento || "",
+          letraBanios: item.letraBanios || "",
+          letraInstElect: item.letraInstElect || "",
+          valorUnitario: String(item.valorUnitario || "0"),
+          depreciacion: String(item.depreciacion || "0"),
+          valorUnitarioDepreciado: String(item.valorUnitarioDepreciado || "0"),
+          valorAreaConstruida: String(item.valorAreaConstruida || "0"),
+          valorConstruccion: String(item.valorConstruccion || "0"),
+          arancel: String(item.arancel || "0"),
+          areaTerreno: String(item.areaTerreno || "0"),
+          areaTotalConstruida: String(item.areaTotalConstruida || "0"),
+          valorTotalConstruccion: String(item.valorTotalConstruccion || "0"),
+          valorTerreno: String(item.valorTerreno || "0"),
+          valorOtrasInstalaciones: String(item.valorOtrasInstalaciones || "0"),
+          autoavaluo: String(item.autoavaluo || "0"),
         }),
-        validateItem: (item: PUData) => !!item.codPredio
+        // El endpoint por contribuyente puede devolver codPredio=null para
+        // cada nivel del inmueble. Esas filas siguen siendo válidas y no
+        // deben descartarse si contienen el contribuyente consultado.
+        validateItem: (item: PUData) => !!item.codContribuyente,
       },
-      'pu'
+      "pu",
     );
   }
 
@@ -173,23 +177,29 @@ class PUService extends BaseApiService<PUData, void, void> {
 
   async buscarPU(params: PUQueryParams): Promise<PUData[]> {
     try {
-      if (!params.codContribuyente || !params.codPredio) {
-        logger.warn('[PUService] Ambos parámetros (codContribuyente y codPredio) son requeridos para la consulta de PU.');
+      if (!params.codContribuyente) {
+        logger.warn(
+          "[PUService] codContribuyente es requerido para la consulta de PU.",
+        );
         return [];
       }
 
       const url = buildApiUrl(this.endpoint);
       const queryParams = new URLSearchParams();
-      queryParams.append('codContribuyente', params.codContribuyente);
-      queryParams.append('codPredio', params.codPredio);
+      queryParams.append("codContribuyente", params.codContribuyente);
+      if (params.codPredio?.trim()) {
+        queryParams.append("codPredio", params.codPredio.trim());
+      }
 
-      const payload = await apiClient.request<unknown>(`${url}?${queryParams.toString()}`);
+      const payload = await apiClient.request<unknown>(
+        `${url}?${queryParams.toString()}`,
+      );
       const items = unwrapApiList<Record<string, unknown>>(payload);
 
       return this.normalizeData(Array.isArray(items) ? items : []);
     } catch (error) {
       if (isApiNotFoundError(error)) return [];
-      logger.warn('[PUService] Error al buscar PU:', error);
+      logger.warn("[PUService] Error al buscar PU:", error);
       throw error;
     }
   }

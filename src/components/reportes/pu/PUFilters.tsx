@@ -16,10 +16,8 @@ import type { PUContributor } from "./pu.types";
 
 interface Props {
   contributor: PUContributor | null;
-  propertyCode: string;
   loading: boolean;
   canPrint: boolean;
-  onPropertyCodeChange: (value: string) => void;
   onSelectContributor: () => void;
   onSearch: () => void;
   onPrint: () => void;
@@ -27,10 +25,8 @@ interface Props {
 
 export function PUFilters({
   contributor,
-  propertyCode,
   loading,
   canPrint,
-  onPropertyCodeChange,
   onSelectContributor,
   onSearch,
   onPrint,
@@ -90,17 +86,6 @@ export function PUFilters({
           slotProps={{ input: { readOnly: true } }}
           sx={{ flex: "1 1 200px", ...readonlySx }}
         />
-        <TextField
-          size="small"
-          label="Código Predio"
-          type="number"
-          value={propertyCode}
-          onChange={(event) => onPropertyCodeChange(event.target.value)}
-          sx={{
-            width: { xs: "100%", sm: 140 },
-            "& .MuiOutlinedInput-root": { height: 40 },
-          }}
-        />
       </Box>
       <Box
         sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, mt: 2 }}
@@ -115,7 +100,7 @@ export function PUFilters({
             )
           }
           onClick={onSearch}
-          disabled={!contributor || !propertyCode || loading}
+          disabled={!contributor || loading}
           sx={{
             width: 150,
             bgcolor: "#3b82f6 !important",

@@ -21,6 +21,7 @@ const jsonResponse = (status: number, body: unknown) => new Response(
 
 describe('BaseApiService retry policy', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -37,12 +38,17 @@ describe('BaseApiService retry policy', () => {
   );
 
   it('retries a GET after a transient status', async () => {
+    vi.useFakeTimers();
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse(503, { message: 'Unavailable' }))
       .mockResolvedValueOnce(jsonResponse(200, { success: true }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(new TestApiService().request('GET', 1)).resolves.toEqual({ success: true });
+    const request = new TestApiService().request('GET', 1);
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await expect(request).resolves.toEqual({ success: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

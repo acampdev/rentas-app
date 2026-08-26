@@ -11,6 +11,52 @@ vi.mock('../../config/api.unified.config', () => ({
   getAuthenticatedUserCode: () => 17
 }));
 
+vi.mock('./aperturaCaja/AperturaCajaHeader', () => ({
+  AperturaCajaHeader: () => null
+}));
+
+vi.mock('./aperturaCaja/aperturaCaja.styles', () => ({
+  StyledAperturaDialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+    open ? <div>{children}</div> : null
+}));
+
+vi.mock('./aperturaCaja/AperturaCajaForm', () => ({
+  AperturaCajaForm: ({ form, confirmed, onAmountChange, onConfirm }: {
+    form: { montoInicial: string };
+    confirmed: boolean;
+    onAmountChange: (value: string) => void;
+    onConfirm: (value: boolean) => void;
+  }) => (
+    <>
+      <label>
+        Monto Inicio de Caja
+        <input
+          aria-label="Monto Inicio de Caja"
+          type="number"
+          value={form.montoInicial}
+          onChange={(event) => onAmountChange(event.target.value)}
+        />
+      </label>
+      <label>
+        <input
+          aria-label="Confirmo que el monto inicial ingresado es correcto"
+          type="checkbox"
+          checked={confirmed}
+          disabled={form.montoInicial === ''}
+          onChange={(event) => onConfirm(event.target.checked)}
+        />
+        Confirmo que el monto inicial ingresado es correcto
+      </label>
+    </>
+  )
+}));
+
+vi.mock('./aperturaCaja/AperturaCajaActions', () => ({
+  AperturaCajaActions: ({ canSubmit, onSubmit }: { canSubmit: boolean; onSubmit: () => void }) => (
+    <button type="button" disabled={!canSubmit} onClick={onSubmit}>Grabar</button>
+  )
+}));
+
 describe('AperturaCaja', () => {
   it('exige ingresar y confirmar explícitamente el monto inicial', () => {
     vi.mocked(useUsuarios).mockReturnValue({

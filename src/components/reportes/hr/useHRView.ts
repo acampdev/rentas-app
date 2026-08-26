@@ -21,9 +21,14 @@ export const useHRView = () => {
     limpiarHR();
   };
 
-  const buscar = () => {
-    if (contribuyente?.codigo) {
-      void buscarHR({ codContribuyente: contribuyente.codigo.toString() });
+  const buscar = async () => {
+    if (!contribuyente?.codigo) return;
+
+    try {
+      await buscarHR({ codContribuyente: contribuyente.codigo.toString() });
+    } catch {
+      // React Query conserva el error para que la vista pueda informarlo sin
+      // generar una promesa rechazada sin controlar desde el botón Buscar.
     }
   };
 

@@ -32,16 +32,13 @@ export const TransferenciaAlcabalaPage = lazyWithRetry('transferencia-alcabala',
 export const ReporteAlcabalaPage = lazyWithRetry('reporte-alcabala', () => import('./predio/transferencia/ReporteAlcabalaPage'));
 export const CajaPage = lazyWithRetry('caja', () => import('./caja/CajaPage'));
 export const ConsultasCaja = lazyWithRetry('consultas-caja', () => import('./caja/ConsultasCaja'));
-export const ReportesPage = lazyWithRetry('reportes', () => import('./reportes/ReportesPage'));
 export const SolicitudFraccionamientoPage = lazyWithRetry('solicitud-fraccionamiento', () => import('./fraccionamiento/SolicitudFraccionamientoPage'));
 export const ConsultaFraccionamientoPage = lazyWithRetry('consulta-fraccionamiento', () => import('./fraccionamiento/ConsultaFraccionamientoPage'));
 export const CronogramaPage = lazyWithRetry('cronograma', () => import('./fraccionamiento/CronogramaPage'));
 export const UsuariosPage = lazyWithRetry('usuarios', () => import('./sistema/UsuariosPage'));
 export const RolesPage = lazyWithRetry('roles', () => import('./sistema/RolesPage'));
 export const PermisosPage = lazyWithRetry('permisos', () => import('./sistema/PermisosPage'));
-export const ConfiguracionPage = lazyWithRetry('configuracion', () => import('./sistema/ConfiguracionPage'));
 export const AuditoriaPage = lazyWithRetry('auditoria', () => import('./sistema/AuditoriaPage'));
-export const RespaldoPage = lazyWithRetry('respaldo', () => import('./sistema/RespaldoPage'));
 export const CoactivaPage = lazyWithRetry('coactiva', () => import('./coactiva/CoactivaPage'));
 export const ExpedientePage = lazyWithRetry('expediente-coactivo', () => import('./coactiva/ExpedientePage'));
 export const ResolucionesPage = lazyWithRetry('resoluciones-coactivas', () => import('./coactiva/ResolucionesPage'));

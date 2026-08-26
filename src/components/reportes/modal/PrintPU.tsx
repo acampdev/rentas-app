@@ -1,5 +1,6 @@
+// src/components/reportes/modal/PrintPU.tsx
 import { Dialog, DialogContent } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PrintPUFooter, PrintPUHeader } from "./printPU/PrintPUControls";
 import { PrintPUDocument } from "./printPU/PrintPUDocument";
 import { PrintPUSelector } from "./printPU/PrintPUSelector";
@@ -18,6 +19,14 @@ export const PrintPU = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const activePu = puData[selectedIndex] ?? puData[0] ?? null;
   const date = useMemo(currentPUDate, []);
+
+  useEffect(() => {
+    if (isOpen) setSelectedIndex(0);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedIndex >= puData.length) setSelectedIndex(0);
+  }, [puData.length, selectedIndex]);
 
   return (
     <Dialog

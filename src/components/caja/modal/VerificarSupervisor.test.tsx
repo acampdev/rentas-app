@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import apiClient from '../../../services/apiClient';
 import VerificarSupervisor from './VerificarSupervisor';
@@ -25,6 +25,37 @@ vi.mock('../../utils/Notification', () => ({
   }
 }));
 
+vi.mock('@mui/icons-material', () => ({
+  Close: () => null,
+  Security: () => null
+}));
+
+vi.mock('@mui/material', () => ({
+  Box: ({ children, component: Component = 'div', ...props }: {
+    children: React.ReactNode;
+    component?: React.ElementType;
+  }) => <Component {...props}>{children}</Component>,
+  Button: ({ children, startIcon: _startIcon, fullWidth: _fullWidth, sx: _sx, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    startIcon?: React.ReactNode;
+    fullWidth?: boolean;
+    sx?: unknown;
+  }) => <button {...props}>{children}</button>,
+  CircularProgress: () => null,
+  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) => open ? <div>{children}</div> : null,
+  DialogActions: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  IconButton: ({ children, sx: _sx, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { sx?: unknown }) => <button {...props}>{children}</button>,
+  TextField: ({ label, fullWidth: _fullWidth, sx: _sx, ...props }: {
+    label: string;
+    fullWidth?: boolean;
+    sx?: unknown;
+  } & React.InputHTMLAttributes<HTMLInputElement>) => (
+    <label>{label}<input aria-label={label} {...props} /></label>
+  ),
+  Typography: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+}));
+
 describe('VerificarSupervisor', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -37,9 +68,11 @@ describe('VerificarSupervisor', () => {
     render(<VerificarSupervisor open onClose={onClose} onVerified={onVerified} />);
     fireEvent.change(screen.getByLabelText(/Usuario/), { target: { value: '  supervisora  ' } });
     fireEvent.change(screen.getByLabelText(/Contraseña/), { target: { value: 'clave' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    });
 
-    await waitFor(() => expect(onVerified).toHaveBeenCalledWith('supervisora', 'token-supervisor'));
+    expect(onVerified).toHaveBeenCalledWith('supervisora', 'token-supervisor');
     expect(mocks.verificarSupervisor).toHaveBeenCalledWith('supervisora', 'clave');
     expect(apiClient.request).toHaveBeenCalledWith(expect.stringContaining('/auth/login'), expect.objectContaining({
       method: 'POST',
@@ -55,9 +88,11 @@ describe('VerificarSupervisor', () => {
     render(<VerificarSupervisor open onClose={vi.fn()} onVerified={onVerified} />);
     fireEvent.change(screen.getByLabelText(/Usuario/), { target: { value: 'operador' } });
     fireEvent.change(screen.getByLabelText(/Contraseña/), { target: { value: 'incorrecta' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    });
 
-    await waitFor(() => expect(mocks.notifyError).toHaveBeenCalled());
+    expect(mocks.notifyError).toHaveBeenCalled();
     expect(onVerified).not.toHaveBeenCalled();
   });
 

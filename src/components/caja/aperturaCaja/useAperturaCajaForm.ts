@@ -6,6 +6,7 @@ import type {
   AperturaCajaErrors,
   AperturaCajaFormData,
 } from "./aperturaCaja.types";
+import { validateAperturaCaja } from "./aperturaCaja.validation";
 
 const createInitialData = (): AperturaCajaFormData => ({
   numeroCaja: "",
@@ -71,22 +72,7 @@ export function useAperturaCajaForm(
   };
 
   const submit = () => {
-    const nextErrors: AperturaCajaErrors = {};
-    if (
-      form.montoInicial === "" ||
-      !Number.isFinite(form.montoInicial) ||
-      form.montoInicial < 0
-    )
-      nextErrors.montoInicial = "Ingrese un monto inicial mayor o igual a 0";
-    if (!confirmed)
-      nextErrors.montoConfirmado =
-        "Debe confirmar expresamente el monto inicial";
-    if (
-      !selectedUser ||
-      !Number.isInteger(form.codUsuario) ||
-      form.codUsuario <= 0
-    )
-      nextErrors.codUsuario = "Debe seleccionar un cajero válido";
+    const nextErrors = validateAperturaCaja(form, confirmed, Boolean(selectedUser));
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length || form.montoInicial === "") return;
     onSave({ ...form, montoInicial: form.montoInicial });

@@ -20,13 +20,71 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - name: Pruebas y umbral mínimo de cobertura
-        run: pnpm test:coverage
       - run: pnpm build
         env:
           # El build valida la configuración segura de producción. Una URL
           # vacía representa /api y /auth mediante proxy inverso del mismo origen.
           VITE_API_URL: ""
+
+  pruebas:
+    name: Pruebas (${{ matrix.grupo }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        grupo: [services, hooks, components, auth]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:ci:${{ matrix.grupo }}
+
+  cobertura:
+    name: Cobertura consolidada
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Pruebas y umbral mínimo de cobertura
+        id: coverage
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p test-performance
+          set +e
+          /usr/bin/time -v -o test-performance/resource-usage.txt \
+            pnpm test:coverage 2>&1 | tee test-performance/vitest-coverage.log
+          test_status=${PIPESTATUS[0]}
+          set -e
+          node scripts/ci/create-test-baseline.mjs \
+            test-performance/vitest-coverage.log \
+            test-performance/resource-usage.txt \
+            test-performance
+          cat test-performance/test-baseline.md >> "$GITHUB_STEP_SUMMARY"
+          exit "$test_status"
+      - name: Guardar línea base y cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-performance/
+            coverage/
+          if-no-files-found: warn
+          retention-days: 30
 
   e2e:
     runs-on: ubuntu-latest

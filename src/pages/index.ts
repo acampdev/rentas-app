@@ -44,9 +44,6 @@ export { default as InteresPage } from './mantenedores/escalas/InteresPage';
 
 
 
-// Páginas de Reportes
-export { default as ReportesPage } from './reportes/ReportesPage';
-
 // Páginas de Fraccionamiento
 export { default as SolicitudFraccionamientoPage } from './fraccionamiento/SolicitudFraccionamientoPage';
 export { default as ConsultaFraccionamientoPage } from './fraccionamiento/ConsultaFraccionamientoPage';
@@ -56,9 +53,7 @@ export { default as CronogramaPage } from './fraccionamiento/CronogramaPage';
 export { default as UsuariosPage } from './sistema/UsuariosPage';
 export { default as RolesPage } from './sistema/RolesPage';
 export { default as PermisosPage } from './sistema/PermisosPage';
-export { default as ConfiguracionPage } from './sistema/ConfiguracionPage';
 export { default as AuditoriaPage } from './sistema/AuditoriaPage';
-export { default as RespaldoPage } from './sistema/RespaldoPage';
 
 // Paginas de Usuarios
 export { default as UsersPage } from './usuarios/UsersPage';

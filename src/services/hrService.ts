@@ -79,7 +79,9 @@ class HRService extends BaseApiService<HRData, void, void> {
           impuestoMensual: String(item.impuestoMensual || '0'),
           impuestoTrimestral: String(item.impuestoTrimestral || '0')
         }),
-        validateItem: (item: HRData) => !!item.codPredio
+        // El reporte se consulta por contribuyente. Una fila sigue siendo
+        // válida aunque el backend no informe codPredio en todos los casos.
+        validateItem: (item: HRData) => !!item.codContribuyente
       },
       'hr'
     );

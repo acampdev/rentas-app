@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
 import {
   AlcabalaPage,
   ArancelesPage,
@@ -33,8 +32,6 @@ import {
   RegistroPisoPage,
   RegistroTIMPage,
   ReporteAlcabalaPage,
-  ReportesPage,
-  RespaldoPage,
   ResolucionesPage,
   ResolucionInteresPage,
   RolesPage,
@@ -148,9 +145,6 @@ export const COLLECTION_ROUTES: AppRouteDefinition[] = [
     TAX_OPERATION_ROLES,
   ),
   route("/cuenta-corriente/consulta", <CuentaConsultaPage />, TAX_READ_ROLES),
-  ...["contribuyentes", "predios", "cuentas", "recaudacion"].map((report) =>
-    route(`/reportes/${report}`, <ReportesPage />, TAX_READ_ROLES),
-  ),
   route(
     "/fraccionamiento/solicitud",
     <SolicitudFraccionamientoPage />,
@@ -233,16 +227,7 @@ export const SYSTEM_ROUTES: AppRouteDefinition[] = [
   route("/sistema/usuarios", <UsuariosPage />, ADMIN_ROLES),
   route("/sistema/roles", <RolesPage />, ADMIN_ROLES),
   route("/sistema/permisos", <PermisosPage />, ADMIN_ROLES),
-  route(
-    "/sistema/configuracion",
-    <ModuleUnavailablePage
-      title="Configuración del sistema en restauración"
-      description="Este módulo aún no está conectado de forma segura a la configuración real del sistema."
-    />,
-    ADMIN_ROLES,
-  ),
   route("/sistema/auditoria", <AuditoriaPage />, AUDIT_ROLES),
-  route("/sistema/respaldo", <RespaldoPage />, ADMIN_ROLES),
   ...["crear-cuenta", "consulta", "recuperar-password", "otras-opciones"].map(
     (action) => route(`/usuarios/${action}`, <UsersPage />, ADMIN_ROLES),
   ),
@@ -257,11 +242,6 @@ export const SYSTEM_ROUTES: AppRouteDefinition[] = [
     "/perfil",
     <ModuleUnavailablePage title="Perfil de usuario" />,
     AUTHENTICATED_ROLES,
-  ),
-  route(
-    "/configuracion",
-    <Navigate to="/sistema/configuracion" replace />,
-    ADMIN_ROLES,
   ),
   route(
     "/buscar",

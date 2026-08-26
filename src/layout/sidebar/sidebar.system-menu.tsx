@@ -20,13 +20,7 @@ export const SYSTEM_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Sistema",
     icon: <Computer />,
     subMenuItems: [
-      {
-        id: "configuracion",
-        label: "Configuración",
-        path: "/sistema/configuracion",
-      },
       { id: "auditoria", label: "Auditoría", path: "/sistema/auditoria" },
-      { id: "respaldo", label: "Respaldo", path: "/sistema/respaldo" },
     ],
   },
   {

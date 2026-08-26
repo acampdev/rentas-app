@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Predio } from '../../../models/Predio';
 import { useSelectorPredio } from './useSelectorPredio';
@@ -24,7 +24,7 @@ describe('useSelectorPredio', () => {
     const onSelectPredio = vi.fn();
     const { result } = renderHook(() => useSelectorPredio({ isOpen: true, onClose, onSelectPredio }));
 
-    await waitFor(() => expect(mocks.buscarPrediosConFiltros).toHaveBeenCalled());
+    expect(mocks.buscarPrediosConFiltros).toHaveBeenCalled();
 
     const predio = {
       codPredioBase: '8', codigoPredio: '20268', codPredio: '20268',

@@ -52,10 +52,6 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/predio/puhr/consulta-pu-hr',
     '/predio/transferencia/reporte-alcabala',
     '/cuenta-corriente/consulta',
-    '/reportes/contribuyentes',
-    '/reportes/predios',
-    '/reportes/cuentas',
-    '/reportes/recaudacion',
     '/fraccionamiento/consulta',
     '/persona/consulta'
   ]),
@@ -98,8 +94,6 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/sistema/usuarios',
     '/sistema/roles',
     '/sistema/permisos',
-    '/sistema/configuracion',
-    '/sistema/respaldo',
     '/usuarios/crear-cuenta',
     '/usuarios/consulta',
     '/usuarios/recuperar-password',
@@ -107,8 +101,7 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/migracion',
     '/migracion/importar',
     '/migracion/exportar',
-    '/migracion/historial',
-    '/configuracion'
+    '/migracion/historial'
   ])
 ];
 

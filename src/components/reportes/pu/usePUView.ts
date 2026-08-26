@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { usePU } from "../../../hooks/usePU";
 import { logger } from "../../../utils/logger";
 import type { PUContributor } from "./pu.types";
 
 export function usePUView() {
-  const { puData, loading, buscarPU, limpiarPU } = usePU();
+  const { puData, loading, buscarPU, precargarPU, limpiarPU } = usePU();
   const [contributor, setContributor] = useState<PUContributor | null>(null);
-  const [propertyCode, setPropertyCode] = useState("");
+  const [searchedContributor, setSearchedContributor] =
+    useState<PUContributor | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
 
@@ -16,39 +17,39 @@ export function usePUView() {
       ...data,
       nombreCompleto: data.contribuyente || data.nombreCompleto || "",
     });
-    setPropertyCode("");
     setSelectorOpen(false);
     limpiarPU();
-  };
-
-  const search = () => {
-    if (!contributor?.codigo || !propertyCode) return;
-    void buscarPU({
-      codContribuyente: String(contributor.codigo),
-      codPredio: propertyCode.trim(),
+    void precargarPU({ codContribuyente: String(data.codigo) }).catch(() => {
+      // Si la precarga falla, Buscar volverá a intentar y React Query
+      // conservará el error correspondiente.
     });
   };
 
-  const results = useMemo(
-    () =>
-      propertyCode
-        ? puData.filter(({ codPredio }) =>
-            codPredio.trim().includes(propertyCode.trim()),
-          )
-        : puData,
-    [puData, propertyCode],
-  );
+  const search = async () => {
+    if (!contributor?.codigo) return;
+    const selectedContributor = contributor;
+
+    try {
+      await buscarPU({
+        codContribuyente: String(selectedContributor.codigo),
+      });
+      setSearchedContributor(selectedContributor);
+      setContributor(null);
+    } catch {
+      // React Query conserva el error de la consulta; evitar una promesa no
+      // controlada cuando el componente dispara la búsqueda desde el botón.
+    }
+  };
 
   return {
     contributor,
-    propertyCode,
-    setPropertyCode,
+    searchedContributor,
     selectorOpen,
     setSelectorOpen,
     printOpen,
     setPrintOpen,
     loading,
-    results,
+    results: puData,
     selectContributor,
     search,
   };

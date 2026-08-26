@@ -94,7 +94,7 @@ export const HRTable = ({ rows, loading }: Props) => {
               >
                 <TableCell>
                   <Chip
-                    label={row.codPredio}
+                    label={row.codPredio || "—"}
                     size="small"
                     variant="outlined"
                     color="primary"

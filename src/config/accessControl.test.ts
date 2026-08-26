@@ -26,7 +26,6 @@ describe('route access matrix', () => {
     ['/caja/apertura', ['CAJERO'], true],
     ['/caja/asignacion', ['CAJERO'], false],
     ['/sistema/auditoria', ['AUDITOR'], true],
-    ['/sistema/respaldo', ['AUDITOR'], false],
     ['/usuarios/consulta', ['ADMINISTRADOR'], true]
   ] as const)('evaluates %s for %s', (path, roles, expected) => {
     expect(canAccessPath(path, roles)).toBe(expected);

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usuarioService } from '../../../services/usuarioService';
 import LogeoSupervisor from './LogeoSupervisor';
@@ -30,9 +30,11 @@ describe('LogeoSupervisor', () => {
 
     fireEvent.change(screen.getByLabelText(/Usuario/), { target: { value: ' davila ' } });
     fireEvent.change(screen.getByLabelText(/Contraseña/), { target: { value: '13579' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    });
 
-    await waitFor(() => expect(onAuthenticated).toHaveBeenCalledWith('26'));
+    expect(onAuthenticated).toHaveBeenCalledWith('26');
     expect(usuarioService.verificarSupervisorCajero).toHaveBeenCalledWith('davila', '13579');
   });
 });

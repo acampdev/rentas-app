@@ -103,7 +103,7 @@ export function PUTable({ data, loading }: Props) {
               >
                 <TableCell>
                   <Chip
-                    label={pu.codPredio}
+                    label={pu.codPredio || "—"}
                     size="small"
                     variant="outlined"
                     color="primary"

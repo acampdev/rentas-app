@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AUTH_SESSION_EXPIRED_EVENT } from '../services/authSession';
 import useAuth from './useAuth';
@@ -40,7 +40,7 @@ describe('useAuth - invalidación global de sesión', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+    expect(result.current.isAuthenticated).toBe(true);
 
     act(() => {
       window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT, {

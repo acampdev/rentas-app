@@ -23,27 +23,4 @@ describe('SistemaService error propagation', () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
-
-  it('does not convert a configuration read error into null', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      errorResponse(403, { detail: 'Configuración restringida' })
-    ));
-
-    await expect(sistemaService.obtenerConfiguracion()).rejects.toMatchObject<ApiClientError>({
-      statusCode: 403,
-      message: 'Configuración restringida'
-    });
-  });
-
-  it('does not convert a failed update into false', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      errorResponse(500, { data: 'No se pudo guardar la configuración' })
-    ));
-
-    await expect(sistemaService.actualizarConfiguracion({ nombreMunicipio: 'Municipalidad' }))
-      .rejects.toMatchObject<ApiClientError>({
-        statusCode: 500,
-        message: 'No se pudo guardar la configuración'
-      });
-  });
 });

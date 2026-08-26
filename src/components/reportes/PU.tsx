@@ -25,10 +25,8 @@ export default function PU() {
         <Box sx={{ p: 3 }}>
           <PUFilters
             contributor={view.contributor}
-            propertyCode={view.propertyCode}
             loading={view.loading}
             canPrint={view.results.length > 0}
-            onPropertyCodeChange={view.setPropertyCode}
             onSelectContributor={() => view.setSelectorOpen(true)}
             onSearch={view.search}
             onPrint={() => view.setPrintOpen(true)}
@@ -47,7 +45,7 @@ export default function PU() {
       <PrintPU
         isOpen={view.printOpen}
         onClose={() => view.setPrintOpen(false)}
-        contribuyente={view.contributor}
+        contribuyente={view.searchedContributor}
         puData={view.results}
       />
     </Box>

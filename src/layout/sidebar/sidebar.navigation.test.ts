@@ -5,6 +5,7 @@ import {
   hasActiveItem,
   isRouteActive,
 } from "./sidebar.navigation";
+import { SYSTEM_MENU_ITEMS } from "./sidebar.system-menu";
 
 const menu: SidebarMenuItem[] = [
   {
@@ -41,5 +42,14 @@ describe("sidebar navigation", () => {
     expect(findActiveParentIds(menu, "/predio/transferencia/alcabala")).toEqual(
       ["predio", "transferencia"],
     );
+  });
+
+  it("no muestra Configuración ni Respaldo en el menú Sistema", () => {
+    const sistema = SYSTEM_MENU_ITEMS.find((item) => item.id === "sistema");
+    const paths = sistema?.subMenuItems?.map((item) => item.path) ?? [];
+
+    expect(paths).not.toContain("/sistema/configuracion");
+    expect(paths).not.toContain("/sistema/respaldo");
+    expect(paths).toContain("/sistema/auditoria");
   });
 });

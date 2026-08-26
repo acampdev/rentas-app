@@ -1,4 +1,4 @@
-import { Chip, Paper, Typography } from "@mui/material";
+import { Box, Paper, Tab, Tabs, Typography } from "@mui/material";
 import type { PrintablePUData } from "./printPU.types";
 
 interface Props {
@@ -13,28 +13,53 @@ export const PrintPUSelector = ({ items, selectedIndex, onSelect }: Props) =>
       elevation={0}
       className="no-print"
       sx={{
-        p: 1.5,
+        px: 1.5,
+        pt: 1.25,
         mb: 2,
-        display: "flex",
-        alignItems: "center",
-        gap: 1,
-        bgcolor: "#e2e8f0",
+        bgcolor: "#f1f5f9",
+        border: "1px solid #cbd5e1",
         borderRadius: 2,
       }}
     >
-      <Typography variant="body2" fontWeight="bold">
-        Seleccionar Predio ({items.length}):
+      <Typography variant="body2" fontWeight={700} sx={{ px: 0.5, mb: 0.5 }}>
+        Predios urbanos encontrados: {items.length}
       </Typography>
-      {items.map((item, index) => (
-        <Chip
-          key={`${item.codPredio}-${index}`}
-          label={`Predio: ${item.codPredio || index + 1}`}
-          onClick={() => onSelect(index)}
-          color={selectedIndex === index ? "success" : "default"}
-          variant={selectedIndex === index ? "filled" : "outlined"}
-          size="small"
-          sx={{ cursor: "pointer", fontWeight: 600 }}
-        />
-      ))}
+      <Box sx={{ maxWidth: "100%" }}>
+        <Tabs
+          value={selectedIndex}
+          onChange={(_event, value: number) => onSelect(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="Predios urbanos para imprimir"
+          sx={{
+            minHeight: 42,
+            "& .MuiTab-root": {
+              minHeight: 42,
+              minWidth: 120,
+              fontWeight: 700,
+              textTransform: "none",
+            },
+          }}
+        >
+          {items.map((item, index) => {
+            const predio = item.codPredio?.trim();
+            const piso = item.nivelPiso?.trim();
+            const detalle = predio
+              ? `Predio ${predio}`
+              : piso
+                ? `Piso ${piso}`
+                : `Registro ${index + 1}`;
+
+            return (
+              <Tab
+                key={`${predio || "pu"}-${piso || "sin-piso"}-${index}`}
+                id={`print-pu-tab-${index}`}
+                aria-controls="printable-pu-document"
+                label={`PU ${index + 1} · ${detalle}`}
+              />
+            );
+          })}
+        </Tabs>
+      </Box>
     </Paper>
   ) : null;
