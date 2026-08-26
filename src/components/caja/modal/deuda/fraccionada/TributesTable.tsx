@@ -64,7 +64,7 @@ export const TributesTable = ({ rows, getColor }: Props) => (
         </TableHead>
         <TableBody>
           {rows.map((row, rowIndex) => (
-            <TableRow key={row.tributo}>
+            <TableRow key={`${row.anio}-${row.tributo}`}>
               <TableCell
                 sx={{
                   fontSize: ".7rem",
@@ -75,7 +75,7 @@ export const TributesTable = ({ rows, getColor }: Props) => (
                   borderRight: "1px solid #e0e0e0",
                 }}
               >
-                {row.tributo}
+                {row.tributo} ({row.anio})
               </TableCell>
               {row.valores.map((value, monthIndex) => {
                 const color = getColor(rowIndex, monthIndex);

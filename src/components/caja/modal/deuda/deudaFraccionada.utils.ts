@@ -6,16 +6,6 @@ import type {
   TributoFraccionado,
 } from "./deudaFraccionada.types";
 
-export const EMPTY_TRIBUTES: TributoFraccionado[] = [
-  "Parques y Jardines",
-  "Impuesto Predial",
-  "Serenazgo",
-  "Limpieza Publica",
-  "Formularios D.J",
-  "TIM Impuesto Predial",
-  "TIM Parques y Jardines",
-].map((tributo) => ({ tributo, valores: Array<number>(12).fill(0) }));
-
 export const installmentTotal = (
   installments: CuotaFraccionamiento[],
 ): number =>
@@ -62,6 +52,7 @@ export const accountDetailToTributes = (
   details: EstadoCuentaDetalle[],
 ): TributoFraccionado[] =>
   details.map((detail) => ({
+    anio: detail.anio,
     tributo: detail.tributo,
     valores: Array.from({ length: 12 }, (_, index) => {
       const period = index + 1;

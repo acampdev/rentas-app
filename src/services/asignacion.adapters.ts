@@ -21,7 +21,7 @@ export const getAsignacionErrorMessage = (
 export const toAsignacionWritePayload = (
   datos: CreateAsignacionAPIDTO,
 ): CreateAsignacionAPIDTO => ({
-  anio: Number(datos.anio || new Date().getFullYear()),
+  anio: Number(datos.anio),
   codPredio: String(datos.codPredio).trim(),
   codContribuyente: Number(datos.codContribuyente),
   codAsignacion: datos.codAsignacion ?? null,

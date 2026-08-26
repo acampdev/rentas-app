@@ -53,7 +53,7 @@ export interface AsignacionPredioDTO {
   codAsignacion: number | string | null;
   porcentajeCondomino: number | null;
   fechaDeclaracion: string;
-  fechaVenta: string;
+  fechaVenta: string | null;
   codModoDeclaracion: string;
 }
 

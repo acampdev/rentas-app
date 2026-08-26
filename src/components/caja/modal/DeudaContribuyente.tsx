@@ -31,7 +31,7 @@ const DeudaContribuyente = ({ open, onClose, contribuyenteData = null, onPagoGen
       <DialogContent sx={{ p: { xs: 1, sm: 2 }, flex: 1, minHeight: 0, overflow: "hidden" }}>
         {contribuyenteData ? <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1, overflow: "hidden" }}>
           <DeudaContribuyenteSummary contributor={contribuyenteData} />
-          <DeudaPagoControls tab={controller.tab} amount={controller.amount} selectionType={controller.selectionType} exceedsDebt={controller.exceedsDebt} canPay={controller.canPay} canReset={controller.tab !== 0 && Boolean(controller.amount || controller.selectedRows.length)} onAmountChange={controller.changeAmount} onSelectionTypeChange={controller.changeSelectionType} onPay={controller.pay} onReset={controller.resetPayment} />
+          <DeudaPagoControls tab={controller.tab} amount={controller.amount} selectionType={controller.selectionType} exceedsDebt={controller.exceedsDebt} canPay={controller.canPay} canReset={controller.tab !== 0 && Boolean(controller.amount || controller.selectedRows.length)} feedback={controller.paymentFeedback} onAmountChange={controller.changeAmount} onSelectionTypeChange={controller.changeSelectionType} onPay={controller.pay} onReset={controller.resetPayment} />
           <DeudaTabsContent contributor={contribuyenteData} controller={controller} />
         </Box> : <Box sx={{ height: "100%", display: "grid", placeItems: "center" }}><Typography variant="h6" color="text.secondary">No hay datos de contribuyente disponibles</Typography></Box>}
       </DialogContent>

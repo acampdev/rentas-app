@@ -9,13 +9,14 @@ interface Props {
   exceedsDebt: boolean;
   canPay: boolean;
   canReset: boolean;
+  feedback: string | null;
   onAmountChange: (value: string) => void;
   onSelectionTypeChange: (value: TipoSeleccionMonto) => void;
   onPay: () => void;
   onReset: () => void;
 }
 
-export const DeudaPagoControls = ({ tab, amount, selectionType, exceedsDebt, canPay, canReset, onAmountChange, onSelectionTypeChange, onPay, onReset }: Props) => (
+export const DeudaPagoControls = ({ tab, amount, selectionType, exceedsDebt, canPay, canReset, feedback, onAmountChange, onSelectionTypeChange, onPay, onReset }: Props) => (
   <Paper variant="outlined" sx={{ p: 1.25, opacity: tab === 0 ? 0.55 : 1 }}>
     <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
       <TextField label="Monto a Pagar" value={amount} onChange={(event) => onAmountChange(event.target.value)} size="small" type="number" placeholder="0.00" disabled={tab === 0 || tab === 2 || (tab === 1 && selectionType === "seleccionar")} sx={{ width: 150 }} slotProps={{ htmlInput: { min: 0, step: 0.01 } }} />
@@ -24,5 +25,6 @@ export const DeudaPagoControls = ({ tab, amount, selectionType, exceedsDebt, can
       <Tooltip title="Limpiar campos (F2)"><span><Button variant="outlined" onClick={onReset} disabled={!canReset} sx={{ height: 40, px: 3 }}>Nuevo</Button></span></Tooltip>
     </Box>
     {exceedsDebt && <Alert severity="warning" icon={<WarningIcon />} sx={{ mt: 1 }}>El monto ingresado excede la deuda total seleccionada.</Alert>}
+    {feedback && <Alert severity="warning" sx={{ mt: 1 }}>{feedback}</Alert>}
   </Paper>
 );

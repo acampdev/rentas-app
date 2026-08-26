@@ -18,23 +18,23 @@ describe("asignacionPredio utils", () => {
     expect(date && formatAssignmentDate(date)).toBe("2026-02-26");
   });
 
-  it("construye el JSON de asignación conservando el porcentaje ingresado", () => {
+  it("construye el JSON usando el año real del predio y conserva fechaVenta nula", () => {
     const payload = buildAssignmentPayload({
-      contribuyente: { codigo: 20, nombreCompleto: "Contribuyente" },
-      predio: { codigoPredio: "28", anio: 2026 } as Predio,
-      modoDeclaracion: "0402",
-      fechaDeclaracion: new Date(2026, 1, 26),
+      contribuyente: { codigo: 35, nombreCompleto: "Contribuyente" },
+      predio: { codigoPredio: "202435", anio: 2024 } as Predio,
+      modoDeclaracion: "7701",
+      fechaDeclaracion: new Date(2002, 11, 4),
       fechaVenta: null,
       porcentajeCondomino: "100",
     });
     expect(payload).toMatchObject({
-      anio: new Date().getFullYear(),
-      codPredio: "202628",
-      codContribuyente: 20,
+      anio: 2024,
+      codPredio: "202435",
+      codContribuyente: 35,
       porcentajeCondomino: 100,
-      fechaDeclaracion: "2026-02-26",
-      fechaVenta: "2026-02-26",
-      codModoDeclaracion: "0402",
+      fechaDeclaracion: "2002-12-04",
+      fechaVenta: null,
+      codModoDeclaracion: "7701",
     });
   });
 
@@ -49,7 +49,22 @@ describe("asignacionPredio utils", () => {
     });
 
     expect(payload.porcentajeCondomino).toBe(37.5);
-    expect(payload.anio).toBe(new Date().getFullYear());
+    expect(payload.anio).toBe(2026);
+  });
+
+  it("obtiene el año del código completo cuando el predio no expone anio", () => {
+    const payload = buildAssignmentPayload({
+      contribuyente: { codigo: 20, nombreCompleto: "Contribuyente" },
+      predio: { codigoPredio: "202528" } as Predio,
+      modoDeclaracion: "0402",
+      fechaDeclaracion: new Date(2025, 1, 26),
+      fechaVenta: null,
+      porcentajeCondomino: "50",
+    });
+
+    expect(payload.anio).toBe(2025);
+    expect(payload.codPredio).toBe("202528");
+    expect(payload.fechaVenta).toBeNull();
   });
 
   it("rechaza porcentajes fuera del rango permitido", () => {

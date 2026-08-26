@@ -19,6 +19,7 @@ export interface ResolucionFraccionamiento {
 }
 
 export interface TributoFraccionado {
+  anio: number;
   tributo: string;
   valores: number[];
 }

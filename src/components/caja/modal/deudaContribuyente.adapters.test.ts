@@ -30,10 +30,10 @@ describe("adaptadores de deuda del contribuyente", () => {
       "R002",
       2,
       [{ nCuota: 1, deuda: 10, im: 1, cuota: 11, fVenc: "2026-01-31", checked: true }],
-      [{ tributo: "Limpieza Pública", valores: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { tributo: "Serenazgo", valores: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }],
+      [{ anio: 2024, tributo: "Limpieza Pública", valores: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { anio: 2025, tributo: "Serenazgo", valores: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }],
       contributor,
     );
     expect(payment?.conceptos.map((item) => item.total)).toEqual([4, 2]);
-    expect(payment?.conceptos[0].saldosDeuda?.[0]).toMatchObject({ anioResolucion: 2026, codResolucion: 2, numeroCuota: 1 });
+    expect(payment?.conceptos[0].saldosDeuda?.[0]).toMatchObject({ anio: 2024, anioResolucion: 2026, codResolucion: 2, numeroCuota: 1 });
   });
 });

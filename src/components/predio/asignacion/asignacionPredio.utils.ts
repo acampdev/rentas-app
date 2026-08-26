@@ -86,13 +86,18 @@ export const buildAssignmentPayload = (
       form.predio.codPredioBase ||
       "",
   ).trim();
-  const year = Number(form.predio.anio || edit?.anio);
+  const yearFromCode = /^\d{4}/.test(baseCode)
+    ? Number(baseCode.slice(0, 4))
+    : Number.NaN;
+  const year = Number(form.predio.anio ?? edit?.anio ?? yearFromCode);
   const contributorCode = Number(form.contribuyente.codigo);
   if (!baseCode || !Number.isFinite(contributorCode))
     throw new Error("Los códigos de predio o contribuyente no son válidos");
+  if (!Number.isInteger(year) || year < 1900)
+    throw new Error("El predio seleccionado no contiene un año válido");
   return {
-    anio: new Date().getFullYear(),
-    codPredio: (/^\d{4}/.test(baseCode) || !Number.isFinite(year)
+    anio: year,
+    codPredio: (/^\d{4}/.test(baseCode)
       ? baseCode
       : `${year}${baseCode}`
     ).trim(),
@@ -100,7 +105,9 @@ export const buildAssignmentPayload = (
     codAsignacion: edit?.codAsignacion ?? null,
     porcentajeCondomino: percentage,
     fechaDeclaracion: formatAssignmentDate(form.fechaDeclaracion),
-    fechaVenta: formatAssignmentDate(form.fechaVenta || form.fechaDeclaracion),
+    fechaVenta: form.fechaVenta
+      ? formatAssignmentDate(form.fechaVenta)
+      : null,
     codModoDeclaracion: form.modoDeclaracion.trim(),
   };
 };

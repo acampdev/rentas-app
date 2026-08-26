@@ -5,19 +5,18 @@ import {
 } from "./asignacionService";
 
 const payload: CreateAsignacionAPIDTO = {
-  anio: new Date().getFullYear(),
-  codPredio: "202628",
-  codContribuyente: 20,
+  anio: 2024,
+  codPredio: "202435",
+  codContribuyente: 35,
   codAsignacion: null,
   porcentajeCondomino: null,
-  fechaDeclaracion: "2026-02-26",
-  fechaVenta: "2026-02-26",
-  codModoDeclaracion: "0402",
+  fechaDeclaracion: "2002-12-04",
+  fechaVenta: null,
+  codModoDeclaracion: "7701",
 };
 
 const legacyPayload = {
   ...payload,
-  anio: 2026,
   codEstado: "0201",
   estado: "ACTIVO",
   pensionista: 1,
@@ -43,7 +42,7 @@ describe("AsignacionService write contract", () => {
     ],
     ["desasignar", () => asignacionService.desasignarAPI(legacyPayload)],
   ])(
-    "includes current year and omits status and pensioner fields when %s",
+    "preserva el año y fechaVenta y omite campos ajenos al contrato al %s",
     async (_name, execute) => {
       const fetchMock = vi
         .fn()
@@ -55,7 +54,8 @@ describe("AsignacionService write contract", () => {
       const options = fetchMock.mock.calls[0][1] as RequestInit;
       const body = JSON.parse(String(options.body)) as Record<string, unknown>;
       expect(body).toEqual(payload);
-      expect(body.anio).toBe(new Date().getFullYear());
+      expect(body.anio).toBe(2024);
+      expect(body.fechaVenta).toBeNull();
       expect(body).not.toHaveProperty("codEstado");
       expect(body).not.toHaveProperty("estado");
       expect(body).not.toHaveProperty("pensionista");

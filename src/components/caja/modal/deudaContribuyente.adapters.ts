@@ -77,35 +77,44 @@ export const crearPagoFraccionado = (
   const selectedInstallments = installments.filter((item) => item.checked);
   if (!selectedInstallments.length || !resolution || !tributes.length) return null;
   let remaining = amount;
-  const grouped = new Map<string, Record<number, number>>();
+  const grouped = new Map<
+    string,
+    { anio: number; tributo: string; detail: Record<number, number> }
+  >();
   for (let month = 1; month <= 12 && remaining > 0; month += 1) {
     for (const tribute of tributes) {
       if (remaining <= 0) break;
       const debt = Number(tribute.valores[month - 1] || 0);
       if (debt <= 0) continue;
       const payment = Math.min(remaining, debt);
-      const detail = grouped.get(tribute.tributo) || {};
+      const key = `${tribute.anio}-${tribute.tributo}`;
+      const current = grouped.get(key) || {
+        anio: tribute.anio,
+        tributo: tribute.tributo,
+        detail: {},
+      };
+      const detail = current.detail;
       detail[month] = payment;
-      grouped.set(tribute.tributo, detail);
+      grouped.set(key, current);
       remaining -= payment;
     }
   }
   const concepts: ConceptoPago[] = [];
-  grouped.forEach((detail, tributeName) => {
+  grouped.forEach(({ anio, tributo: tributeName, detail }) => {
     const total = Object.values(detail).reduce((sum, value) => sum + value, 0);
     if (total <= 0) return;
     const months = Object.keys(detail).map(Number);
     concepts.push({
-      id: `fraccionamiento-${resolution}-${tributeName}`,
-      descripcion: `${tributeName} - Año: ${year} - ${resolution} - Cuotas: ${selectedInstallments.map((item) => item.nCuota).join(", ")}`,
-      añosAfectados: [year], mesesAfectados: months, total, detalleMeses: detail,
+      id: `fraccionamiento-${resolution}-${anio}-${tributeName}`,
+      descripcion: `${tributeName} - Año deuda: ${anio} - ${resolution} - Cuotas: ${selectedInstallments.map((item) => item.nCuota).join(", ")}`,
+      añosAfectados: [anio], mesesAfectados: months, total, detalleMeses: detail,
       tributoNombre: tributeName, tipoPago: "fraccionamiento",
       saldosDeuda: months.map((month) => {
         const matchingInstallment = selectedInstallments.find((item) => {
           const parts = item.fVenc?.includes("-") ? item.fVenc.split("-") : item.fVenc?.split("/") || [];
           return Number(parts[0]?.length === 4 ? parts[1] : parts[1]) === month;
         }) || selectedInstallments[0];
-        return { codTributo: mapTributoNameToCode(tributeName), anio: year, periodo: month, abono: Number(detail[month].toFixed(4)), anioResolucion: year, codResolucion: resolutionCode || Number(resolution.replace(/\D/g, "")) || 1, numeroCuota: matchingInstallment.nCuota };
+        return { codTributo: mapTributoNameToCode(tributeName), anio, periodo: month, abono: Number(detail[month].toFixed(4)), anioResolucion: year, codResolucion: resolutionCode || Number(resolution.replace(/\D/g, "")) || 1, numeroCuota: matchingInstallment.nCuota };
       }),
     });
   });

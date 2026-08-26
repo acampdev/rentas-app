@@ -7,7 +7,6 @@ import type {
 } from "./deudaFraccionada.types";
 import {
   accountDetailToTributes,
-  EMPTY_TRIBUTES,
   groupSchedule,
   installmentTotal,
 } from "./deudaFraccionada.utils";
@@ -118,11 +117,13 @@ export const useDeudaFraccionada = (props: Props) => {
   ]);
 
   const tributes = useMemo(() => {
-    const details =
-      allDetails.find((item) => item.year === selectedAño)?.details ?? [];
-    const mapped = accountDetailToTributes(details);
-    return mapped.length ? mapped : EMPTY_TRIBUTES;
-  }, [allDetails, selectedAño]);
+    // Una resolución puede fraccionar deudas de años anteriores. El año de la
+    // resolución no debe usarse para descartar esos conceptos tributarios.
+    const details = allDetails.flatMap((item) => item.details);
+    return accountDetailToTributes(details).filter((item) =>
+      item.valores.some((value) => value > 0),
+    );
+  }, [allDetails]);
 
   useEffect(
     () => setTributosFraccionados?.(tributes),

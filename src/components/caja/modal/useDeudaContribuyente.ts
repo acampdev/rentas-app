@@ -29,6 +29,7 @@ export const useDeudaContribuyente = ({ open, contributor, onClose, onPayment }:
   const [installments, setInstallments] = useState<CuotaFraccionamiento[]>([]);
   const [fractionTributes, setFractionTributes] = useState<TributoFraccionado[]>([]);
   const [fractionAmount, setFractionAmount] = useState("");
+  const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
 
   const selectedYearIds = useCallback((year: number | null) => items.filter((item) => item.año === year && item.deuda > 0).map((item) => item.id), [items]);
 
@@ -95,6 +96,7 @@ export const useDeudaContribuyente = ({ open, contributor, onClose, onPayment }:
   }, [ordinaryYear, selectedYearIds]);
 
   const changeTab = useCallback((value: number) => {
+    setPaymentFeedback(null);
     setTab(value);
     setAmount("");
     setSelectedCells({});
@@ -131,6 +133,7 @@ export const useDeudaContribuyente = ({ open, contributor, onClose, onPayment }:
   }, [amount, fractionAmount, fractionTributes]);
 
   const resetPayment = useCallback(() => {
+    setPaymentFeedback(null);
     setAmount("");
     setSelectionType("repartir");
     setSelectedRows(tab === 1 ? selectedYearIds(ordinaryYear) : []);
@@ -151,13 +154,24 @@ export const useDeudaContribuyente = ({ open, contributor, onClose, onPayment }:
 
   const pay = useCallback(() => {
     const numericAmount = Number(amount);
-    if (!contributor || numericAmount <= 0) return;
+    setPaymentFeedback(null);
+    if (!contributor || numericAmount <= 0) {
+      setPaymentFeedback("Seleccione una deuda válida antes de pagar.");
+      return;
+    }
     const payment = tab === 1
       ? crearPagoOrdinario(numericAmount, items, distribution, contributor)
       : tab === 2 && fractionYear
         ? crearPagoFraccionado(numericAmount, fractionYear, resolution, resolutionCode, installments, fractionTributes, contributor)
         : null;
-    if (!payment?.conceptos.length) return;
+    if (!payment?.conceptos.length) {
+      setPaymentFeedback(
+        tab === 2
+          ? "No se encontraron saldos tributarios pendientes asociados a las cuotas seleccionadas."
+          : "No se encontraron saldos ordinarios para el monto seleccionado.",
+      );
+      return;
+    }
     onPayment?.(payment);
     close();
   }, [amount, close, contributor, distribution, fractionTributes, fractionYear, installments, items, onPayment, resolution, resolutionCode, tab]);
@@ -175,6 +189,6 @@ export const useDeudaContribuyente = ({ open, contributor, onClose, onPayment }:
     selectedRows, selectRow, selectCell, ordinaryYear, selectYear, distribution, cellColor, exceedsDebt,
     fractionYear, setFractionYear, resolution, setResolution, resolutionCode, setResolutionCode,
     installments, setInstallments, fractionTributes, setFractionTributes, fractionAmount, setFractionAmount,
-    fractionCellColor, resetPayment, close, pay, canPay,
+    fractionCellColor, resetPayment, close, pay, canPay, paymentFeedback,
   };
 };
