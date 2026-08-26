@@ -10,7 +10,16 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../../../hooks/useConstantesOptions', () => ({
-  useTipoInscripcionPredio: () => ({ options: [], loading: false }),
+  useTipoInscripcionPredio: () => ({
+    options: [
+      { value: '7701', label: 'Inscripción a solicitud desde API' },
+      { value: '7702', label: 'Inscripción de oficio desde API' },
+      { value: '7712', label: 'Adjudicación posesionario desde API' },
+      { value: '7703', label: 'Subdivisión desde API' },
+      { value: '9999', label: 'Opción que debe ocultarse' },
+    ],
+    loading: false,
+  }),
 }));
 vi.mock('../../utils/Notification', () => ({
   NotificationService: { error: mocks.notifyError },
@@ -23,7 +32,7 @@ const completeForm = (result: { current: ReturnType<typeof useAsignacionPredioFo
       contribuyente: 'Contribuyente de prueba',
     } as never);
     result.current.selectProperty({ codigoPredio: '202628', anio: 2026 } as Predio);
-    result.current.update('modoDeclaracion', '0402');
+    result.current.update('modoDeclaracion', '7701');
     result.current.update('fechaDeclaracion', new Date(2026, 1, 26));
     result.current.update('porcentajeCondomino', '100');
   });
@@ -31,6 +40,20 @@ const completeForm = (result: { current: ReturnType<typeof useAsignacionPredioFo
 
 describe('useAsignacionPredioForm', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('filtra los modos del API y conserva sus descripciones', () => {
+    const { result } = renderHook(() => useAsignacionPredioForm({}));
+
+    expect(result.current.modes.map(({ value }) => value)).toEqual([
+      '7701',
+      '7702',
+      '7712',
+      '7703',
+    ]);
+    expect(result.current.modes[0].label).toBe(
+      'Inscripción a solicitud desde API',
+    );
+  });
 
   it('muestra en el formulario el detalle real cuando el registro falla', async () => {
     const apiMessage = "Error en sp_asignacionPredio (Tipo 1)\r\nMensaje: conflicto con FK_predio_pu";

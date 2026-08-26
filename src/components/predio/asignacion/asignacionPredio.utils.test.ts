@@ -2,12 +2,24 @@ import { describe, expect, it } from "vitest";
 import type { Predio } from "../../../models/Predio";
 import {
   buildAssignmentPayload,
+  filterAssignmentModeOptions,
   formatAssignmentDate,
   formatAssignmentModeOption,
   parseAssignmentDate,
 } from "./asignacionPredio.utils";
 
 describe("asignacionPredio utils", () => {
+  it("filtra la respuesta del API sin reemplazar sus descripciones", () => {
+    expect(filterAssignmentModeOptions([
+      { value: "7701", label: "Descripción 7701 del API" },
+      { value: "9999", label: "No permitido" },
+      { value: "7703", label: "Descripción 7703 del API" },
+    ])).toEqual([
+      { value: "7701", label: "Descripción 7701 del API" },
+      { value: "7703", label: "Descripción 7703 del API" },
+    ]);
+  });
+
   it("muestra código y nombre en el modo de declaración", () => {
     expect(formatAssignmentModeOption({ value: "0402", label: "COMPRA" })).toBe("0402 - COMPRA");
     expect(formatAssignmentModeOption({ value: "0402", label: "0402 - COMPRA" })).toBe("0402 - COMPRA");

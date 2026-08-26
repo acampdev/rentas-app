@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Predio } from "../../../models/Predio";
 import type { ContribuyenteListItem } from "../../../hooks/useContribuyentes";
@@ -15,6 +15,7 @@ import {
 import {
   assignmentFromEdit,
   buildAssignmentPayload,
+  filterAssignmentModeOptions,
 } from "./asignacionPredio.utils";
 
 export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
@@ -28,7 +29,12 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
     datosEdicion,
   } = props;
   const navigate = useNavigate();
-  const { options: modes, loading: loadingModes } = useTipoInscripcionPredio();
+  const { options: apiModes, loading: loadingModes } =
+    useTipoInscripcionPredio();
+  const modes = useMemo(
+    () => filterAssignmentModeOptions(apiModes),
+    [apiModes],
+  );
   const [form, setForm] = useState<AsignacionFormData>(EMPTY_ASSIGNMENT);
   const [loaded, setLoaded] = useState(false);
   const [internalLoading, setInternalLoading] = useState(false);
@@ -141,7 +147,7 @@ export const useAsignacionPredioForm = (props: AsignacionPredioProps) => {
   return {
     form,
     modes,
-    loading: externalLoading || internalLoading,
+    loading: externalLoading || internalLoading || loadingModes,
     isEditMode,
     isDesasignarMode,
     contributorModal,

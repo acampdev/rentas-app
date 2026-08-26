@@ -5,6 +5,20 @@ import type {
   DatosEdicionAsignacion,
 } from "./asignacionPredio.types";
 
+export const ASSIGNMENT_MODE_CODES = new Set([
+  "7701",
+  "7702",
+  "7712",
+  "7703",
+]);
+
+export const filterAssignmentModeOptions = <
+  T extends { value: unknown; label?: string },
+>(options: T[]): T[] =>
+  options.filter((option) =>
+    ASSIGNMENT_MODE_CODES.has(String(option.value ?? "").trim()),
+  );
+
 export const formatAssignmentModeOption = (option: {
   value: unknown;
   label?: string;
