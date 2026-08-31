@@ -75,6 +75,11 @@ export const MAIN_MENU_ITEMS: SidebarMenuItem[] = [
         path: "/predio/asignacion/consulta",
       },
       {
+        id: "subdivicion-predio",
+        label: "Subdivisión",
+        path: "/predio/subdivicion",
+      },
+      {
         id: "transferencia-predios",
         label: "Transferencia",
         subMenuItems: [

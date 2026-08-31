@@ -28,6 +28,7 @@ export const ConsultaPisosPage = lazyWithRetry('consulta-pisos', () => import('.
 export const AsignacionPredioPage = lazyWithRetry('asignacion-predio', () => import('./predio/asignacion/AsignacionPredioPage'));
 export const ConsultaAsignacionPage = lazyWithRetry('consulta-asignacion', () => import('./predio/asignacion/ConsultaAsignacionPage'));
 export const ConsultaPUHRPage = lazyWithRetry('consulta-puhr', () => import('./predio/puhr/ConsultaPUHRPage'));
+export const SubdivicionPage = lazyWithRetry('subdivicion-predio', () => import('./predio/subdivicion/SubdivicionPage'));
 export const TransferenciaAlcabalaPage = lazyWithRetry('transferencia-alcabala', () => import('./predio/transferencia/TransferenciaAlcabalaPage'));
 export const ReporteAlcabalaPage = lazyWithRetry('reporte-alcabala', () => import('./predio/transferencia/ReporteAlcabalaPage'));
 export const CajaPage = lazyWithRetry('caja', () => import('./caja/CajaPage'));

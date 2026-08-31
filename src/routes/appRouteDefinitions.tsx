@@ -37,6 +37,7 @@ import {
   RolesPage,
   SectoresPage,
   SolicitudFraccionamientoPage,
+  SubdivicionPage,
   TransferenciaAlcabalaPage,
   UitPage,
   UsersPage,
@@ -114,6 +115,7 @@ export const CONTRIBUTOR_PROPERTY_ROUTES: AppRouteDefinition[] = [
   route("/predio/pisos/registro", <RegistroPisoPage />, TAX_OPERATION_ROLES),
   route("/predio/pisos/consulta", <ConsultaPisosPage />, TAX_READ_ROLES),
   route("/predio/puhr/consulta-pu-hr", <ConsultaPUHRPage />, TAX_READ_ROLES),
+  route("/predio/subdivicion", <SubdivicionPage />, TAX_OPERATION_ROLES),
   route(
     "/predio/transferencia/alcabala",
     <TransferenciaAlcabalaPage />,

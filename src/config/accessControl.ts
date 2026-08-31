@@ -37,6 +37,7 @@ export const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
     '/predio/editar/:anio/:codPredio',
     '/predio/asignacion/nuevo',
     '/predio/pisos/registro',
+    '/predio/subdivicion',
     '/predio/transferencia/alcabala',
     '/cuenta-corriente/cargo/nuevo',
     '/cuenta-corriente/abono/nuevo',

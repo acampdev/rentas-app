@@ -17,6 +17,7 @@ import {
   Chip,
   Button,
   CircularProgress,
+  Tooltip,
   useTheme,
   alpha
 } from '@mui/material';
@@ -25,7 +26,8 @@ import {
   Visibility as VisibilityIcon,
   Add as AddIcon,
   Home as HomeIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  CallSplit as CallSplitIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useConsultaPredios, formatDireccion } from '../../hooks/useConsultaPredios';
@@ -186,6 +188,16 @@ const ConsultaPredios: React.FC = () => {
                       <Stack direction="row" spacing={0.5} justifyContent="center">
                         <IconButton size="small" onClick={() => handleView(p)} color="info"><VisibilityIcon fontSize="small" /></IconButton>
                         <IconButton size="small" onClick={() => handleEdit(p)} color="primary"><EditIcon fontSize="small" /></IconButton>
+                        <Tooltip title="Subdividir predio" arrow>
+                          <IconButton
+                            size="small"
+                            color="secondary"
+                            aria-label={`Subdividir predio ${p.codPredioBase || p.codigoPredio}`}
+                            onClick={() => navigate("/predio/subdivicion", { state: { predioMatriz: p } })}
+                          >
+                            <CallSplitIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Stack>
                     </TableCell>
                   </TableRow>
